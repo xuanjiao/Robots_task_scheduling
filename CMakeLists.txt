@@ -147,6 +147,11 @@ add_executable(goal_client src/goal_client.cpp)
 add_dependencies(goal_client ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(goal_client ${catkin_LIBRARIES})
 
+
+add_executable(move_subscribe_simple src/move_subscribe_simple.cpp)
+add_dependencies(move_subscribe_simple ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(move_subscribe_simple ${catkin_LIBRARIES})
+
 ## Rename C++ execu(table without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
