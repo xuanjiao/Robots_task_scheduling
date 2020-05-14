@@ -10,7 +10,10 @@ project(robot_navigation)
 find_package(catkin REQUIRED COMPONENTS
   actionlib
   move_base_msgs
+  geometry_msgs
   roscpp
+  std_msgs
+  message_generation
 )
 
 
@@ -48,11 +51,10 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+add_message_files(
+   FILES
+   sensor_data.msg
+)
 
 ## Declaration Message: MsgTutorial.msg 
 
@@ -75,7 +77,7 @@ find_package(catkin REQUIRED COMPONENTS
 #   DEPENDENCIES
 #   move_base_msgs
 # )
-generate_messages(DEPENDENCIES std_msgs)
+generate_messages(DEPENDENCIES geometry_msgs std_msgs)
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
 ################################################
@@ -139,13 +141,14 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/robot_navigation_node.cpp)
-add_executable(topic_publisher src/topic_publisher.cpp)
-add_dependencies(topic_publisher ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(topic_publisher ${catkin_LIBRARIES})
 
-add_executable(goal_client src/goal_client.cpp)
-add_dependencies(goal_client ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(goal_client ${catkin_LIBRARIES})
+add_executable(door_sensor src/door_sensor.cpp)
+add_dependencies(door_sensor ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(door_sensor ${catkin_LIBRARIES})
+
+#add_executable(goal_client src/goal_client.cpp)
+#add_dependencies(goal_client ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+#target_link_libraries(goal_client ${catkin_LIBRARIES})
 
 
 add_executable(move_subscribe_simple src/move_subscribe_simple.cpp)

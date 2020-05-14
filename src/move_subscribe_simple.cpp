@@ -24,7 +24,7 @@ int main(int argc, char **argv){
     nh.getParam("/room_pose_i/position",position);
     nh.getParam("/room_pose_i/orientation",orientation);
 
-
+    // subscribe to current position
     ros::Subscriber sub = 
         nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("amcl_pose",1,callback);
 
