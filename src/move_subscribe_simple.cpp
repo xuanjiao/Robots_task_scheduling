@@ -18,27 +18,36 @@ int main(int argc, char **argv){
 
     ros::NodeHandle nh;
     
+    std::vector<double> position;
+    std::vector<double> orientation;
+
+    nh.getParam("/room_pose_i/position",position);
+    nh.getParam("/room_pose_i/orientation",orientation);
+
+
     ros::Subscriber sub = 
         nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("amcl_pose",1,callback);
 
     ros::Publisher pub = nh.advertise<geometry_msgs::PoseStamped>("move_base_simple/goal",1);
-
-    double position[3] = {0.05,-2.05,0};
 
     geometry_msgs::PoseStamped message;
 
     message.header.frame_id = "map";
     message.header.stamp = ros::Time::now();
 
-    message.pose.position.x = position[0];
-    message.pose.position.y = position[1];
-    message.pose.position.z = position[2];
-    message.pose.orientation.w = 1.0;
+     message.pose.position.x = position[0];
+     message.pose.position.y = position[1];
+     message.pose.position.z = position[2];
+
+     message.pose.orientation.x = orientation[0];
+     message.pose.orientation.y = orientation[1];
+     message.pose.orientation.z = orientation[2];
+     message.pose.orientation.w = orientation[3];
 
     ros::Rate loop_rate(10);
       
     while(ros::ok()){
-	    pub.publish(message);
+	pub.publish(message);
         ros::spinOnce();
         loop_rate.sleep();
     }

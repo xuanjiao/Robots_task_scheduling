@@ -1,0 +1,3 @@
+<launch>
+    <rosparam command="load" file="$(find robot_navigation)/param/target_pose.yaml" />
+</launch>

@@ -1,0 +1,4 @@
+<launch>
+    <include file="$(find robot_navigation)/launch/load_params.launch"/>
+    <node pkg="robot_navigation" type="move_subscribe_simple" name="move_subscribe" output="screen" />
+</launch>
