@@ -8,7 +8,11 @@ int main(int argc, char** argv){
     std::vector<double> position;
     char room_id=argv[1][0];
 
-    if(! (argc == 2 && ( (room_id >='A' && room_id <='Z')|| (room_id >='a' && room_id < 'z')) )){
+    // for(int i = 0; i < argc;i++){
+    //     ROS_INFO_STREAM("params: "<<argv[i]);
+    // }
+
+    if( !((room_id >='A' && room_id <='Z')|| (room_id >='a' && room_id < 'z'))){
         ROS_INFO("Please enter a room id (a-z)");
         return 1;
     }
@@ -29,7 +33,7 @@ int main(int argc, char** argv){
     // publish sensor data
     ros::Publisher pub = nh.advertise<robot_navigation::sensor_data>("sensor_data",100);
 
-    ros::Rate loop_rate(1); // period = 1s 
+    ros::Rate loop_rate(0.5); // period = 2s 
     
     std::string format = "%Y-%m-%d %H:%M:%S";
 
@@ -49,6 +53,7 @@ int main(int argc, char** argv){
         char output[output_size];
    
         msg.stamp = ros::Time::now();
+        msg.id = room_id;
         
         // construct time string
         std::time_t  raw_time = static_cast<time_t>(msg.stamp.sec); // convert ros time to time_t
