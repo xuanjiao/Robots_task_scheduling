@@ -12,7 +12,7 @@ position of room also stored in [target_pose.yaml](./param/target_pose.yaml)
 
 ![rqt](./img/rosgraph.png)
 
-## message
+## messageg
 [sensor data message](./msg/sensor_data.msg)
 
 ## TO DO
