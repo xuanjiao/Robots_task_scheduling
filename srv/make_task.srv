@@ -1,0 +1,4 @@
+geometry_msgs/Point pose
+int16 battery_level
+---
+geometry_msgs/PoseStamped best_task

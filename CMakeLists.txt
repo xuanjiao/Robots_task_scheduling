@@ -16,7 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
 )
 
-
+add_compile_options(-std=c++11)
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -59,11 +59,10 @@ add_message_files(
 ## Declaration Message: MsgTutorial.msg 
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+add_service_files(
+  FILES
+  make_task.srv
+)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -150,10 +149,14 @@ target_link_libraries(door_sensor ${catkin_LIBRARIES})
 #add_dependencies(goal_client ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 #target_link_libraries(goal_client ${catkin_LIBRARIES})
 
-
 add_executable(move_subscribe_simple src/move_subscribe_simple.cpp)
 add_dependencies(move_subscribe_simple ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(move_subscribe_simple ${catkin_LIBRARIES})
+
+
+add_executable(centralized_pool src/centralized_pool.cpp)
+add_dependencies(centralized_pool ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(centralized_pool ${catkin_LIBRARIES})
 
 ## Rename C++ execu(table without prefix
 ## The above recommended prefix causes long target names, the following renames the
