@@ -8,10 +8,12 @@
 #define ROOM_NUM 3
 
 typedef struct {
+    double path_lengh;
     int priority;
     int task_id;
     char room_id;
     geometry_msgs::PoseStamped goal; // distination and timestamp
+
 }EnterRoomTask;
 
 class CentralizedPool{
@@ -21,18 +23,21 @@ public:
 
         load_room_position();
 
-        //nh.getParam("/room_pose_i/position",target_pose_position);
-        //nh.getParam("/room_pose_i/orientation",target_pose_orientation);
-
         // Create available tasks
-
+        create_random_tasks(10,ros::Time::now());
 
         // Create a server, usiing make_task.srv file. The service name is make_task
-        // task_server = nh.advertiseService<robot_navigation::make_task>("make_task",choose_best_task);
+        task_server = nh.advertiseService("make_task",&CentralizedPool::choose_best_task,this);
     
         // Create a client for service "make_plan"
-        // plan_client = nh.serviceClient<nav_msgs::GetPlan>("make_plan");
+        plan_client = nh.serviceClient<nav_msgs::GetPlan>("move_base/make_plan");
+        ros::Rate loop_rate(2); // 2hz
 
+        while(ros::ok()){
+            
+            ros::spinOnce();
+            loop_rate.sleep();
+        }
     }
 
     void load_room_position(){
@@ -67,28 +72,69 @@ public:
             room_map.insert(std::pair<char,geometry_msgs::Pose>('a'+i,pose));
 
         }
-        ROS_INFO_STREAM("load "<<room_map.size()<<"positions");
+        ROS_INFO_STREAM("load "<<room_map.size()<<" positions");
     }
 
-    bool choose_best_task(robot_navigation::make_task::Request &req,robot_navigation::make_task::Response &res){
-        
-        // request plan with start point and end point
 
-        // Calculate all distances of all plan
+    bool compare_task_cost(const std::pair<EnterRoomTask*,double> &p1, const std::pair<EnterRoomTask*,double> &p2){
+        return p1.second>p2.second;
+    }
+    
+    bool choose_best_task(robot_navigation::make_task::Request &req,robot_navigation::make_task::Response &res){
+        ROS_INFO_STREAM("receive request: "<<req);
+        
+        cost_vector.clear();
+        ROS_INFO_STREAM("There are "<<tasks.size()<<" tasks");
+        for(int i = 0; i < tasks.size(); i++){
+
+            double distance = 0.0;
+            
+            // Declare the service
+            nav_msgs::GetPlan make_plan_srv;
+            make_plan_srv.request.start.pose = req.pose;
+            make_plan_srv.request.goal.pose = tasks[i]->goal.pose;
+	   ROS_INFO_STREAM("request plan start: "<<req.pose<<" end: "<< tasks[i]->goal.pose);
+            // request plan with start point and end point
+            if(!plan_client.call(make_plan_srv)){
+                ROS_INFO_STREAM("Failed to send request to make plan server");
+                return false;
+            }
+            // calculate distance
+            std::vector<geometry_msgs::PoseStamped> &dists = make_plan_srv.response.plan.poses;
+
+            int size = dists.size();   
+
+            ROS_INFO_STREAM("receive plan size "<<size);
+
+            for(int i = 1; i < size;i++){
+                distance += sqrt(pow((dists[i].pose.position.x - dists[i-1].pose.position.x),2) + 
+                                    pow((dists[i].pose.position.y - dists[i-1].pose.position.y),2));
+            }       
+
+            // cost equal to distance
+
+            cost_vector.push_back(std::pair<EnterRoomTask*,double>(tasks[i],distance));
+
+            ROS_INFO_STREAM("task id: "<<tasks[i]->task_id<<" distance "<<distance);
+            
+
+        }
+  
 
         // Choose the one with shortest distance
-
-
-        // Declare the service
-        nav_msgs::GetPlan make_plan_srv;
-    
-        geometry_msgs::PoseStamped start;
-    
-
+        std::sort(cost_vector.begin(),cost_vector.end(),
+            [](const std::pair<EnterRoomTask*,double> &p1, const std::pair<EnterRoomTask*,double> &p2){
+                return p1.second>p2.second;
+            }
+        );    
+         
+        res.best_task = cost_vector.back().first->goal;
+ 
+        return true;
     }
 
     void create_random_tasks(int num,ros::Time start_time){
-        
+        ROS_INFO_STREAM("start create "<<num<<" tasks");
         int cnt = 0;
         long increase_sec;
         int output_size = 100;
@@ -97,9 +143,8 @@ public:
         std::time_t  raw_time;
         ros::Time time;
         
-
         while(cnt < num){
-            increase_sec = rand();
+            increase_sec = rand()%3600;
             
             // Create a random time after start time 
             time = start_time + ros::Duration(increase_sec);
@@ -107,38 +152,45 @@ public:
             raw_time = static_cast<time_t>(time.sec); // convert ros time to time_t
             struct tm* time_info = localtime(&raw_time);
 
-            if (time_info->tm_wday > 0 && time_info->tm_wday < 6 && time_info->tm_hour > 9 && time_info->tm_hour < 20) {
+           // if (time_info->tm_wday > 0 && time_info->tm_wday < 6 && time_info->tm_hour > 9 && time_info->tm_hour < 20) {
 			    
                 // Create a task on Monday to Friday from 9 am to 20 pm
-                EnterRoomTask task;
-                task.goal.header.stamp = time;  // set task time
-                task.priority = rand()%4 + 1;   // set random task priority 1-5
-                task.room_id = rand()%ROOM_NUM + 'A';
-
+                EnterRoomTask* task = new EnterRoomTask();
+                task->goal.header.frame_id = "map";
+                task->goal.header.stamp = time;  // set task time
+                task->priority = rand()%4 + 1;   // set random task priority 1-5
+                task->room_id = rand()%ROOM_NUM + 'a';
+                task->goal.pose=room_map[task->room_id];                
+                tasks.push_back(task);
+                
                 std::strftime(output,output_size,format.c_str(),time_info);
+                ROS_INFO_STREAM("Create new Task: "<<output<<" room "<<task->room_id<<" priority "<<task->priority);
+           // }
 
-            }
+            cnt++;
         }
     }
+
 private:
     ros::ServiceServer task_server;
 
     ros::ServiceClient plan_client;
 
-    std::vector<EnterRoomTask> tasks;
+    std::vector<EnterRoomTask*> tasks;
 
     ros::NodeHandle nh;
 
     std::map<char,geometry_msgs::Pose> room_map;
 
+    std::vector<std::pair<EnterRoomTask*,double>> cost_vector;
 };
 
 int main(int argc, char** argv){
     ros::init(argc,argv,"centralized_poor");
     
     CentralizedPool pool;
-    
 
+    
     // Give request value
    // make_plan_srv.request.start(start);
     

@@ -1,7 +1,10 @@
 <launch>
     <include file="$(find robot_navigation)/launch/load_params.launch"/>
     <param name="/use_sim_time" value="true"/>
+    
     <node pkg="robot_navigation" type="move_subscribe_simple" name="move_subscribe" output="screen"/>
+    
+    <node pkg="robot_navigation" type="centralized_pool" name="centralized_pool" output = "screen"/>
     <!--<node pkg="robot_navigation" type="door_sensor" name="door_sensor_a" args="a" output="log"/>
     <node pkg="robot_navigation" type="door_sensor" name="door_sensor_b" args="b" output="log"/>
     <node pkg="robot_navigation" type="door_sensor" name="door_sensor_c" args="c"/>
@@ -11,10 +14,11 @@
     <node pkg="robot_navigation" type="door_sensor" name="door_sensor_g" args="g"/>
     <node pkg="robot_navigation" type="door_sensor" name="door_sensor_h" args="h"/>
 -->
+ <!--
     <node pkg="robot_navigation" type="door_sensor" name="door_sensor_i" args="i"/>
     <node pkg="robot_navigation" type="door_sensor" name="door_sensor_j" args="j"/>
     <node pkg="robot_navigation" type="door_sensor" name="door_sensor_k" args="k"/>
-    <!--
+   
     <node pkg="robot_navigation" type="door_sensor" name="door_sensor_l" args="l"/>
     <node pkg="robot_navigation" type="door_sensor" name="door_sensor_m" args="m"/>
     <node pkg="robot_navigation" type="door_sensor" name="door_sensor_n" args="n"/>

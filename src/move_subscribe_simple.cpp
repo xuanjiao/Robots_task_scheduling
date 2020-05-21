@@ -1,5 +1,6 @@
 #include "ros/ros.h"
 #include "robot_navigation/sensor_data.h"
+#include "robot_navigation/make_task.h"
 #include <cmath>
 #include <sstream>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
@@ -15,44 +16,56 @@ public:
     Demo(){
 
 	ROS_INFO("constructor run");
-        nh.getParam("/room_pose_i/position",target_pose_position);
-        nh.getParam("/room_pose_i/orientation",target_pose_orientation);
-
         // subscribe to current position
         pos_sub = 
             nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("amcl_pose",1,&Demo::pos_callback,this);
         // subscribe to door sensor node
         sensor_sub = 
             nh.subscribe<robot_navigation::sensor_data>("sensor_data",100,&Demo::sensor_callback,this);
-        plan_sub = 
-            nh.subscribe<nav_msgs::Path>("move_base/NavfnROS/plan",1,&Demo::plan_callback,this);
+        // plan_sub = 
+        //    nh.subscribe<nav_msgs::Path>("move_base/NavfnROS/plan",1,&Demo::plan_callback,this);
+        
+        move_base_pub = nh.advertise<geometry_msgs::PoseStamped>("move_base_simple/goal",1);
 
-        pub = nh.advertise<geometry_msgs::PoseStamped>("move_base_simple/goal",1);
+        task_client = nh.serviceClient<robot_navigation::make_task>("make_task");
 
-        // build message
-        geometry_msgs::PoseStamped message;
-
-        message.header.frame_id = "map";
-        message.header.stamp = ros::Time::now();
-
-        message.pose.position.x = target_pose_position[0];
-        message.pose.position.y = target_pose_position[1];
-        message.pose.position.z = target_pose_position[2];
-
-        message.pose.orientation.x = target_pose_orientation[0];
-        message.pose.orientation.y = target_pose_orientation[1];
-        message.pose.orientation.z = target_pose_orientation[2];
-        message.pose.orientation.w = target_pose_orientation[3];
-
-        pub.publish(message);
+      // run_task();
 
         ros::Rate loop_rate(2); // 2hz
 
         while(ros::ok()){
-            pub.publish(message);
+            //pub.publish(message);
+             // request a best task from centralized pool and do this task
+            
             ros::spinOnce();
             loop_rate.sleep();
         }
+        
+    }
+
+    void run_task(){
+        // request a best task
+        robot_navigation::make_task srv;
+        srv.request.battery_level = 100;
+         srv.request.pose = current_pos;
+        //srv.request.pose.position.x = 100;
+        
+        ROS_INFO_STREAM("send request "<<srv.request);
+
+        if(!task_client.call(srv)){
+            ROS_INFO_STREAM("Failed to send request");
+            return;
+        }
+
+        ROS_INFO_STREAM("receive response "<<srv.response);
+        
+        // // build message
+        // geometry_msgs::PoseStamped message;
+        // message.header.frame_id = "map";
+        // message.header.stamp = ros::Time::now();
+        // message.pose = srv.response.best_task;
+
+        move_base_pub.publish(srv.response.best_task);
         
     }
     
@@ -108,13 +121,15 @@ private:
     ros::NodeHandle nh;
     
     // Publisher
-    ros::Publisher pub;
+    ros::Publisher move_base_pub;
 
     // Subscriber 
     ros::Subscriber pos_sub;
     ros::Subscriber sensor_sub;
     ros::Subscriber plan_sub;
 
+    // client
+    ros::ServiceClient task_client;
     geometry_msgs::Pose current_pos;
         
     std::vector<double> target_pose_position;
