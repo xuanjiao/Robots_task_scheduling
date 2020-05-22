@@ -5,7 +5,7 @@
 
 ## demo
 
-[click to go to demo](https://www.youtube.com/watch?v=cLfMKVpCcfQ&feature=youtu.be)
+https://www.youtube.com/watch?v=cLfMKVpCcfQ
 
 ## rqt graph
 
@@ -19,3 +19,9 @@
 - build global occupation possibility table
 
 - write cost function = Θ1 * occupation possibility+  Θ2 * hour different +  Θ3* distance + Θ4* task priority + Θ5 * battery level + Θ6
+
+## problem
+
+![1](./img/problem1.png)
+
+![2](./img/problem2.png)
