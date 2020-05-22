@@ -1,25 +1,20 @@
 # robot_navigation
 
-## map
+## work flow
+![work flow](./img/scheduler-ros_workflow.png)
 
-![map](./img/office.jpg)
+## demo
 
-![map](./img/office_pos.png)
-
-position of room also stored in [target_pose.yaml](./param/target_pose.yaml)
+[click to go to demo](https://www.youtube.com/watch?v=cLfMKVpCcfQ&feature=youtu.be)
 
 ## rqt graph
 
 ![rqt](./img/rosgraph.png)
 
-## messageg
-[sensor data message](./msg/sensor_data.msg)
 
 ## TO DO
 
 - use [clock](http://wiki.ros.org/Clock) package to simulate the time
-
-- subscribe path and predict path length
 
 - build global occupation possibility table
 
