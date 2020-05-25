@@ -8,6 +8,7 @@
 #define ROOM_NUM 15
 #define TASK_NUM 5
 #define DEFAULT_COST 1000
+#define SIMULATION_DURATION_SEC 600
 
 typedef struct {
     double path_lengh;
@@ -22,18 +23,26 @@ class CentralizedPool{
 
 public:
     CentralizedPool(){
+
+        init();
+
         // load room location parameters
         load_room_position();
 
         // Create available tasks
         create_random_tasks(TASK_NUM,ros::Time::now());
 
-        init_server_client();
 
         ros::spin(); // block program
     }
 
-    void init_server_client(){
+    void init(){
+        // double sec =1000000;
+       // double sec =1591120000;
+       // ros::Time start(sec);
+       // ros::Time::setNow(start);
+        ROS_INFO_STREAM("Current time: "<<time_str(ros::Time::now()));
+
         // Create a server, usiing make_task.srv file. The service name is make_task
         task_server = nh.advertiseService("make_task",&CentralizedPool::choose_best_task,this);
     
@@ -144,7 +153,8 @@ public:
         );    
          
         res.best_task = cost_vector.back().first->goal;
-	ROS_INFO_STREAM("Give robot the best task room id: "<<cost_vector.back().first->room_id<<" distance "<<cost_vector.back().second);
+	ROS_INFO_STREAM("Give robot the best task "<<time_str(cost_vector.back().first->goal.header.stamp)<<" room id: "<<
+        cost_vector.back().first->room_id<<" distance "<<cost_vector.back().second);
         // remove this task
         cost_vector.pop_back();
  
@@ -162,7 +172,7 @@ public:
         ros::Time time;
         
         while(cnt < num){
-            increase_sec = rand()%3600;
+            increase_sec = rand()%SIMULATION_DURATION_SEC;
             
             // Create a random time after start time 
             time = start_time + ros::Duration(increase_sec);
@@ -223,7 +233,7 @@ private:
 
 int main(int argc, char** argv){
     ros::init(argc,argv,"centralized_poor");
-    
+
     CentralizedPool pool;
 
     

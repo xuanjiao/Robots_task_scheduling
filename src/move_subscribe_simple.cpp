@@ -10,7 +10,7 @@
 #include <nav_msgs/Path.h>
 #include <string> 
 
-#define SENSOR_RANGE 3
+#define SENSOR_RANGE 1
 
     typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
 
@@ -18,17 +18,25 @@ class Demo{
 
 public:
     Demo():move_base_client("move_base", true){
-        initialized = false;
-	
-        // subscribe to current position
-        //pos_sub = 
-        //   nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("amcl_pose",1,&Demo::pos_callback,this);
-        // subscribe to door sensor node
+        battery_level = 100;
+
+     // subscribe to door sensor node
         sensor_sub = 
             nh.subscribe<robot_navigation::sensor_data>("sensor_data",100,&Demo::sensor_callback,this);
         
         task_client = nh.serviceClient<robot_navigation::make_task>("make_task");
+ 
+        move_base_client.waitForServer();
 
+        request_current_pose();
+        
+        // request a best task from centralized pool and do this task
+        run_task();
+
+        ros::spin();
+    }
+
+    void request_current_pose(){
         // try to get its current location
         boost::shared_ptr<geometry_msgs::PoseWithCovarianceStamped const> sharedPtr =
              ros::topic::waitForMessage<geometry_msgs::PoseWithCovarianceStamped>("amcl_pose",nh);
@@ -38,38 +46,36 @@ public:
         }
         
         current_pos = sharedPtr->pose.pose;
-        ROS_INFO_STREAM("Robot get current position "<<pose_str(current_pos));
-        
-        move_base_client.waitForServer();
-
-        // move_base_pub = nh.advertise<geometry_msgs::PoseStamped>("move_base_simple/goal",1);
-
-        // request a best task from centralized pool and do this task
-        run_task();
-
-        ros::spin();
+        ROS_INFO_STREAM("Robot get current position "<<pose_str(current_pos));       
     }
 
     void run_task(){
         // request a best task
         robot_navigation::make_task srv;
-        srv.request.battery_level = 100;
-         srv.request.pose = current_pos;
+        srv.request.battery_level = battery_level;
+        srv.request.pose = current_pos;
         
-        ROS_INFO_STREAM("send task request "<<pose_str(srv.request.pose));
+        ROS_INFO_STREAM("send task request. start "<<pose_str(srv.request.pose));
 
         if(!task_client.call(srv)){
             ROS_INFO_STREAM("Failed to send request");
             return;
         }
 
-        ROS_INFO_STREAM("receive best task response "<<pose_str(srv.response.best_task.pose));
-
+        ROS_INFO_STREAM("receive response best task  "<<" time "<<time_str(srv.response.best_task.header.stamp)
+            <<"Position "<<pose_str(srv.response.best_task.pose));
         move_base_msgs::MoveBaseGoal goal;
         goal.target_pose = srv.response.best_task;
+        ROS_INFO_STREAM("Current time: "<<time_str(ros::Time::now())<<" sleep until "<<
+            time_str(goal.target_pose.header.stamp));
+            
+        ros::Time::sleepUntil(goal.target_pose.header.stamp);
+        ROS_INFO_STREAM("Current time: "<<time_str(ros::Time::now()));
+        
         move_base_client.sendGoal(goal,
                 boost::bind(&Demo::move_complete_callback,this, _1, _2),
                 MoveBaseClient::SimpleActiveCallback(),
+             // MoveBaseClient::SimpleFeedbackCallback());
                 boost::bind(&Demo::move_position_feedback,this, _1));
         // move_base_pub.publish(srv.response.best_task);
         
@@ -77,7 +83,8 @@ public:
 
     void move_position_feedback(const move_base_msgs::MoveBaseFeedbackConstPtr &feedback){
             current_pos = feedback->base_position.pose;
-            ROS_INFO_STREAM("Current position: "<<pose_str(current_pos));
+            battery_level-=0.1;
+            // ROS_INFO_STREAM("Current position: "<<pose_str(current_pos));
      }
      
     void move_complete_callback(const actionlib::SimpleClientGoalState& state,
@@ -90,14 +97,7 @@ public:
             }else
                     ROS_INFO("Goal failed");
     }
-    // void pos_callback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& message){
-        
-    //     ROS_INFO_STREAM("Time"<<time_str(ros::Time::now())<<" Position"<<pose_str(message->pose.pose));
 
-    //     if(!initialized){
-    //         initialized = true;
-    //     }
-    // }
 
     void sensor_callback(const robot_navigation::sensor_data::ConstPtr& message){
         std::string status = message->door_status?"open":"closed";
@@ -160,7 +160,7 @@ private:
     geometry_msgs::Pose current_pos;
   
     // flag
-    bool initialized;
+    double battery_level;
 };
 
 int main(int argc, char **argv){
