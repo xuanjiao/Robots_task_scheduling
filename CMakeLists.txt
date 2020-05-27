@@ -3,6 +3,9 @@ project(robot_navigation)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake-modules)
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -15,6 +18,8 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   message_generation
 )
+
+find_package(MySqlClient REQUIRED)
 
 add_compile_options(-std=c++11)
 ## System dependencies are found with CMake's conventions
@@ -122,8 +127,9 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-# include
+  include
   ${catkin_INCLUDE_DIRS}
+  ${MYSQL_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -145,9 +151,13 @@ add_executable(door_sensor src/door_sensor.cpp)
 add_dependencies(door_sensor ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(door_sensor ${catkin_LIBRARIES})
 
-#add_executable(goal_client src/goal_client.cpp)
-#add_dependencies(goal_client ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-#target_link_libraries(goal_client ${catkin_LIBRARIES})
+add_definitions(${MYSQL_DEFINITIONS})
+add_executable(door_status_advertiser src/door_status_advertiser.cpp)
+add_dependencies(door_status_advertiser ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(door_status_advertiser
+  ${catkin_LIBRARIES}
+  mysqlclient
+)
 
 add_executable(move_subscribe_simple src/move_subscribe_simple.cpp)
 add_dependencies(move_subscribe_simple ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
