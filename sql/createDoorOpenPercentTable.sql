@@ -24,4 +24,8 @@ insert into user_defined_door_open_possibility_table(room_id,day_of_week,start_t
 insert into user_defined_door_open_possibility_table(room_id,day_of_week,start_time,end_time,open_percent) values( 'c',1,'8:00:00','12:00:00',90);
 insert into user_defined_door_open_possibility_table(room_id,day_of_week,start_time,end_time,open_percent) values( 'c',1,'12:00:00','24:00:00',0);
 
+insert into user_defined_door_open_possibility_table(room_id,day_of_week,start_time,end_time,open_percent) values( 'd',1,'00:00:00','8:00:00',0);
+insert into user_defined_door_open_possibility_table(room_id,day_of_week,start_time,end_time,open_percent) values( 'd',1,'8:00:00','15:00:00',100);
+insert into user_defined_door_open_possibility_table(room_id,day_of_week,start_time,end_time,open_percent) values( 'd',1,'15:00:00','24:00:00',0);
+
 select * from user_defined_door_open_possibility_table

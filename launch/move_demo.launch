@@ -1,7 +1,6 @@
 <launch>
     <include file="$(find robot_navigation)/launch/load_params.launch"/>
-    <param name="/use_sim_time" value="true"/>
-    
+
     <node pkg="robot_navigation" type="move_subscribe_simple" name="move_subscribe" output="screen" launch-prefix="xterm -e"/>
     
     <node pkg="robot_navigation" type="centralized_pool" name="centralized_pool" output = "screen"/>

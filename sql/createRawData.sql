@@ -42,5 +42,6 @@ delimiter ;
 call createRawData('a','2020-06-01 8:00:00','01:00:00',100);
 call createRawData('b','2020-06-01 8:00:00','01:00:00',100);
 call createRawData('c','2020-06-01 8:00:00','01:00:00',100);
+call createRawData('d','2020-06-01 8:00:00','01:00:00',100);
 
-select * from door_status_list order by date_time;
+select * from door_status_list;

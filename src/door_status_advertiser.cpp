@@ -4,15 +4,46 @@
 #include <mysql/mysql.h>
 #include <sstream>
 #include "util.h"
+#include "robot_navigation/sensor_data.h"
+
 using namespace std;
 class Advertiser{
     public:
     Advertiser(){
         init_time();
         connect_to_db();
-        query();
+        load_room_positions();
 
-        ros::spin();
+        // publish sensor data
+        int max_room;
+        nh.getParam("available_room_num",max_room);
+        ros::Publisher pub = nh.advertise<robot_navigation::sensor_data>("sensor_data",100);
+
+        ros::Rate loop_rate(2);
+        while(ros::ok()){
+            for(int i = 0; i < max_room;i++){
+                char room_id = 'a'+i;
+                robot_navigation::sensor_data msg;
+                msg.stamp = ros::Time::now();
+                msg.id = room_id; //convert char to string
+                msg.pose = room_map[room_id];
+                
+                if(query(room_id,msg.stamp,msg.door_status)){ //query door value or current time
+                    // fond a door status in database
+                    // ROS_INFO_STREAM("publish a message: " <<msg);
+                    pub.publish(msg);
+                }else{
+                    ROS_INFO_STREAM("no data for room "<<room_id<<" "<<Util::time_str(msg.stamp));
+                }
+            }
+            ROS_INFO_STREAM("sleep");
+            ros::spinOnce();
+            loop_rate.sleep();
+            // ros::Duration(10).sleep();
+        }
+
+        
+
     }
 
     void init_time(){
@@ -28,11 +59,11 @@ class Advertiser{
         
         rawtime = mktime(st);
 
-        ROS_INFO_STREAM("start time: "<<rawtime);
         ros::Time start(rawtime);
         ros::Time::setNow(start);
         ROS_INFO_STREAM("start time: "<<Util::time_str(ros::Time::now()));
     }
+
     bool connect_to_db(){
         connection = mysql_init(NULL);
 
@@ -51,49 +82,71 @@ class Advertiser{
         }
     }
 
-    void query(){
+    bool query(char room_id,ros::Time time, uint8_t& door_status){
             MYSQL_RES *result;  
             MYSQL_ROW row; 
 
-            // std::stringstream query;
-            char room_id = 'a';
             char query[200];
-            std::string cur_time =Util::time_str(ros::Time::now());
+            std::string cur_time =Util::time_str(time);
             sprintf(query,"SELECT *  FROM door_status_list WHERE room_id = '%c' and TIMEDIFF(\"%s\",date_time)<\"01:00:00\" and TIMEDIFF(\" %s \",date_time)>=0",room_id,cur_time.c_str(),cur_time.c_str());
         
-            ROS_INFO_STREAM(query);
+            ROS_DEBUG_STREAM(query);
 
         if(mysql_query(connection, query))  
         {
             ROS_INFO("Query Error: %s", mysql_error(connection));  
             exit(1);  
-        }
-        else{
+        }else{
             // result = mysql_store_result(connection);
             result = mysql_use_result(connection);
             row = mysql_fetch_row(result); 
    
             if(row <= 0){  
-                ROS_INFO("no result");
-                return; 
+                door_status = false;   // doesn't find log, search result -1
+                return false; 
             }
-            bool door_status = false;
-            door_status = (std::strcmp(row[1],"0")==0)?false:true;  // get first row in result
-            ROS_INFO("door %s",door_status?"opened":"closed");
-                    
+          
+            door_status = (std::strcmp(row[1],"0")==0)?0:1;  // get first row in result                            
             mysql_free_result(result);  
+            return true;
         }
+    }
+
+    void load_room_positions(){
+        // get position of all rooms store them in map
+        std::vector<double> point_vec;
+        geometry_msgs::Point point;
+        std::stringstream stream;
+        char room_id = 'a';
+        while(true){
+            stream.str("");
+            point_vec.clear();
+            stream << "/room_pose_" << room_id << "/position";
+
+            if(!nh.getParam(stream.str(),point_vec)){ // When room not exist quit
+                break;
+            }
+            point.x = point_vec[0];
+            point.y = point_vec[1];
+            point.z = point_vec[2];
+           
+            room_map.insert(std::pair<char,geometry_msgs::Point>(room_id,point));
+            room_id++;
+        }
+        ROS_INFO_STREAM("load "<<room_id-'a'<<" points");
+        
     }
 
 private:
     MYSQL *connection;
     ros::NodeHandle nh;
+    std::map<char,geometry_msgs::Point> room_map;
+    
 };
 int main(int argc, char** argv){
     ROS_INFO("main function start\n");
     ros::init(argc,argv,"door_status_advertiser"); // Initializes Node Name
     Advertiser ad;
-    
       
     return 0;
 }
