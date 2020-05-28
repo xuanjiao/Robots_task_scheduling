@@ -19,7 +19,7 @@ class Advertiser{
         nh.getParam("available_room_num",max_room);
         ros::Publisher pub = nh.advertise<robot_navigation::sensor_data>("sensor_data",100);
 
-        ros::Rate loop_rate(2);
+        //ros::Rate loop_rate(2);
         while(ros::ok()){
             for(int i = 0; i < max_room;i++){
                 char room_id = 'a'+i;
@@ -28,18 +28,20 @@ class Advertiser{
                 msg.id = room_id; //convert char to string
                 msg.pose = room_map[room_id];
                 
+                ROS_INFO_STREAM("Current time: "<<Util::time_str(msg.stamp));
+                
                 if(query(room_id,msg.stamp,msg.door_status)){ //query door value or current time
                     // fond a door status in database
                     // ROS_INFO_STREAM("publish a message: " <<msg);
                     pub.publish(msg);
                 }else{
-                    ROS_INFO_STREAM("no data for room "<<room_id<<" "<<Util::time_str(msg.stamp));
+                    ROS_INFO_STREAM("no data for room "<<room_id);
                 }
             }
             ROS_INFO_STREAM("sleep");
             ros::spinOnce();
-            loop_rate.sleep();
-            // ros::Duration(10).sleep();
+            // loop_rate.sleep();
+            ros::Duration(10).sleep();
         }
 
         
@@ -88,7 +90,7 @@ class Advertiser{
 
             char query[200];
             std::string cur_time =Util::time_str(time);
-            sprintf(query,"SELECT *  FROM door_status_list WHERE room_id = '%c' and TIMEDIFF(\"%s\",date_time)<\"01:00:00\" and TIMEDIFF(\" %s \",date_time)>=0",room_id,cur_time.c_str(),cur_time.c_str());
+            sprintf(query,"SELECT *  FROM door_status_list WHERE room_id = '%c' and TIMEDIFF(\"%s\",date_time)<\"00:10:00\" and TIMEDIFF(\" %s \",date_time)>=0",room_id,cur_time.c_str(),cur_time.c_str());
         
             ROS_DEBUG_STREAM(query);
 
