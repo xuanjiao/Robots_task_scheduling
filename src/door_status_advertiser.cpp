@@ -10,7 +10,7 @@ using namespace std;
 class Advertiser{
     public:
     Advertiser(){
-        init_time();
+        //init_time();
         connect_to_db();
         load_room_positions();
 
@@ -28,13 +28,14 @@ class Advertiser{
                 msg.id = room_id; //convert char to string
                 msg.pose = room_map[room_id];
                 
-                ROS_INFO_STREAM("Current time: "<<Util::time_str(msg.stamp));
+               
                 
                 if(query(room_id,msg.stamp,msg.door_status)){ //query door value or current time
                     // fond a door status in database
-                    // ROS_INFO_STREAM("publish a message: " <<msg);
+                    ROS_INFO_STREAM("publish a message: " <<msg);
                     pub.publish(msg);
                 }else{
+ 			ROS_INFO_STREAM("Current time: "<<Util::time_str(msg.stamp));
                     ROS_INFO_STREAM("no data for room "<<room_id);
                 }
             }

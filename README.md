@@ -28,6 +28,7 @@ program result
     roslaunch robot_navigation office_world.launch
     rosrun rosrun robot_navigation door_status_advertiser
 ```
+![sensor](./img/door_status_advertiser.png)
 ## 3. Start navigation stack
 ```
     roslaunch robot_navigation robot_navigation.launch
