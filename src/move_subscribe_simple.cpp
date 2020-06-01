@@ -19,6 +19,9 @@ class Demo{
 public:
     Demo():move_base_client("move_base", true){
         battery_level = 100;
+        ROS_INFO_STREAM("Current time: "<<time_str(ros::Time::now()));
+	ros::Duration(3).sleep();
+        ROS_INFO_STREAM("Current time: "<<time_str(ros::Time::now()));
 
      // subscribe to door sensor node
         sensor_sub = 

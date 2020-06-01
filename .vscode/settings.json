@@ -59,5 +59,6 @@
         "typeindex": "cpp",
         "typeinfo": "cpp",
         "iterator": "cpp"
-    }
+    },
+    "cmake.configureOnOpen": false
 }

@@ -1,66 +1,66 @@
 available_room_num: 4
 
-room_pose_a:
+room_a_door:
   position: [-21.6662127429, 9.50513223651, 0.0]
   orientation: [0.0, 0.0, 9.50513223651, 0.667743723726]
 
-room_pose_b:
+room_b_door:
   position: [-19.4278817305, 9.0054257766, 0.0]
   orientation: [0.0, 0.0, 0.673662651895, 0.739038991827]
 
-room_pose_c:
+room_c_door:
   position: [-14.7790163094, 9.0879504651, 0.0]
   orientation: [0.0, 0.0, 0.696015604107, 0.718026656078]
 
-room_pose_d:
+room_d_door:
   position: [-22.3155041827, 8.20714003079, 0.0]
   orientation: [0.0, 0.0, -0.999991890265,0.0040273322644]
 
-room_pose_e:
+room_e_door:
   position: [-17.6463588911, -17.6463588911, 0.0]
   orientation: [0.0, 0.0,  0.710953141288, 0.703239383775]
 
-room_pose_f:
+room_f_door:
   position: [-13.2646228952, 7.77758415791, 0.0]
   orientation: [0.0, 0.0, 7.77758415791,0.998654018142]
 
-room_pose_g:
+room_g_door:
   position: [-9.72013338947, 8.52865724571, 0.0]
   orientation: [0.0, 0.0, -0.999999263125, 0.0012139806762]
 
-room_pose_h:
+room_h_door:
   position: [-9.03927424531, 6.62321407921, 0.0]
   orientation: [0.0, 0.0, 0.651078250306, 0.759010613877]
 
-room_pose_i:
+room_i_door:
   position: [-0.868440756591, 7.0788002511, 0.0]
   orientation: [0.0, 0.0, 0.662118779871, 0.749398906686]
 
-room_pose_j:
+room_j_door:
   position: [4.38077210276, 9.34650744461, 0.0]
   orientation: [0.0, 0.0, 0.721488227349, 0.692426702112]
 
-room_pose_k:
+room_k_door:
   position: [6.48236977439, 9.48845367671, 0.0]
   orientation: [0.0, 0.0, 0.711113291282, 0.703077440231]
 
-room_pose_l:
+room_l_door:
   position: [3.6025773004, 8.71864545073, 0.0]
   orientation: [0.0, 0.0, -0.99768098292, 0.0680636196487]
 
-room_pose_m:
+room_m_door:
   position: [4.23119675634, 7.38657063027, 0.0]
   orientation: [0.0, 0.0, 0.608479240054, 0.793569791778]
 
-room_pose_n:
+room_n_door:
   position: [6.86290545247, 5.40794760884, 0.0]
   orientation: [0.0, 0.0, 0.114759478636, 0.993393306834]
 
-room_pose_o:
+room_o_door:
   position: [-2.95220390532, 2.39211836475, 0.0]
   orientation: [0.0, 0.0, -0.702331560869, -0.702331560869]
 
-room_pose_p:
+room_p_door:
   position: [4.28632121392, 2.54533955273, 0.0]
   orientation: [0.0, 0.0, -0.723120814312, 0.690721570468]
 

@@ -23,7 +23,7 @@ program result
 ```
 ![result](./img/raw_data.png)
 
-### 2.  Start sensor node(has a bug):
+### 2.  Start sensor node:
 ```
     roslaunch robot_navigation office_world.launch
     rosrun rosrun robot_navigation door_status_advertiser

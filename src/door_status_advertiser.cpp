@@ -27,15 +27,13 @@ class Advertiser{
                 msg.stamp = ros::Time::now();
                 msg.id = room_id; //convert char to string
                 msg.pose = room_map[room_id];
-                
-               
-                
+                            
                 if(query(room_id,msg.stamp,msg.door_status)){ //query door value or current time
                     // fond a door status in database
                     ROS_INFO_STREAM("publish a message: " <<msg);
                     pub.publish(msg);
                 }else{
- 			ROS_INFO_STREAM("Current time: "<<Util::time_str(msg.stamp));
+ 			        ROS_INFO_STREAM("Current time: "<<Util::time_str(msg.stamp));
                     ROS_INFO_STREAM("no data for room "<<room_id);
                 }
             }
