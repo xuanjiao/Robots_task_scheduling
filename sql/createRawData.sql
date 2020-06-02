@@ -23,6 +23,7 @@ begin
                 from user_defined_door_open_possibility_table
 		    where TIME(cur_time) between start_time and end_time and id = room_id and dayofweek(cur_time) = day_of_week;
 
+			 call process_measurement_result(id,cur_time);
           set cur_time = addtime(cur_time,period);
           set cnt = cnt + 1;
     end while;
