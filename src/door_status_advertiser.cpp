@@ -33,7 +33,7 @@ class Advertiser{
     bool publish_door_status(){
         std::vector<Table_row> rows;
         ros::Time now = ros::Time::now();
-        if(!sql_client.query_posibility_table(rows,now)){
+        if(!sql_client.query_posibility_table_rooms(rows,now)){
  			ROS_INFO_STREAM("No result. Current time: "<<Util::time_str(now));
             return false;
         }

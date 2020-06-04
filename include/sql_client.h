@@ -5,6 +5,7 @@
 #include <ros/ros.h>
 #include <vector>
 #include <mysql/jdbc.h>
+#include "util.h"
 
 #define   USER_NAME "root"
 #define   PASSWARD  "pi"
@@ -47,22 +48,59 @@ class SQLClient{
     }
 
     void prepare_statements(){
-      query_table_statement = con->prepareStatement("select * from " + std::string(TABLE_NAME) +                             
+      query_table_rooms_statement = con->prepareStatement("select * from " + std::string(TABLE_NAME) +                             
 		     " where (TIME(?) between start_time and end_time )and dayofweek(?) = day_of_week "
       );
-      
+      query_table_single_room_statement = con->prepareStatement("select * from " + std::string(TABLE_NAME) +                             
+		     " where (TIME(?) between start_time and end_time )and dayofweek(?) = day_of_week and ? = room_id"
+      );
       insert_list_statement = con->prepareStatement( "insert into " + std::string(LIST_NAME)+" values (?,?,?)");
     }
 
-    bool query_posibility_table(std::vector<Table_row>& rows, const ros::Time& t){
+    bool query_posibility_table_single_room(Table_row& row, const ros::Time& t){
       std::string time = Util::time_str(t);
+      ROS_INFO_STREAM("query parameters :"<<row.room_id << ", "<<time);
       try
       {      
-        ROS_INFO_STREAM("query parameters: "<<time);
-        query_table_statement->setString(1,time);
-        query_table_statement->setString(2,time);
+        query_table_single_room_statement->setString(1,time);
+        query_table_single_room_statement->setString(2,time);
+        query_table_single_room_statement->setString(3,row.room_id);
+        result =  query_table_single_room_statement->executeQuery();
+        if(result->rowsCount()==0){
+            ROS_INFO_STREAM("no result");
+            return false;
+        }
+
+        while (result->next())
+        {
+            
+            row.room_id = result->getString("room_id");
+            row.day_of_week = result->getInt("day_of_week");
+            row.time_slot_left = result->getInt("start_time");
+            row.time_slot_right = result->getInt("end_time");
+            row.open_pos = result->getInt("open_posibility");
+            row.statistuc_open_pos = result->getInt("statistic_door_open_posibility");
+            row.door_status = rand()%100<row.open_pos?1:0;                    
+        }
+      }
+      catch(sql::SQLException &e)
+      {
+        ROS_INFO_STREAM( e.what());
+        return false;
+      }catch (const std::exception& e){
+        ROS_INFO_STREAM( e.what());
+      }
+      return true;
+      
+    }
+    bool query_posibility_table_rooms(std::vector<Table_row>& rows, const ros::Time& t){
+      std::string time = Util::time_str(t);
+      try
+      {     
+         query_table_rooms_statement->setString(1,time);
+         query_table_rooms_statement->setString(2,time);
         
-        result = query_table_statement->executeQuery();
+        result =  query_table_rooms_statement->executeQuery();
         if(result->rowsCount()==0){
             ROS_INFO_STREAM("no result");
             return false;
@@ -105,7 +143,9 @@ class SQLClient{
 
 
     ~SQLClient(){
-      delete query_table_statement;
+      delete insert_list_statement;
+      delete query_table_rooms_statement;
+      delete query_table_single_room_statement;
     }
 
    static SQLClient& getInstance() {
@@ -116,7 +156,8 @@ class SQLClient{
     sql::Driver* driver;
     sql::Connection* con;
     sql::PreparedStatement* insert_list_statement;
-    sql::PreparedStatement* query_table_statement;
+    sql::PreparedStatement* query_table_rooms_statement;
+    sql::PreparedStatement* query_table_single_room_statement;
     sql::ResultSet* result;
   
 };

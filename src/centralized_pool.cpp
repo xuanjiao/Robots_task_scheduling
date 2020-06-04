@@ -12,6 +12,13 @@
 #define DEFAULT_COST 1000
 #define SIMULATION_DURATION_SEC 600
 
+typedef struct{
+    double distance;
+    double hour_diff;
+    int    statisic_open_possibility;
+    double battery_level;
+}CostFunction;
+
 class CentralizedPool{
 
 public:
@@ -19,15 +26,11 @@ public:
 
         init();
 
-        // Table_row row;
-        // row.room_id = 'a';
-        // sql_client.query_posibility_table(row,ros::Time::now());
-  
         // load room location parameters
         load_room_position();
 
         // Create available tasks
-        // create_random_tasks(TASK_NUM,ros::Time::now());
+        create_random_tasks(TASK_NUM,ros::Time::now());
 
 
         ros::spin(); // block program
@@ -87,9 +90,17 @@ public:
         return p1.second>p2.second;
     }
 
+    int get_statistic_open_possibility(char room_id, ros::Time time){
+        Table_row row;
+        row.room_id = room_id;
+        sql_client.query_posibility_table_single_room(row,time);
+        ROS_INFO_STREAM("room id "<<row.room_id<<"pos "<<row.statistuc_open_pos);
+        return row.statistuc_open_pos;
+    }
     
     bool choose_best_task(robot_navigation::make_task::Request &req,robot_navigation::make_task::Response &res){
-	int plan_size = 0;
+        ros::Time cur_time = ros::Time::now();
+        int plan_size = 0;
         ROS_INFO_STREAM("receive request from a robot in "<<Util::pose_str(req.pose));
         
         ROS_INFO_STREAM("There are "<<cost_vector.size()<<" tasks");
@@ -100,22 +111,26 @@ public:
         }
 
         for(int i = 0; i < cost_vector.size(); i++){
+            CostFunction cost_function;
             std::pair<EnterRoomTask*,double> &pair = cost_vector[i];
-            double distance = 0.0; 
-
-            int time_diff = (pair.first->goal.header.stamp - ros::Time::now()).sec;
-
-            if(time_diff<0){
+            
+            // for each room, calculate time different
+            cost_function.hour_diff = (pair.first->goal.header.stamp - cur_time).sec/3600;
+            if(cost_function.hour_diff<0){
                 ROS_INFO_STREAM("Task %d"<<pair.first->task_id<<" is expired ");
                 continue;
             }
-            // Declare the service
+
+            // for each room, check open possibility
+            cost_function.statisic_open_possibility = get_statistic_open_possibility(pair.first->room_id,cur_time);
+ 
+            // for each room, request distance from move base plan server
             nav_msgs::GetPlan make_plan_srv;
             make_plan_srv.request.start.pose= req.pose;
             make_plan_srv.request.start.header = pair.first->goal.header;
             make_plan_srv.request.goal= pair.first->goal;
             make_plan_srv.request.tolerance = 1;
-	        // ROS_INFO_STREAM("request plan start: "<<make_plan_srv.request.start<<" end: "<< make_plan_srv.request.goal);
+	        
             // request plan with start point and end point
             if(!plan_client.call(make_plan_srv)){
                 ROS_INFO_STREAM("Failed to send request to make plan server");
@@ -132,19 +147,16 @@ public:
             ROS_INFO_STREAM("receive plan size "<<plan_size);
 
             for(int i = 1; i < plan_size;i++){
-                distance += sqrt(pow((dists[i].pose.position.x - dists[i-1].pose.position.x),2) + 
+                cost_function.distance += sqrt(pow((dists[i].pose.position.x - dists[i-1].pose.position.x),2) + 
                                     pow((dists[i].pose.position.y - dists[i-1].pose.position.y),2));
             }       
-
-            // cost function = distance
-            
-            pair.second = distance + time_diff%3600;
-
-            // cost equal to distance
+             
+            pair.second = cost_function.distance + cost_function.hour_diff + 100 - cost_function.statisic_open_possibility;
 
             ROS_INFO_STREAM("available task room id: "<<pair.first->room_id<<
-                                " distance "<<distance<<
-                                "hour different "<<time_diff%3600<<
+                                " distance "<<cost_function.distance<<
+                                "hour different "<<cost_function.hour_diff<<
+                                "open possibility "<<cost_function.statisic_open_possibility<<
                                 " cost "<<pair.second);          
         }
   
