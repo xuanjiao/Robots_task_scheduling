@@ -56,6 +56,7 @@
   <build_depend>std_msgs</build_depend>
   <build_depend>geometry_msgs</build_depend>
   <build_depend>message_generation</build_depend>
+  <build_depend>libmysqlcppconn</build_depend>
   <build_depend>libmysqlclient-dev</build_depend>
   <exec_depend>actionlib</exec_depend>
   <exec_depend>std_msgs</exec_depend>
@@ -64,12 +65,12 @@
   <exec_depend>move_base_msgs</exec_depend>
   <exec_depend>roscpp</exec_depend>
   <exec_depend>libmysqlclient-dev</exec_depend>
-
+  <exec_depend>libmysqlcppconn</exec_depend>
   
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
-  <cpp lflags="-lmysqlclient"/>
+  <cpp lflags="-lmysqlclient-lmysqlcppconn "/>
     <!-- Other tools can request additional information be placed here -->
   </export>
 </package>

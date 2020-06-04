@@ -58,7 +58,9 @@
         "utility": "cpp",
         "typeindex": "cpp",
         "typeinfo": "cpp",
-        "iterator": "cpp"
+        "iterator": "cpp",
+        "*.ipp": "cpp",
+        "forward_list": "cpp"
     },
     "cmake.configureOnOpen": false
 }

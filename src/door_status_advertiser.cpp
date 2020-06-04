@@ -5,112 +5,48 @@
 #include <sstream>
 #include "util.h"
 #include "robot_navigation/sensor_data.h"
+#include "sql_client.h"
 
 using namespace std;
 class Advertiser{
     public:
-    Advertiser(){
-        //init_time();
-        connect_to_db();
+    Advertiser():sql_client(SQLClient::getInstance()){
+        ROS_INFO_STREAM("using simulation time "<<ros::Time::isSimTime());
+        ROS_INFO_STREAM("using system time "<<ros::Time::isSystemTime());
+        ros::Duration(1).sleep();
+        ROS_INFO_STREAM("Current time "<<Util::time_str(ros::Time::now()));
         load_room_positions();
+        sql_client.connect_to_database();
+        
 
-        // publish sensor data
         int max_room;
         nh.getParam("available_room_num",max_room);
-        ros::Publisher pub = nh.advertise<robot_navigation::sensor_data>("sensor_data",100);
+        pub = nh.advertise<robot_navigation::sensor_data>("sensor_data",100);
 
-        //ros::Rate loop_rate(2);
         while(ros::ok()){
-            for(int i = 0; i < max_room;i++){
-                char room_id = 'a'+i;
-                robot_navigation::sensor_data msg;
-                msg.stamp = ros::Time::now();
-                msg.id = room_id; //convert char to string
-                msg.pose = room_map[room_id];
-                            
-                if(query(room_id,msg.stamp,msg.door_status)){ //query door value or current time
-                    // fond a door status in database
-                    ROS_INFO_STREAM("publish a message: " <<msg);
-                    pub.publish(msg);
-                }else{
- 			        ROS_INFO_STREAM("Current time: "<<Util::time_str(msg.stamp));
-                    ROS_INFO_STREAM("no data for room "<<room_id);
-                }
-            }
-            ROS_INFO_STREAM("sleep");
+            publish_door_status();
             ros::spinOnce();
-            // loop_rate.sleep();
             ros::Duration(10).sleep();
         }
-
-        
-
     }
 
-    void init_time(){
-        time_t rawtime;
-        time(&rawtime);
-        struct tm* st = localtime(&rawtime);
-        st->tm_year = 2020-1900;
-        st->tm_mon = 6-1;
-        st->tm_mday = 1;
-        st->tm_hour = 8;
-        st->tm_min = 0;
-        st->tm_sec = 0;
-        
-        rawtime = mktime(st);
-
-        ros::Time start(rawtime);
-        ros::Time::setNow(start);
-        ROS_INFO_STREAM("start time: "<<Util::time_str(ros::Time::now()));
-    }
-
-    bool connect_to_db(){
-        connection = mysql_init(NULL);
-
-        if(connection == NULL){
-            ROS_INFO("init error %s\n",mysql_error(connection));
-            exit(1);
-            return false; 
+    bool publish_door_status(){
+        std::vector<Table_row> rows;
+        ros::Time now = ros::Time::now();
+        if(!sql_client.query_posibility_table(rows,now)){
+ 			ROS_INFO_STREAM("No result. Current time: "<<Util::time_str(now));
+            return false;
         }
-
-        connection = mysql_real_connect(connection, "localhost", "root", "pi", "sensor_db", 0, NULL, 0);
-
-        if(connection == NULL){
-            ROS_INFO("failed to connect to database error %s",mysql_error(connection));
-            exit(1);
-            return false; 
+        for(Table_row row : rows){  
+                robot_navigation::sensor_data msg;
+                msg.stamp = now;
+                msg.id = row.room_id; 
+                msg.pose = room_map[row.room_id[0]];
+                msg.door_status = row.door_status; 
+                pub.publish(msg);    // publish message       
+                ROS_INFO_STREAM("publish a message: " <<msg);                  
         }
-    }
-
-    bool query(char room_id,ros::Time time, uint8_t& door_status){
-            MYSQL_RES *result;  
-            MYSQL_ROW row; 
-
-            char query[200];
-            std::string cur_time =Util::time_str(time);
-            sprintf(query,"SELECT *  FROM door_status_list WHERE room_id = '%c' and TIMEDIFF(\"%s\",date_time)<\"00:10:00\" and TIMEDIFF(\" %s \",date_time)>=0",room_id,cur_time.c_str(),cur_time.c_str());
-        
-            ROS_DEBUG_STREAM(query);
-
-        if(mysql_query(connection, query))  
-        {
-            ROS_INFO("Query Error: %s", mysql_error(connection));  
-            exit(1);  
-        }else{
-            // result = mysql_store_result(connection);
-            result = mysql_use_result(connection);
-            row = mysql_fetch_row(result); 
-   
-            if(row <= 0){  
-                door_status = false;   // doesn't find log, search result -1
-                return false; 
-            }
-          
-            door_status = (std::strcmp(row[1],"0")==0)?0:1;  // get first row in result                            
-            mysql_free_result(result);  
-            return true;
-        }
+        return true;
     }
 
     void load_room_positions(){
@@ -122,7 +58,7 @@ class Advertiser{
         while(true){
             stream.str("");
             point_vec.clear();
-            stream << "/room_pose_" << room_id << "/position";
+            stream << "/room_" << room_id << "_door/position";
 
             if(!nh.getParam(stream.str(),point_vec)){ // When room not exist quit
                 break;
@@ -142,6 +78,8 @@ private:
     MYSQL *connection;
     ros::NodeHandle nh;
     std::map<char,geometry_msgs::Point> room_map;
+    SQLClient sql_client;
+    ros::Publisher pub;
     
 };
 int main(int argc, char** argv){

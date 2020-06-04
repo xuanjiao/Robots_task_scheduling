@@ -2,6 +2,11 @@
 ## How to use this program
 
 ### 1.  Create log file of door sensor:
+1. install 
+'''
+sudo apt-get install libmysqlcppconn-dev
+'''
+
 1. log in mysql server 
 
     `mysql -r root -p`

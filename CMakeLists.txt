@@ -18,8 +18,8 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   message_generation
 )
-
-find_package(MySqlClient REQUIRED)
+# find_package(MySqlClient REQUIRED)
+# find_package(MYSQLCPPCONN REQUIRED)
 
 add_compile_options(-std=c++11)
 ## System dependencies are found with CMake's conventions
@@ -130,6 +130,7 @@ include_directories(
   include
   ${catkin_INCLUDE_DIRS}
   ${MYSQL_INCLUDE_DIRS}
+  ${MYSQLCPPCONN_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -146,6 +147,10 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/robot_navigation_node.cpp)
+add_executable(sql_client src/sql_client.cpp)
+add_dependencies(sql_client ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries (sql_client  mysqlcppconn mysqlclient  ${catkin_LIBRARIES})
+
 
 add_executable(door_sensor src/door_sensor.cpp)
 add_dependencies(door_sensor ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
@@ -157,6 +162,7 @@ add_dependencies(door_status_advertiser ${${PROJECT_NAME}_EXPORTED_TARGETS} ${ca
 target_link_libraries(door_status_advertiser
   ${catkin_LIBRARIES}
   mysqlclient
+  mysqlcppconn
 )
 
 add_executable(move_subscribe_simple src/move_subscribe_simple.cpp)
@@ -166,7 +172,7 @@ target_link_libraries(move_subscribe_simple ${catkin_LIBRARIES})
 
 add_executable(centralized_pool src/centralized_pool.cpp)
 add_dependencies(centralized_pool ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(centralized_pool ${catkin_LIBRARIES})
+target_link_libraries(centralized_pool mysqlcppconn ${catkin_LIBRARIES})
 
 ## Rename C++ execu(table without prefix
 ## The above recommended prefix causes long target names, the following renames the

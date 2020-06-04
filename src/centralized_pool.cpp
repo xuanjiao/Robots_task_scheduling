@@ -4,6 +4,7 @@
 #include <nav_msgs/GetPlan.h>
 #include <vector>
 #include "util.h"
+#include "sql_client.h"
 #include <string>
 
 #define ROOM_NUM 4
@@ -14,15 +15,19 @@
 class CentralizedPool{
 
 public:
-    CentralizedPool(){
+    CentralizedPool():sql_client(SQLClient::getInstance()){
 
         init();
 
+        // Table_row row;
+        // row.room_id = 'a';
+        // sql_client.query_posibility_table(row,ros::Time::now());
+  
         // load room location parameters
         load_room_position();
 
         // Create available tasks
-        create_random_tasks(TASK_NUM,ros::Time::now());
+        // create_random_tasks(TASK_NUM,ros::Time::now());
 
 
         ros::spin(); // block program
@@ -31,9 +36,10 @@ public:
     void init(){
 
         ROS_INFO_STREAM("Current time: "<<Util::time_str(ros::Time::now()));
-	    ros::Duration(3).sleep();
+	    ros::Duration(1).sleep();
         ROS_INFO_STREAM("Current time: "<<Util::time_str(ros::Time::now()));
-    
+        
+
         // Create a server, usiing make_task.srv file. The service name is make_task
         task_server = nh.advertiseService("make_task",&CentralizedPool::choose_best_task,this);
     
@@ -202,6 +208,8 @@ private:
 
     ros::ServiceClient plan_client;
 
+    SQLClient sql_client;
+
     ros::NodeHandle nh;
 
     std::map<char,geometry_msgs::Pose> room_map;
@@ -213,5 +221,7 @@ int main(int argc, char** argv){
     ros::init(argc,argv,"centralized_poor");
 
     CentralizedPool pool;
+
+    SQLClient sql_client;
     
 }

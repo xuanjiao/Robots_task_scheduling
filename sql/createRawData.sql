@@ -20,7 +20,7 @@ begin
             id,
             if(rand()*100 < open_posibility,1,0), 
             cur_time -- create door status according to possibility table
-                from user_defined_door_open_possibility_table
+                from open_possibility_table
 		    where TIME(cur_time) between start_time and end_time and id = room_id and dayofweek(cur_time) = day_of_week;
 
 			 call process_measurement_result(id,cur_time);
