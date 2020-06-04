@@ -59,7 +59,6 @@ class SQLClient{
 
     bool query_posibility_table_single_room(Table_row& row, const ros::Time& t){
       std::string time = Util::time_str(t);
-      ROS_INFO_STREAM("query parameters :"<<row.room_id << ", "<<time);
       try
       {      
         query_table_single_room_statement->setString(1,time);

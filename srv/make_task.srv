@@ -1,4 +1,8 @@
 geometry_msgs/Pose pose
 int16 battery_level
+string room_id
+bool is_task_completed
+bool door_status
+
 ---
 geometry_msgs/PoseStamped best_task

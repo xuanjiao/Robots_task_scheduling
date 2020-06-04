@@ -8,15 +8,16 @@
 #include <string>
 
 #define ROOM_NUM 4
-#define TASK_NUM 5
+#define TASK_NUM 10
 #define DEFAULT_COST 1000
-#define SIMULATION_DURATION_SEC 600
+#define SIMULATION_DURATION_SEC 300
 
 typedef struct{
-    double distance;
-    double hour_diff;
-    int    statisic_open_possibility;
-    double battery_level;
+    double distance = 0;
+    double sec_diff = 0;
+    int periority = 0;
+    int    statisic_open_possibility = 0;
+    double battery_level = 0l;
 }CostFunction;
 
 class CentralizedPool{
@@ -114,17 +115,17 @@ public:
             CostFunction cost_function;
             std::pair<EnterRoomTask*,double> &pair = cost_vector[i];
             
-            // for each room, calculate time different
-            cost_function.hour_diff = (pair.first->goal.header.stamp - cur_time).sec/3600;
-            if(cost_function.hour_diff<0){
+            // for each task, calculate time different
+            cost_function.sec_diff = (pair.first->goal.header.stamp - cur_time).sec;
+            if(cost_function.sec_diff<0){
                 ROS_INFO_STREAM("Task %d"<<pair.first->task_id<<" is expired ");
                 continue;
             }
 
-            // for each room, check open possibility
+            // for each task, check open possibility
             cost_function.statisic_open_possibility = get_statistic_open_possibility(pair.first->room_id,cur_time);
  
-            // for each room, request distance from move base plan server
+            // for each task, request distance from move base plan server
             nav_msgs::GetPlan make_plan_srv;
             make_plan_srv.request.start.pose= req.pose;
             make_plan_srv.request.start.header = pair.first->goal.header;
@@ -151,12 +152,15 @@ public:
                                     pow((dists[i].pose.position.y - dists[i-1].pose.position.y),2));
             }       
              
-            pair.second = cost_function.distance + cost_function.hour_diff + 100 - cost_function.statisic_open_possibility;
+            pair.second = cost_function.distance + cost_function.sec_diff/10.0 +
+                         100 - cost_function.statisic_open_possibility
+                         + cost_function.periority * 5 +  
+                         + 100 - cost_function.battery_level;
 
             ROS_INFO_STREAM("available task room id: "<<pair.first->room_id<<
                                 " distance "<<cost_function.distance<<
-                                "hour different "<<cost_function.hour_diff<<
-                                "open possibility "<<cost_function.statisic_open_possibility<<
+                                " hour different "<<cost_function.sec_diff<<
+                                " open possibility "<<cost_function.statisic_open_possibility<<
                                 " cost "<<pair.second);          
         }
   
