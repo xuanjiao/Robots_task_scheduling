@@ -31,19 +31,20 @@ class Advertiser{
     }
 
     bool publish_door_status(){
-        std::vector<Table_row> rows;
+        std::vector<Table_row> table_rows;
+        std::vector<List_row> list_rows;
         ros::Time now = ros::Time::now();
-        if(!sql_client.query_posibility_table_rooms(rows,now)){
+        if(!sql_client.query_posibility_table_rooms(table_rows,list_rows,now)){
  			ROS_INFO_STREAM("No result. Current time: "<<Util::time_str(now));
             return false;
         }
-        for(Table_row row : rows){  
+        for(List_row row : list_rows){  
                 robot_navigation::sensor_data msg;
                 msg.stamp = now;
                 msg.id = row.room_id; 
                 msg.pose = room_map[row.room_id[0]];
                 msg.door_status = row.door_status; 
-                pub.publish(msg);    // publish message       
+                pub.publish(msg);    // publish message     
                 ROS_INFO_STREAM("publish a message: " <<msg);                  
         }
         return true;

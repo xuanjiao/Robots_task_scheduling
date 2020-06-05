@@ -11,10 +11,11 @@ sudo apt-get install libmysqlcppconn-dev
 
     `mysql -r root -p`
 
-3. create door open possibility table 
+3. create door open possibility table and some data in  door status list
 ```
     source /home/[user_name]/catkin_ws/src/robot_navigation/sql/run.sql
 ```
+![table_list](./img/create_table_and_list.png)
 
 ### 2.  Start sensor node:
 ```
@@ -38,8 +39,19 @@ use estimate position tool in rviz to estimate position
 ## work flow
 ![work flow](./img/scheduler-ros_workflow.png)
 
-cost function = 100 - door open possibility +  0.1 * second different +  distance + 5* task priority + 100 - battery level
+cost function = 100 - door open possibility +  0.2 * second different +  distance + 5* task priority + 100 - battery level
+
+## Idea of simulation time
+| Simulation time | door Simulator/ Centralized pool query in possibility table |
+------|------------|
+|   0:00:00 |   2020.06.01 06:00:00 | 
+|   0:00:30 |   2020.06.01 12:00:00 |
+|   0:00:59 |   2020.06.01 17:59:xx |
+|   0:00:60 |   2020.06.02 06:00:00 |
+|   ......     |
 
 ## TO DO
 
-- use [clock](http://wiki.ros.org/Clock) package to simulate the time
+- simulation time issue
+- add returned task to the memory of contralized pool
+- when centralized pool receive request, it may let robot to go to battery charging station

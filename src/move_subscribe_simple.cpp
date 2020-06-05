@@ -9,32 +9,30 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <nav_msgs/Path.h>
 #include <string> 
+#include "util.h"
 
 #define SENSOR_RANGE 1
 
-    typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
-
+typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
+ 
 class Demo{
 
 public:
     Demo():move_base_client("move_base", true){
         battery_level = 100;
-        ROS_INFO_STREAM("Current time: "<<time_str(ros::Time::now()));
-	ros::Duration(3).sleep();
-        ROS_INFO_STREAM("Current time: "<<time_str(ros::Time::now()));
+        ROS_INFO_STREAM("Current time: "<<Util::time_str(ros::Time::now()));
+	ros::Duration(1).sleep();
+        ROS_INFO_STREAM("Current time: "<<Util::time_str(ros::Time::now()));
 
-     // subscribe to door sensor node
+        // subscribe to door sensor node
         sensor_sub = 
-            nh.subscribe<robot_navigation::sensor_data>("sensor_data",100,&Demo::sensor_callback,this);
-        
+            nh.subscribe<robot_navigation::sensor_data>("sensor_data",100,&Demo::sensor_callback,this);      
         task_client = nh.serviceClient<robot_navigation::make_task>("make_task");
- 
         move_base_client.waitForServer();
-
         request_current_pose();
         
         // request a best task from centralized pool and do this task
-        run_task();
+        talk_to_centralized_pool();
 
         ros::spin();
     }
@@ -49,45 +47,48 @@ public:
         }
         
         current_pos = sharedPtr->pose.pose;
-        ROS_INFO_STREAM("Robot get current position "<<pose_str(current_pos));       
+        ROS_INFO_STREAM("Robot get current position "<<Util::pose_str(current_pos));       
     }
 
-    void run_task(){
+    void talk_to_centralized_pool(){
         // request a best task
         robot_navigation::make_task srv;
         srv.request.battery_level = battery_level;
         srv.request.pose = current_pos;
-        
-        ROS_INFO_STREAM("send task request. start "<<pose_str(srv.request.pose));
+        srv.request.last_task = current_task;
+        srv.request.last_task.is_completed = true;
+        srv.request.last_task.door_status = current_task.door_status;
+        ROS_INFO_STREAM("send task request. start "<<Util::pose_str(srv.request.pose));
 
         if(!task_client.call(srv)){
             ROS_INFO_STREAM("Failed to send request");
             return;
         }
+        current_task = srv.response.best_task;
+        ROS_INFO_STREAM("receive response best task  "<<" time "<<Util::time_str(current_task.goal.header.stamp)
+            <<"Position "<<Util::pose_str(current_task.goal.pose));
+        run_task();
+    }
 
-        ROS_INFO_STREAM("receive response best task  "<<" time "<<time_str(srv.response.best_task.header.stamp)
-            <<"Position "<<pose_str(srv.response.best_task.pose));
+    void run_task(){
         move_base_msgs::MoveBaseGoal goal;
-        goal.target_pose = srv.response.best_task;
-        ROS_INFO_STREAM("Current time: "<<time_str(ros::Time::now())<<" sleep until "<<
-            time_str(goal.target_pose.header.stamp));
+        goal.target_pose = current_task.goal;
+        ROS_INFO_STREAM("Current time: "<<Util::time_str(ros::Time::now())<<" sleep until "<<
+            Util::time_str(goal.target_pose.header.stamp));
             
         ros::Time::sleepUntil(goal.target_pose.header.stamp);
-        ROS_INFO_STREAM("Current time: "<<time_str(ros::Time::now()));
+        ROS_INFO_STREAM("Wake up current time: "<<Util::time_str(ros::Time::now()));
         
         move_base_client.sendGoal(goal,
                 boost::bind(&Demo::move_complete_callback,this, _1, _2),
                 MoveBaseClient::SimpleActiveCallback(),
-             // MoveBaseClient::SimpleFeedbackCallback());
-                boost::bind(&Demo::move_position_feedback,this, _1));
-        // move_base_pub.publish(srv.response.best_task);
-        
+                boost::bind(&Demo::move_position_feedback,this, _1));        
     }
 
     void move_position_feedback(const move_base_msgs::MoveBaseFeedbackConstPtr &feedback){
             current_pos = feedback->base_position.pose;
-            battery_level-=0.1;
-            // ROS_INFO_STREAM("Current position: "<<pose_str(current_pos));
+            battery_level-=0.01;
+            // ROS_INFO_STREAM("Current position: "<<Util::pose_str(current_pos));
      }
      
     void move_complete_callback(const actionlib::SimpleClientGoalState& state,
@@ -96,50 +97,21 @@ public:
                     ROS_INFO("Goal reached!");
 
                     // complete one task, request next one
-                    run_task();
+                    talk_to_centralized_pool();
             }else
                     ROS_INFO("Goal failed");
     }
 
 
     void sensor_callback(const robot_navigation::sensor_data::ConstPtr& message){
-        std::string status = message->door_status?"open":"closed";
-            
+
         double distance = sqrt(pow(current_pos.position.x - message->pose.x,2) + pow(current_pos.position.y - message->pose.y,2));
 
         if(distance <= SENSOR_RANGE){
+                std::string status = message->door_status?"open":"closed";
+                current_task.door_status = message->door_status;
             ROS_INFO_STREAM( "Distance "<< distance<<" room " << message->id <<" door "<<status<<" position ("<<message->pose.x<<", "<<message->pose.y<<", "<<message->pose.z<<")");
         }
-    }
-
-    // void plan_callback(const nav_msgs::Path::ConstPtr& messgae){
-        
-    //     double distance = 0.0;
-    //     int size = messgae->poses.size();
-        
-    //     for(int i = 1; i < size;i++){
-    //         distance += sqrt(pow((messgae->poses[i].pose.position.x - messgae->poses[i-1].pose.position.x),2) + 
-    //                             pow((messgae->poses[i].pose.position.y - messgae->poses[i-1].pose.position.y),2));
-    //     }
-
-    //     ROS_INFO_STREAM("Distance to goal: "<<distance);
-    // }
-
-    std::string pose_str(const geometry_msgs::Pose p){
-        std::stringstream ss;
-        ss.precision(3);
-        ss << "("<<p.position.x <<", " <<p.position.y <<", "<< p.position.z<<")";
-        return ss.str();
-    }
-
-    std::string time_str(ros::Time time){
-        const int output_size = 100;
-        char output[output_size];
-        std::string format = "%Y-%m-%d %H:%M:%S"; // time format
-        std::time_t  raw_time = static_cast<time_t>(time.sec); // convert ros time to time_t
-        struct tm* time_info = localtime(&raw_time);
-        std::strftime(output,output_size,format.c_str(),time_info);
-        return "Time: " + std::string(output);
     }
 
 private:
@@ -153,16 +125,13 @@ private:
     // Subscriber 
     ros::Subscriber pos_sub;
     ros::Subscriber sensor_sub;
-    ros::Subscriber plan_sub;
 
     // client
     ros::ServiceClient task_client;
     MoveBaseClient move_base_client;
 
-    
     geometry_msgs::Pose current_pos;
-  
-    // flag
+    robot_navigation::task_info current_task;
     double battery_level;
 };
 

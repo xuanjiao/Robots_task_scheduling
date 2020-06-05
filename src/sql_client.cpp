@@ -9,7 +9,7 @@ int main(int argc, char**argv){
   SQLClient sql_client = SQLClient::getInstance();
   Table_row row;
   row.room_id = "a";
-  sql_client.query_posibility_table_single_room(row,ros::Time::now());
+  //sql_client.query_posibility_table_single_room(row,ros::Time::now());
 
   ros::spin();
 }

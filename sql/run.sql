@@ -125,9 +125,9 @@ insert into open_possibility_table(room_id,day_of_week,start_time,end_time,open_
 
 -- 
 -- -- -- create raw data with datetime and door status, 
--- call createRawData('a','2020-06-01 0:00:00','00:10:00',500);
--- call createRawData('b','2020-06-01 0:00:00','00:10:00',500);
--- call createRawData('c','2020-06-01 0:00:00','00:10:00',500);
+call createRawData('a','2020-06-01 0:00:00','00:10:00',500);
+call createRawData('b','2020-06-01 0:00:00','00:10:00',500);
+call createRawData('c','2020-06-01 0:00:00','00:10:00',500);
 
--- select * from door_status_list;
--- select * from open_possibility_table;
+select * from door_status_list;
+select * from open_possibility_table;

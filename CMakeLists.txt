@@ -59,6 +59,7 @@ add_compile_options(-std=c++11)
 add_message_files(
    FILES
    sensor_data.msg
+   task_info.msg
 )
 
 ## Declaration Message: MsgTutorial.msg 

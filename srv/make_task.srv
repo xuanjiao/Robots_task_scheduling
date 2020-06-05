@@ -1,8 +1,5 @@
-geometry_msgs/Pose pose
-int16 battery_level
-string room_id
-bool is_task_completed
-bool door_status
-
+geometry_msgs/Pose pose # current position
+int16 battery_level     
+robot_navigation/task_info last_task
 ---
-geometry_msgs/PoseStamped best_task
+robot_navigation/task_info best_task
