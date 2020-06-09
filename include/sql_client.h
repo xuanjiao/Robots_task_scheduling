@@ -17,8 +17,8 @@
 
 typedef struct table_row{
   std::string room_id;
-  int open_pos;
-  int statistuc_open_pos; 
+  double open_pos;
+  double statistuc_open_pos; 
   int time_slot_left;
   int time_slot_right;
   int day_of_week;
@@ -109,8 +109,8 @@ class SQLClient{
             table_row.day_of_week = result_set->getInt("day_of_week");
             table_row.time_slot_left = result_set->getInt("start_time");
             table_row.time_slot_right = result_set->getInt("end_time");
-            table_row.open_pos = result_set->getInt("open_posibility");
-            table_row.statistuc_open_pos = result_set->getInt("statistic_door_open_posibility");
+            table_row.open_pos = result_set->getDouble("open_posibility");
+            table_row.statistuc_open_pos = result_set->getDouble("statistic_door_open_posibility");
             list_row.door_status = rand()%100<table_row.open_pos?1:0;                    
         }
       }
@@ -141,12 +141,13 @@ class SQLClient{
         {
             Table_row table_row;
             List_row list_row;
+            
             table_row.room_id = result_set->getString("room_id");
             table_row.day_of_week = result_set->getInt("day_of_week");
             table_row.time_slot_left = result_set->getInt("start_time");
             table_row.time_slot_right = result_set->getInt("end_time");
-            table_row.open_pos = result_set->getInt("open_posibility");
-            table_row.statistuc_open_pos = result_set->getInt("statistic_door_open_posibility");
+            table_row.open_pos = result_set->getDouble("open_posibility");
+            table_row.statistuc_open_pos = result_set->getDouble("statistic_door_open_posibility");
             table_rows.push_back(table_row);
             list_row.room_id = result_set->getString("room_id");
             list_row.door_status = rand()%100<table_row.open_pos?1:0;  

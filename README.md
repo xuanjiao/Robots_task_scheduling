@@ -55,3 +55,7 @@ cost function = 100 - door open possibility +  0.2 * second different +  distanc
 - simulation time issue
 - add returned task to the memory of contralized pool
 - when centralized pool receive request, it may let robot to go to battery charging station
+
+## Problem
+
+- battery consum

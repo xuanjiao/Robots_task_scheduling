@@ -5,12 +5,13 @@
 #include <vector>
 #include "util.h"
 #include "sql_client.h"
+#include "time_transfer.h"
 #include <string>
 
 #define ROOM_NUM 4
 #define TASK_NUM 30
 #define DEFAULT_COST 1000
-#define SIMULATION_DURATION_SEC 200
+#define SIMULATION_DURATION_SEC 259200 // 3 days
 
 typedef struct{
     double distance = 0;
@@ -32,7 +33,7 @@ public:
         load_room_position();
 
         // Create available tasks
-        create_random_tasks(TASK_NUM,ros::Time::now());
+        create_random_tasks(TASK_NUM,Time_Transfer::convert_to_office_time(ros::Time::now()));
 
 
         ros::spin(); // block program
@@ -40,9 +41,10 @@ public:
 
     void init(){
 
-        ROS_INFO_STREAM("Current time: "<<Util::time_str(ros::Time::now()));
+    
+        ROS_INFO_STREAM("Current time: "<<Time_Transfer::convert_to_office_time_string(ros::Time::now()));
 	    ros::Duration(1).sleep();
-        ROS_INFO_STREAM("Current time: "<<Util::time_str(ros::Time::now()));
+        ROS_INFO_STREAM("Current time: "<<Time_Transfer::convert_to_office_time_string(ros::Time::now()));
         
 
         // Create a server, usiing make_task.srv file. The service name is make_task
@@ -92,7 +94,7 @@ public:
         return p1.second>p2.second;
     }
 
-    int get_statistic_open_possibility(char room_id, ros::Time time){
+    double get_statistic_open_possibility(char room_id, ros::Time time){
         Table_row table_row;
         List_row list_row;
         table_row.room_id = room_id;
@@ -156,7 +158,7 @@ public:
     }
 
     bool process_robot_request(robot_navigation::make_task::Request &req,robot_navigation::make_task::Response &res){
-        ros::Time cur_time = ros::Time::now();
+        ros::Time cur_time = Time_Transfer::convert_to_office_time(ros::Time::now());
         int plan_size = 0;
         ROS_INFO_STREAM("receive request from a robot.\n last task: "<<req.last_task<<
                         "\nbettery level "<<req.battery_level<<
@@ -224,7 +226,7 @@ public:
             raw_time = static_cast<time_t>(time.sec); // convert ros time to time_t
             struct tm* time_info = localtime(&raw_time);
 
-          // if (time_info->tm_wday > 0 && time_info->tm_wday < 6 && time_info->tm_hour > 9 && time_info->tm_hour < 20) {
+           if (time_info->tm_wday > 0 && time_info->tm_wday < 6 && time_info->tm_hour > 9 && time_info->tm_hour < 20) {
 			    
                 // Create a task on Monday to Friday from 9 am to 20 pm
                 EnterRoomTask* task = new EnterRoomTask();
@@ -240,7 +242,7 @@ public:
                 std::strftime(output,output_size,format.c_str(),time_info);
                 ROS_INFO_STREAM("Create new Task: "<<output<<" room "<<task->room_id<<" priority "<<task->priority <<" goal "<<task->goal);
 		cnt++;
-//           }  
+        }  
         }
     }
     

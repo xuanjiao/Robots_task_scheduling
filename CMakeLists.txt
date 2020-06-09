@@ -21,7 +21,7 @@ find_package(catkin REQUIRED COMPONENTS
 # find_package(MySqlClient REQUIRED)
 # find_package(MYSQLCPPCONN REQUIRED)
 
-add_compile_options(-std=c++11)
+add_compile_options(-std=c++11 -Wall -g)
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -218,6 +218,7 @@ target_link_libraries(centralized_pool mysqlcppconn ${catkin_LIBRARIES})
 #   RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
 # )
 
+
 ## Mark cpp header files for installation
 # install(DIRECTORY include/${PROJECT_NAME}/
 #   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
@@ -244,3 +245,8 @@ target_link_libraries(centralized_pool mysqlcppconn ${catkin_LIBRARIES})
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
+if(CATKIN_ENABLE_TESTING)
+  find_package(rostest REQUIRED)
+  add_rostest_gtest(${PROJECT_NAME}-test launch/gtest.test tests/tests_1.cpp)
+  target_link_libraries(${PROJECT_NAME}-test ${catkin_LIBRARIES})
+endif()
