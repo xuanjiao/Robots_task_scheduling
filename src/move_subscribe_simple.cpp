@@ -10,6 +10,7 @@
 #include <nav_msgs/Path.h>
 #include <string> 
 #include "util.h"
+#include "time_transfer.h"
 
 #define SENSOR_RANGE 1
 
@@ -20,9 +21,9 @@ class Demo{
 public:
     Demo():move_base_client("move_base", true){
         battery_level = 100;
-        ROS_INFO_STREAM("Current time: "<<Util::time_str(ros::Time::now()));
-	ros::Duration(1).sleep();
-        ROS_INFO_STREAM("Current time: "<<Util::time_str(ros::Time::now()));
+        ROS_INFO_STREAM("Current Office time: "<<TimeTransfer::convert_to_office_time_string(ros::Time::now()));
+	    ros::Duration(1).sleep();
+        ROS_INFO_STREAM("Current Office time: "<<TimeTransfer::convert_to_office_time_string(ros::Time::now()));
 
         // subscribe to door sensor node
         sensor_sub = 
@@ -65,7 +66,7 @@ public:
             return;
         }
         current_task = srv.response.best_task;
-        ROS_INFO_STREAM("receive response best task  "<<" time "<<Util::time_str(current_task.goal.header.stamp)
+        ROS_INFO_STREAM("receive response best task  "<<" time "<<TimeTransfer::convert_to_office_time_string(current_task.goal.header.stamp)
             <<"Position "<<Util::pose_str(current_task.goal.pose));
         run_task();
     }
@@ -73,11 +74,14 @@ public:
     void run_task(){
         move_base_msgs::MoveBaseGoal goal;
         goal.target_pose = current_task.goal;
-        ROS_INFO_STREAM("Current time: "<<Util::time_str(ros::Time::now())<<" sleep until "<<
-            Util::time_str(goal.target_pose.header.stamp));
+        ROS_INFO_STREAM("Current office time: "<<TimeTransfer::convert_to_office_time_string(ros::Time::now())<<
+                        "\nSimulation time: " <<ros::Time::now().sec <<
+                        "\nSleep until "<< TimeTransfer::convert_to_office_time_string(goal.target_pose.header.stamp) <<
+                        "\nSimulation time: " <<goal.target_pose.header.stamp.sec
+        );
             
         ros::Time::sleepUntil(goal.target_pose.header.stamp);
-        ROS_INFO_STREAM("Wake up current time: "<<Util::time_str(ros::Time::now()));
+        ROS_INFO_STREAM("** Wake up. Current office time: "<<TimeTransfer::convert_to_office_time_string(ros::Time::now()));
         
         move_base_client.sendGoal(goal,
                 boost::bind(&Demo::move_complete_callback,this, _1, _2),

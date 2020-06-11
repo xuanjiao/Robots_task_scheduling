@@ -6,7 +6,7 @@
 
 #define START_TIME 1590980400 //2020.06.01 06:00:00
 
-class Time_Transfer{
+class TimeTransfer{
 public:
     static ros::Time convert_to_office_time(ros::Time origin){
          uint32_t time = START_TIME + (origin.sec % 60) *720 + origin.sec / 60 * 86400; // 1s -12 min

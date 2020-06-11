@@ -7,29 +7,36 @@
 #include <mysql/jdbc.h>
 #include "util.h"
 
-#define   USER_NAME "root"
-#define   PASSWARD  "pi"
-#define   TABLE_NAME "open_possibility_table"
-#define   LIST_NAME "door_status_list"
-#define   DATABASE_NAME  "sensor_db"
-#define   URI "tcp://127.0.0.1"
+#define   USER_NAME                                       "root"
+#define   PASSWARD                                        "pi"
+#define   POSSIBILITY_TABLE                               "open_possibility_table"
+#define   DOOR_STATUS_LIST                                "door_status_list"
+#define   CHARGING_STATION_POSITION_TABLE                 "charging_station_position"
+#define   ROOM_POSITION_TABLE                             "door_position"
+#define   DATABASE_NAME                                   "sensor_db"
+#define   URI                                             "tcp://127.0.0.1"
 
 
-typedef struct table_row{
+typedef struct {
   std::string room_id;
   double open_pos;
   double statistuc_open_pos; 
   int time_slot_left;
   int time_slot_right;
   int day_of_week;
-}Table_row;
+}PossibilityTableRow;
 
-typedef struct list_row{
+typedef struct {
   std::string room_id;
   std::string date_time;
   bool door_status;
-}List_row;
+}DoorStatusListRow;
 
+typedef struct {
+  std::string room_id;
+  std::string date_time;
+  bool door_status;
+}PositionTableRow;
 
 
 class SQLClient{
@@ -53,26 +60,76 @@ class SQLClient{
     }
 
     void prepare_statements(){
-      query_table_rooms_statement = con->prepareStatement("select * from " + std::string(TABLE_NAME) +                             
+      query_table_rooms_statement = con->prepareStatement("select * from " + std::string(POSSIBILITY_TABLE) +                             
 		     " where (TIME(?) between start_time and end_time )and dayofweek(?) = day_of_week "
       );
-      query_table_single_room_statement = con->prepareStatement("select * from " + std::string(TABLE_NAME) +                             
+      query_table_single_room_statement = con->prepareStatement("select * from " + std::string(POSSIBILITY_TABLE) +                             
 		     " where (TIME(?) between start_time and end_time )and dayofweek(?) = day_of_week and ? = room_id"
       );
-      insert_list_statement = con->prepareStatement( "insert into " + std::string(LIST_NAME)+" values (?,?,?)");
+      insert_list_statement = con->prepareStatement( "insert into " + std::string(DOOR_STATUS_LIST)+" values (?,?,?)");
     
-      update_possibility_table_statement = con->prepareStatement("	update " + std::string(TABLE_NAME) + 
+      update_possibility_table_statement = con->prepareStatement("	update " + std::string(POSSIBILITY_TABLE) + 
 		                                      " set statistic_door_open_posibility = ( \
 			                                        select 100*sum(door_status)/count(door_status) \
-						                                          from " + std::string(LIST_NAME) +
+						                                          from " + std::string(DOOR_STATUS_LIST) +
 		      	" where ? = room_id and dayofweek(?) = dayofweek(date_time) and (TIME(date_time) between start_time and end_time))\
 	          where  ? = room_id and dayofweek(?) = day_of_week and (time(?) between start_time and end_time);"
      );
-    
-    
+
+     query_rooms_position_statement = con->prepareStatement(" select * from " + std::string(ROOM_POSITION_TABLE));
+     query_charging_stations_position_statement = con->prepareStatement(" select * from " + std::string(CHARGING_STATION_POSITION_TABLE));
     }
 
-    bool update_possibility_table(list_row &row){
+    int query_charging_stations_position(std::map<char,geometry_msgs::Pose> &station_map){
+        sql::ResultSet* result_set;
+        int ret = -1;
+      try{
+         result_set = query_charging_stations_position_statement->executeQuery();
+         ret = result_set->rowsCount();
+        while(result_set->next()){
+          char id = result_set->getString("station_id")[0];
+          geometry_msgs::Pose pose;
+          pose.position.x = result_set->getDouble("position_x");
+          pose.position.y = result_set->getDouble("position_y");
+          pose.orientation.z = result_set->getDouble("orientation_z");
+          pose.orientation.w = result_set->getDouble("orientation_w");
+          station_map.insert(std::pair<char,geometry_msgs::Pose>(id,pose)) ;
+        }
+      }catch (const std::exception& e){
+        ROS_INFO_STREAM( e.what());
+      }
+        delete result_set;  
+        return ret;   
+    }
+
+    int query_rooms_position(std::map<char,geometry_msgs::Pose> &room_map){
+      sql::ResultSet* result_set;
+      int ret = -1;
+      try
+      { 
+        result_set = query_rooms_position_statement->executeQuery();
+        ret = result_set->rowsCount();
+        while(result_set->next()){
+          char id = result_set->getString("room_id")[0];
+          geometry_msgs::Pose pose;
+          pose.position.x = result_set->getDouble("position_x");
+          pose.position.y = result_set->getDouble("position_y");
+          pose.orientation.z = result_set->getDouble("orientation_z");
+          pose.orientation.w = result_set->getDouble("orientation_w");
+          room_map.insert(std::pair<char,geometry_msgs::Pose>(id,pose)) ;
+        }
+      }
+      catch(const std::exception& e)
+      {
+        ROS_INFO_STREAM( e.what() );
+      }
+        
+        delete result_set; 
+        return ret;
+    }
+
+
+    void update_possibility_table(DoorStatusListRow &row){
         update_possibility_table_statement->setString(1,row.room_id);
         update_possibility_table_statement->setString(2,row.date_time);
         update_possibility_table_statement->setString(3,row.room_id);
@@ -81,26 +138,26 @@ class SQLClient{
         update_possibility_table_statement->executeUpdate();
     }
 
-    bool insert_to_list(List_row &row){        
+    void insert_to_list(DoorStatusListRow &row){        
       insert_list_statement->setString(1,row.room_id);
       insert_list_statement->setBoolean(2,row.door_status);
       insert_list_statement->setString(3,row.date_time);
       insert_list_statement->execute();
     }
 
-
-
-    bool query_posibility_table_single_room(Table_row& table_row,List_row& list_row){
-      
+    int query_posibility_table_single_room(PossibilityTableRow& table_row,DoorStatusListRow& list_row){
+       sql::ResultSet* result_set;
+       int ret = -1;
       try
       {      
         query_table_single_room_statement->setString(1,list_row.date_time);
         query_table_single_room_statement->setString(2,list_row.date_time);
         query_table_single_room_statement->setString(3,list_row.room_id);
         result_set =  query_table_single_room_statement->executeQuery();
-        if(result_set->rowsCount()==0){
+        ret = result_set->rowsCount();
+        if(ret <=0){
             ROS_INFO_STREAM("no result");
-            return false;
+            return ret;
         }
 
         while (result_set->next())
@@ -117,30 +174,34 @@ class SQLClient{
       catch(sql::SQLException &e)
       {
         ROS_INFO_STREAM( e.what());
-        return false;
       }catch (const std::exception& e){
         ROS_INFO_STREAM( e.what());
       }
-      return true;
+      delete result_set;
+      return ret;
       
     }
-    bool query_posibility_table_rooms(std::vector<Table_row>& table_rows, std::vector<List_row>& list_rows,ros::Time t){
-      std::string time = Util::time_str(t);
+
+    int query_posibility_table_rooms(std::vector<PossibilityTableRow>& table_rows, std::vector<DoorStatusListRow>& list_rows,ros::Time t){
+          sql::ResultSet* result_set;
+          int ret = -1;
+          std::string time = Util::time_str(t);
       try
       {     
          query_table_rooms_statement->setString(1,time);
          query_table_rooms_statement->setString(2,time);
         
         result_set =  query_table_rooms_statement->executeQuery();
-        if(result_set->rowsCount()==0){
+        ret = result_set->rowsCount();
+        if(ret <=0){
             ROS_INFO_STREAM("no result");
-            return false;
+            return ret;
         }
 
         while (result_set->next())
         {
-            Table_row table_row;
-            List_row list_row;
+            PossibilityTableRow table_row;
+            DoorStatusListRow list_row;
             
             table_row.room_id = result_set->getString("room_id");
             table_row.day_of_week = result_set->getInt("day_of_week");
@@ -152,7 +213,7 @@ class SQLClient{
             list_row.room_id = result_set->getString("room_id");
             list_row.door_status = rand()%100<table_row.open_pos?1:0;  
             list_rows.push_back(list_row);
-            ROS_INFO_STREAM("open possibility "<<table_row.open_pos << " generate door status "<<list_row.door_status);
+            // ROS_INFO_STREAM("open possibility "<<table_row.open_pos << " generate door status "<<list_row.door_status);
 
         }
       }
@@ -163,6 +224,7 @@ class SQLClient{
       }catch (const std::exception& e){
         ROS_INFO_STREAM( e.what());
       }
+      delete result_set;
       return true;
       
     }
@@ -172,7 +234,8 @@ class SQLClient{
       delete query_table_rooms_statement;
       delete query_table_single_room_statement;
       delete update_possibility_table_statement;
-      delete result_set;
+      delete query_rooms_position_statement;
+      delete query_charging_stations_position_statement;
     }
 
    static SQLClient& getInstance() {
@@ -186,5 +249,7 @@ class SQLClient{
     sql::PreparedStatement* query_table_rooms_statement;
     sql::PreparedStatement* query_table_single_room_statement;
     sql::PreparedStatement* update_possibility_table_statement;  
-    sql::ResultSet* result_set;
+    sql::PreparedStatement* query_rooms_position_statement;
+    sql::PreparedStatement* query_charging_stations_position_statement;
+
 };

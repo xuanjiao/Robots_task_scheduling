@@ -7,7 +7,7 @@ int main(int argc, char**argv){
   ros::Duration(1).sleep();
   ros::NodeHandle nh;
   SQLClient sql_client = SQLClient::getInstance();
-  Table_row row;
+  PossibilityTableRow row;
   row.room_id = "a";
   //sql_client.query_posibility_table_single_room(row,ros::Time::now());
 

@@ -6,6 +6,7 @@
 #include "util.h"
 #include "robot_navigation/sensor_data.h"
 #include "sql_client.h"
+#include "time_transfer.h"
 
 using namespace std;
 class Advertiser{
@@ -14,7 +15,7 @@ class Advertiser{
         ROS_INFO_STREAM("using simulation time "<<ros::Time::isSimTime());
         ROS_INFO_STREAM("using system time "<<ros::Time::isSystemTime());
         ros::Duration(1).sleep();
-        ROS_INFO_STREAM("Current time "<<Util::time_str(ros::Time::now()));
+        ROS_INFO_STREAM("Current Office time "<<TimeTransfer::convert_to_office_time_string(ros::Time::now()));
         load_room_positions();
         sql_client.connect_to_database();
         
@@ -31,14 +32,14 @@ class Advertiser{
     }
 
     bool publish_door_status(){
-        std::vector<Table_row> table_rows;
-        std::vector<List_row> list_rows;
+        std::vector<PossibilityTableRow> table_rows;
+        std::vector<DoorStatusListRow> list_rows;
         ros::Time now = ros::Time::now();
-        if(!sql_client.query_posibility_table_rooms(table_rows,list_rows,now)){
- 			ROS_INFO_STREAM("No result. Current time: "<<Util::time_str(now));
+        if(!sql_client.query_posibility_table_rooms(table_rows,list_rows,TimeTransfer::convert_to_office_time(now))){
+ 			ROS_INFO_STREAM("No result. Current Office time: "<<TimeTransfer::convert_to_office_time_string(now));
             return false;
         }
-        for(List_row row : list_rows){  
+        for(DoorStatusListRow row : list_rows){  
                 robot_navigation::sensor_data msg;
                 msg.stamp = now;
                 msg.id = row.room_id; 

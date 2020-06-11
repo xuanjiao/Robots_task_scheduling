@@ -5,14 +5,6 @@
 #include <sstream>
 #include <geometry_msgs/PoseStamped.h>
 
-typedef struct {
-    double path_lengh;
-    int priority;
-    int task_id;
-    char room_id;
-    geometry_msgs::PoseStamped goal; // distination and timestamp
-}EnterRoomTask;
-
 class Util{
     public:
     static std::string pose_str(const geometry_msgs::Pose p){

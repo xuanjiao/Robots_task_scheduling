@@ -1,5 +1,5 @@
 #include "time_transfer.h"
-
+#include "sql_client.h"
 #include <ros/ros.h>
 
 #include <gtest/gtest.h>
@@ -13,9 +13,21 @@ class MyTestSuite :public ::testing::Test {
 
         }
         ~MyTestSuite(){}
-    Time_Transfer tt;
+    TimeTransfer tt;
+    SQLClient sql_client;
 };
 
+TEST_F(MyTestSuite,sql_room){
+    std::map<char,geometry_msgs::Pose> map;
+    sql_client.query_rooms_position(map);    
+    ASSERT_GT(map.size(),0);
+}
+
+TEST_F(MyTestSuite,sql_charging_station){
+    std::map<char,geometry_msgs::Pose> map;
+    sql_client.query_charging_stations_position(map);
+    ASSERT_GT(map.size(),0);
+}
 
 TEST_F(MyTestSuite, time_increase){
     ASSERT_LT(tt.convert_to_office_time(ros::Time::now()),
