@@ -15,6 +15,8 @@ sudo apt-get install libmysqlcppconn-dev
 ```
     source /home/[user_name]/catkin_ws/src/robot_navigation/sql/run.sql
 ```
+![database](./img/robot-database.png)
+
 ![table_list](./img/create_table_and_list.png)
 
 ### 2.  Start sensor node:
