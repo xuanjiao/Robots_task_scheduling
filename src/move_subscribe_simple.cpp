@@ -122,9 +122,10 @@ public:
     }
 
     void move_position_feedback(const move_base_msgs::MoveBaseFeedbackConstPtr &feedback){
+            double distance = sqrt(pow((feedback->base_position.pose.position.x - current_pos.position.x),2) + 
+                                    pow((feedback->base_position.pose.position.y - current_pos.position.y),2));
             current_pos = feedback->base_position.pose;
-            battery_level-=0.01;
-            // ROS_INFO_STREAM("Current position: "<<Util::pose_str(current_pos));
+            battery_level-= distance * 0.01;
      }
      
     void move_complete_callback(const actionlib::SimpleClientGoalState& state,

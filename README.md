@@ -41,7 +41,7 @@ use estimate position tool in rviz to estimate position
 ## work flow
 ![work flow](./img/robot-ros_workflow.png)
 
-cost function = 100 - door open possibility +  0.2 * second different +  distance + 5* task priority + 100 - battery level
+cost_function.cost = 1.0 * distance + 0.2 * sec_diff + (-1.0) * statisic_open_possibility +(-10) * priority  +  (-1.0) * battery_level;
 
 ## Idea of simulation time
 | Simulation time | door Simulator/ Centralized pool query in possibility table |
@@ -58,7 +58,3 @@ cost function = 100 - door open possibility +  0.2 * second different +  distanc
 
 - simulation time issue
 - when centralized pool receive request, it may let robot to go to battery charging station
-
-## Problem
-
-- battery consum
