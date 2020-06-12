@@ -14,12 +14,19 @@
 
 #define SENSOR_RANGE 1
 
+enum MODE{
+    SLEEP = 0,
+    REQUEST = 1,
+    RUN = 2
+};
+
 typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
  
 class Demo{
 
 public:
     Demo():move_base_client("move_base", true){
+        mode = 1;
         battery_level = 100;
         ROS_INFO_STREAM("Current Office time: "<<TimeTransfer::convert_to_office_time_string(ros::Time::now()));
 	    ros::Duration(1).sleep();
@@ -33,10 +40,11 @@ public:
         request_current_pose();
         
         // request a best task from centralized pool and do this task
-        talk_to_centralized_pool();
+        next_mode(MODE::REQUEST,true);
 
         ros::spin();
     }
+
 
     void request_current_pose(){
         // try to get its current location
@@ -45,19 +53,51 @@ public:
         if(sharedPtr == NULL){
            ROS_DEBUG("Failed to get current position");
            return;
-        }
-        
+        }     
         current_pos = sharedPtr->pose.pose;
         ROS_INFO_STREAM("Robot get current position "<<Util::pose_str(current_pos));       
     }
 
-    void talk_to_centralized_pool(){
+    void next_mode(MODE mode,bool result){
+        this->mode = mode;
+        switch(mode){
+            case MODE::SLEEP:
+               go_to_sleep();
+               break;
+            case MODE::RUN:
+                run_task();
+                break;
+            case MODE::REQUEST:
+                talk_to_centralized_pool(result);
+                break;
+        }
+    }
+
+    void go_to_sleep(){
+        ros::Time wake_up = current_task.goal.header.stamp - ros::Duration(0.1);
+        if( wake_up < ros::Time::now()){
+            ROS_INFO_STREAM("Task is expired");
+            next_mode(MODE::REQUEST,false);
+            return;
+        }
+        ROS_INFO_STREAM("Current office time: "<<TimeTransfer::convert_to_office_time_string(ros::Time::now())<<
+                        "\nSimulation time: " <<ros::Time::now().sec <<
+                        "\nSleep until "<< TimeTransfer::convert_to_office_time_string(wake_up) <<
+                        "\nSimulation time: " <<wake_up.sec
+        );
+        ros::Time::sleepUntil(wake_up - ros::Duration(0.1));                
+        ROS_INFO_STREAM("** Wake up. Current office time: "<<TimeTransfer::convert_to_office_time_string(ros::Time::now()));
+        next_mode(MODE::RUN,true);
+    }
+
+
+    void talk_to_centralized_pool(bool is_complete){
         // request a best task
         robot_navigation::make_task srv;
         srv.request.battery_level = battery_level;
         srv.request.pose = current_pos;
         srv.request.last_task = current_task;
-        srv.request.last_task.is_completed = true;
+        srv.request.last_task.is_completed = is_complete;
         srv.request.last_task.door_status = current_task.door_status;
         ROS_INFO_STREAM("send task request. start "<<Util::pose_str(srv.request.pose));
 
@@ -68,21 +108,13 @@ public:
         current_task = srv.response.best_task;
         ROS_INFO_STREAM("receive response best task  "<<" time "<<TimeTransfer::convert_to_office_time_string(current_task.goal.header.stamp)
             <<"Position "<<Util::pose_str(current_task.goal.pose));
-        run_task();
+        
+        next_mode(MODE::SLEEP,true);
     }
 
     void run_task(){
         move_base_msgs::MoveBaseGoal goal;
         goal.target_pose = current_task.goal;
-        ROS_INFO_STREAM("Current office time: "<<TimeTransfer::convert_to_office_time_string(ros::Time::now())<<
-                        "\nSimulation time: " <<ros::Time::now().sec <<
-                        "\nSleep until "<< TimeTransfer::convert_to_office_time_string(goal.target_pose.header.stamp) <<
-                        "\nSimulation time: " <<goal.target_pose.header.stamp.sec
-        );
-            
-        ros::Time::sleepUntil(goal.target_pose.header.stamp);
-        ROS_INFO_STREAM("** Wake up. Current office time: "<<TimeTransfer::convert_to_office_time_string(ros::Time::now()));
-        
         move_base_client.sendGoal(goal,
                 boost::bind(&Demo::move_complete_callback,this, _1, _2),
                 MoveBaseClient::SimpleActiveCallback(),
@@ -97,15 +129,9 @@ public:
      
     void move_complete_callback(const actionlib::SimpleClientGoalState& state,
            const move_base_msgs::MoveBaseResult::ConstPtr& result ){
-            if(state == actionlib::SimpleClientGoalState::SUCCEEDED){
-                    ROS_INFO("Goal reached!");
-
-                    // complete one task, request next one
-                    talk_to_centralized_pool();
-            }else
-                    ROS_INFO("Goal failed");
+            ROS_INFO_STREAM(state.toString());
+            next_mode(MODE::REQUEST,((state == actionlib::SimpleClientGoalState::SUCCEEDED )&& current_task.door_status )?true:false);
     }
-
 
     void sensor_callback(const robot_navigation::sensor_data::ConstPtr& message){
 
@@ -113,9 +139,11 @@ public:
 
         if(distance <= SENSOR_RANGE){
                 std::string status = message->door_status?"open":"closed";
-                current_task.door_status = message->door_status;
             ROS_INFO_STREAM( "Distance "<< distance<<" room " << message->id <<" door "<<status<<" position ("<<message->pose.x<<", "<<message->pose.y<<", "<<message->pose.z<<")");
-        }
+        
+            if(message->id == current_task.room_id)
+                current_task.door_status = message->door_status;
+            }
     }
 
 private:
@@ -137,6 +165,8 @@ private:
     geometry_msgs::Pose current_pos;
     robot_navigation::task_info current_task;
     double battery_level;
+
+    int mode;
 };
 
 int main(int argc, char **argv){

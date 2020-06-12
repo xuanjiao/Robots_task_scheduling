@@ -29,6 +29,16 @@ TEST_F(MyTestSuite,sql_charging_station){
     ASSERT_GT(map.size(),0);
 }
 
+TEST_F(MyTestSuite,sql_query_single_room){
+    PossibilityTableRow table_row;
+    DoorStatusListRow list_row;
+    list_row.room_id ='a';
+    list_row.date_time = "2020-06-01 13:30:00";
+    sql_client.query_posibility_table_single_room(table_row,list_row);
+    ASSERT_EQ(table_row.statistuc_open_pos,90);
+    ASSERT_EQ(list_row.door_status,1);
+}
+
 TEST_F(MyTestSuite, time_increase){
     ASSERT_LT(tt.convert_to_office_time(ros::Time::now()),
                 tt.convert_to_office_time(ros::Time::now()+ros::Duration(1)));              

@@ -148,11 +148,6 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/robot_navigation_node.cpp)
-add_executable(sql_client src/sql_client.cpp)
-add_dependencies(sql_client ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries (sql_client  mysqlcppconn mysqlclient  ${catkin_LIBRARIES})
-
-
 add_executable(door_sensor src/door_sensor.cpp)
 add_dependencies(door_sensor ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(door_sensor ${catkin_LIBRARIES})

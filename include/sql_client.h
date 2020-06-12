@@ -238,10 +238,6 @@ class SQLClient{
       delete query_charging_stations_position_statement;
     }
 
-   static SQLClient& getInstance() {
-      static SQLClient instance;
-      return instance;
-    }
    private:
     sql::Driver* driver;
     sql::Connection* con;

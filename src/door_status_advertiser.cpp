@@ -7,27 +7,33 @@
 #include "robot_navigation/sensor_data.h"
 #include "sql_client.h"
 #include "time_transfer.h"
-
+#include "task_process.h"
 using namespace std;
 class Advertiser{
     public:
-    Advertiser():sql_client(SQLClient::getInstance()){
+    Advertiser():sql_client(){
         ROS_INFO_STREAM("using simulation time "<<ros::Time::isSimTime());
         ROS_INFO_STREAM("using system time "<<ros::Time::isSystemTime());
         ros::Duration(1).sleep();
         ROS_INFO_STREAM("Current Office time "<<TimeTransfer::convert_to_office_time_string(ros::Time::now()));
-        load_room_positions();
+       
         sql_client.connect_to_database();
-        
-
-        int max_room;
-        nh.getParam("available_room_num",max_room);
+        load_room_position();
         pub = nh.advertise<robot_navigation::sensor_data>("sensor_data",100);
 
         while(ros::ok()){
             publish_door_status();
             ros::spinOnce();
             ros::Duration(10).sleep();
+        }
+    }
+
+    void load_room_position(){
+        if(sql_client.query_rooms_position(room_map)>0){
+            ROS_INFO_STREAM("load "<<room_map.size()<< " room positions");
+        } else{
+            ROS_INFO_STREAM("load room position failed");
+            exit(1);
         }
     }
 
@@ -40,54 +46,28 @@ class Advertiser{
             return false;
         }
         for(DoorStatusListRow row : list_rows){  
-                robot_navigation::sensor_data msg;
-                msg.stamp = now;
-                msg.id = row.room_id; 
-                msg.pose = room_map[row.room_id[0]];
-                msg.door_status = row.door_status; 
-                pub.publish(msg);    // publish message     
-                ROS_INFO_STREAM("publish a message: " <<msg);                  
+            robot_navigation::sensor_data msg;
+            msg.stamp = now;
+            msg.id = row.room_id; 
+            msg.pose = room_map[row.room_id[0]].position;
+            msg.door_status = row.door_status; 
+            pub.publish(msg);    // publish message     
+            ROS_INFO_STREAM("publish a message: " <<msg);                  
         }
         return true;
-    }
-
-    void load_room_positions(){
-        // get position of all rooms store them in map
-        std::vector<double> point_vec;
-        geometry_msgs::Point point;
-        std::stringstream stream;
-        char room_id = 'a';
-        while(true){
-            stream.str("");
-            point_vec.clear();
-            stream << "/room_" << room_id << "_door/position";
-
-            if(!nh.getParam(stream.str(),point_vec)){ // When room not exist quit
-                break;
-            }
-            point.x = point_vec[0];
-            point.y = point_vec[1];
-            point.z = point_vec[2];
-           
-            room_map.insert(std::pair<char,geometry_msgs::Point>(room_id,point));
-            room_id++;
-        }
-        ROS_INFO_STREAM("load "<<room_id-'a'<<" points");
-        
     }
 
 private:
     MYSQL *connection;
     ros::NodeHandle nh;
-    std::map<char,geometry_msgs::Point> room_map;
+    std::map<char,geometry_msgs::Pose> room_map;
     SQLClient sql_client;
-    ros::Publisher pub;
-    
+    ros::Publisher pub;   
 };
+
 int main(int argc, char** argv){
     ROS_INFO("main function start\n");
     ros::init(argc,argv,"door_status_advertiser"); // Initializes Node Name
-    Advertiser ad;
-      
+    Advertiser ad;      
     return 0;
 }
