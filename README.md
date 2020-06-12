@@ -36,10 +36,10 @@ use estimate position tool in rviz to estimate position
 ```
 ## Structure
 
-![structure](./img/scheduler-ros_structure.png)
+![structure](./img/robot-ros_structure.png)
 
 ## work flow
-![work flow](./img/scheduler-ros_workflow.png)
+![work flow](./img/robot-ros_workflow.png)
 
 cost function = 100 - door open possibility +  0.2 * second different +  distance + 5* task priority + 100 - battery level
 
