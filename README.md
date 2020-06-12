@@ -46,14 +46,15 @@ cost function = 100 - door open possibility +  0.2 * second different +  distanc
 ------|------------|
 |   0:00:00 |   2020.06.01 06:00:00 | 
 |   0:00:30 |   2020.06.01 12:00:00 |
-|   0:00:59 |   2020.06.01 17:59:xx |
+|   0:00:59 |   2020.06.01 17:48:xx |
 |   0:00:60 |   2020.06.02 06:00:00 |
 |   ......     |
+
+1s -12min
 
 ## TO DO
 
 - simulation time issue
-- add returned task to the memory of contralized pool
 - when centralized pool receive request, it may let robot to go to battery charging station
 
 ## Problem
