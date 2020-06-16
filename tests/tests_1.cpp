@@ -1,21 +1,27 @@
 #include "time_transfer.h"
 #include "sql_client.h"
 #include <ros/ros.h>
-
+#include "Battery.hh"
+#include <Battery.hh>
 #include <gtest/gtest.h>
-
 #include <thread>
 #include <chrono>
 
 class MyTestSuite :public ::testing::Test {
     public:
-        MyTestSuite(){
+        MyTestSuite():sql_client("root","pi"){
 
         }
         ~MyTestSuite(){}
     TimeTransfer tt;
+
+    gazebo::common::Battery battery;
     SQLClient sql_client;
 };
+TEST_F(MyTestSuite,battery_name){
+    battery.Init();
+    ASSERT_EQ(battery.Name(),NULL)<<battery.Name();
+}
 
 TEST_F(MyTestSuite,sql_room){
     std::map<char,geometry_msgs::Pose> map;
@@ -59,6 +65,8 @@ TEST_F(MyTestSuite, sec_60){
 TEST_F(MyTestSuite, sec_100){
     ASSERT_EQ(tt.convert_to_office_time_string(ros::Time(100)),"2020-06-02 14:00:00");
 }
+
+
 
 
 int main(int argc, char** argv){

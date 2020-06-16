@@ -7,8 +7,7 @@
 #include <mysql/jdbc.h>
 #include "util.h"
 
-#define   USER_NAME                                       "root"
-#define   PASSWARD                                        "pi"
+
 #define   POSSIBILITY_TABLE                               "open_possibility_table"
 #define   DOOR_STATUS_LIST                                "door_status_list"
 #define   CHARGING_STATION_POSITION_TABLE                 "charging_station_position"
@@ -41,14 +40,14 @@ typedef struct {
 
 class SQLClient{
   public:
-    SQLClient(){
+    SQLClient(std::string user_name, std::string pass):user_name(user_name),pass(pass){
       connect_to_database();
       prepare_statements();
     }
 
     void connect_to_database(){
       driver = sql::mysql::get_driver_instance();
-      con = driver->connect(URI,USER_NAME,PASSWARD);
+      con = driver->connect(URI,user_name,pass);
       if(con->isValid()){
         ROS_INFO_STREAM("Connected to "<< DATABASE_NAME);
         con->setSchema(DATABASE_NAME);
@@ -239,6 +238,8 @@ class SQLClient{
     }
 
    private:
+    std::string user_name;
+    std::string pass;
     sql::Driver* driver;
     sql::Connection* con;
     sql::PreparedStatement* insert_list_statement;

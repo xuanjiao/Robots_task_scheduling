@@ -49,6 +49,7 @@
   <!-- Use doc_depend for packages you need only for building documentation: -->
   <!--   <doc_depend>doxygen</doc_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>gazebo_dev</build_depend>
   <build_depend>cmake_modules</build_depend>
   <build_depend>actionlib</build_depend>
   <build_depend>move_base_msgs</build_depend>
@@ -58,6 +59,7 @@
   <build_depend>message_generation</build_depend>
   <build_depend>libmysqlcppconn</build_depend>
   <build_depend>libmysqlclient-dev</build_depend>
+  <exec_depend>gazebo_dev</exec_depend>
   <exec_depend>actionlib</exec_depend>
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>

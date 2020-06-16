@@ -11,7 +11,7 @@
 using namespace std;
 class Advertiser{
     public:
-    Advertiser():sql_client(){
+    Advertiser():sql_client("door_simulator","pass"){
         ROS_INFO_STREAM("using simulation time "<<ros::Time::isSimTime());
         ROS_INFO_STREAM("using system time "<<ros::Time::isSystemTime());
         ros::Duration(1).sleep();

@@ -21,7 +21,7 @@ typedef struct{
 class CentralizedPool{
 
 public:
-    CentralizedPool():task_process(cost_vector,doing_task){
+    CentralizedPool():sql_client("centralized_pool","pass"),task_process(cost_vector,doing_task){
         init();
         load_room_position();
         load_charging_station_position();
@@ -160,7 +160,13 @@ public:
                 cost_vector[i].second = calculate_cost(cost_vector[i].first,cur_time,req.pose,req.battery_level);
             }
         }
-  
+
+        ROS_INFO_STREAM("There are "<<cost_vector.size()<<" tasks");
+        if(!cost_vector.size()){
+            ROS_INFO("No available tasks in centralized pool");
+            return false;
+        }
+        
         // sort with task cost
         std::sort(cost_vector.begin(),cost_vector.end(),
             [](const std::pair<EnterRoomTask*,double> &p1, const std::pair<EnterRoomTask*,double> &p2){
@@ -206,8 +212,6 @@ int main(int argc, char** argv){
 
     CentralizedPool pool;
 
-    SQLClient sql_client;
-    
     ros::spin(); // block program
     
 }
