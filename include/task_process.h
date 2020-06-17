@@ -10,6 +10,7 @@
 #define SIMULATION_DURATION_SEC 100 // 100s 
 #define DELAY_RETURNED_TASK_SEC 5   // 5s - 60min  = 1h  
 #define INCREASE_RETURNED_TASK_PRIORITY    3
+#define TASK_INTERVAL_SEC 30
 
 typedef struct {
     double path_lengh;
@@ -51,7 +52,14 @@ public:
             ROS_INFO_STREAM("Unknown task.Nothing to delete");
         }
     }
-    // create task
+    // // create task
+    // void create_enter_room_tasks(int num,ros::Time start_time){
+    //     for(inti = 0; i < num; i++){
+    //         sql_client.insert_new_task("EnterRoomTask",
+    //             TimeTransfer::convert_to_office_time_string(start_time + ros::Duration(TASK_INTERVAL_SEC*i)));
+    //     }
+    // }
+
     void create_random_tasks(int num,ros::Time start_time,std::map<char,geometry_msgs::Pose> &room_map){
         ROS_INFO_STREAM("start create "<<num<<" tasks");
         ros::Time time;
