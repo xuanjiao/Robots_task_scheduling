@@ -60,7 +60,8 @@
         "typeinfo": "cpp",
         "iterator": "cpp",
         "*.ipp": "cpp",
-        "forward_list": "cpp"
+        "forward_list": "cpp",
+        "string": "cpp"
     },
     "cmake.configureOnOpen": false,
     "editor.tokenColorCustomizations": {

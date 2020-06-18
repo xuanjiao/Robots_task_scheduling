@@ -49,7 +49,18 @@ CREATE TABLE tasks (
     PRIMARY KEY (task_id)
 );
 
-
+drop table if exists costs;
+CREATE TABLE costs (
+    task_id INT,
+    robot_id INT,
+    priority INT,
+    open_pos_st DOUBLE,
+    time_diff DOUBLE,
+    battery DOUBLE,
+    cost DOUBLE,
+     distance DOUBLE,
+    PRIMARY KEY (task_id)
+);
 
 -- insert value to door_position table
 -- insert door_position values('a',-21.6662127429, 9.50513223651, 9.50513223651, 0.667743723726);
@@ -69,7 +80,7 @@ CREATE TABLE tasks (
 insert targets values('a','Door',4.23119675634, 7.38657063027, 0.608479240054, 0.793569791778);
 insert targets values('b','Door',6.86290545247, 5.40794760884, 0.114759478636, 0.993393306834);
 insert targets values('c','Door',-2.95220390532, 2.39211836475, -0.702331560869, -0.702331560869);
-insert targets values('d','Door',4.28632121392, 2.54533955273, -0.723120814312, 0.690721570468);
+-- insert targets values('d','Door',4.28632121392, 2.54533955273, -0.723120814312, 0.690721570468);
 
 insert targets values('u','ChargingStation',5.65501045464, 3.61291033625, -0.0804240616382, 0.996760738748);
 insert targets values('v','ChargingStation',-7.19262782348, 3.11045426516, 0.63173805188, 0.77518193594);
@@ -181,12 +192,10 @@ insert into open_possibilities values( 'c',6,'17:00:00','23:59:59',0,0);
 insert into open_possibilities values( 'a',7,'00:00:00','23:59:59',0,0);
 insert into open_possibilities values( 'b',7,'00:00:00','23:59:59',0,0);
 insert into open_possibilities values( 'c',7,'00:00:00','23:59:59',0,0);
-insert into open_possibilities values( 'd',7,'00:00:00','23:59:59',0,0);
 
 insert into open_possibilities values( 'a',1,'00:00:00','23:59:59',0,0);
 insert into open_possibilities values( 'b',1,'00:00:00','23:59:59',0,0);
 insert into open_possibilities values( 'c',1,'00:00:00','23:59:59',0,0);
-insert into open_possibilities values( 'd',1,'00:00:00','23:59:59',0,0);
 
 -- 
 -- -- -- create raw data with datetime and door status, 

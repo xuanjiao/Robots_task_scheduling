@@ -164,7 +164,8 @@ class SQLClient{
       return v;
     }
 
-    void insert_new_enter_room_tasks(int num, string start_time){
+    // Create new tasks
+    void insert_new_enter_room_tasks(int num, ros::Time start, ros::Duration interval){
       sql::ResultSet* res;
       vector<char> doors;
       char id,priority;
@@ -176,15 +177,63 @@ class SQLClient{
         priority = rand()%4  + '1';     // 1-5
         id = doors[rand()%doors.size()];  
         stmt->execute(
-            "INSERT INTO tasks(task_type, start_time, target_id, priority) VALUES('EnterRoom','" + start_time + "','" + id + "'," + priority +")"
+            "INSERT INTO tasks(task_type, start_time, target_id, priority) VALUES('EnterRoom','" + Util::time_str(start + interval *i) + "','" + id + "'," + priority +")"
         );
       }
+      delete res;
     }
 
-    vector<tuple<char,geometry_msgs::Pose,string,double>>
-    query_all_task_pose_time_open_pos(){
-      vector<tuple<char,geometry_msgs::Pose,string,double>> v;
-      // stmt->executeQuery("SELECT *")
+    // get distance to calculate cost
+    vector<tuple<int,ros::Time,geometry_msgs::Pose>>
+    query_all_pose_time_in_costs(){
+      sql::ResultSet* res;
+    vector<tuple<int,ros::Time,geometry_msgs::Pose>> infos;
+      res = stmt->executeQuery(
+        " SELECT c.task_id, tasks.start_time, t.position_x, t.position_y, t.orientation_w, t.orientation_z FROM targets t \
+        inner join costs c, tasks \
+        where tasks.target_id = t.target_id and c.task_id = tasks.task_id"
+      );
+      while(res->next()){
+        geometry_msgs::Pose pose;
+        string time = res->getString("start_time");
+        pose.position.x = res->getDouble("position_x");
+        pose.position.y = res->getDouble("position_y");
+        pose.orientation.z = res->getDouble("orientation_z");
+        pose.orientation.w = res->getDouble("orientation_w");
+        
+        infos.push_back(make_tuple(res->getInt("task_id"),Util::str_ros_time(time),pose));
+      }
+      delete res;
+      return infos;
+    }
+
+    void insert_available_task_to_costs(ros::Time cur_time, double battery){
+        stmt->execute("TRUNCATE costs");
+        stmt->execute(
+          " INSERT INTO costs(task_id,robot_id,priority, open_pos_st,time_diff, battery) \
+            SELECT t.task_id, t.robot_id, t.priority, o.open_pos_st, TIMESTAMPDIFF(SECOND,'" + Util::time_str(cur_time) + "',t.start_time)," + to_string(battery) +" FROM open_possibilities o \
+            INNER JOIN tasks t \  
+            WHERE t.target_id = o.door_id AND dayofweek(t.start_time) = o.day_of_week AND TIME(t.start_time) BETWEEN o.start_time AND o.end_time"
+        );
+    }
+
+
+    void update_distances_in_costs(int id,double dist){
+          stmt->executeUpdate(
+            "UPDATE costs SET distance = " + to_string(dist) + " WHERE task_id = " + to_string(id)
+          );
+    }
+
+    int query_task_id_highest_cost(){
+        // Calculate cost
+        int task_id = -1;
+        sql::ResultSet* res;
+        stmt->executeUpdate("UPDATE costs set cost = 1.0 * distance + 0.2 * time_diff + (-1.0) * open_pos_st +(-10) * priority  + (-1.0) * battery");
+        res = stmt->executeQuery("select task_id from costs where cost = (select max(cost) from costs)");
+        res->next();
+        task_id = res->getInt("task_id"); // get task id which has highest cost
+        delete res;
+        return task_id;
     }
 
     // void prepare_statements(){

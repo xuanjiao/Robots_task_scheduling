@@ -5,6 +5,7 @@
 #include <vector>
 #include "util.h"
 #include "sql_client.h"
+#include <tuple>
 // #include "time_transfer.h"
 // #include "task_process.h"
 #include <string>
@@ -29,14 +30,12 @@ public:
     void init(){
 	    ros::Duration(1).sleep();
         ROS_INFO_STREAM("Current office time: "<<Util::time_str(ros::Time::now()));
-        // task_server = nh.advertiseService("make_task",&CentralizedPool::process_robot_request,this);
+        task_server = nh.advertiseService("make_task",&CentralizedPool::process_robot_request,this);
         plan_client = nh.serviceClient<nav_msgs::GetPlan>("move_base/NavfnROS/make_plan");      
     }
 
     void create_enter_room_tasks(int num){
-        sql_client.insert_new_enter_room_tasks(num,
-                Util::time_str(ros::Time::now() + ros::Duration(30*i))
-            );
+        sql_client.insert_new_enter_room_tasks(num,ros::Time::now(),ros::Duration(30));
         sql_client.print_table("tasks");
     }
 
@@ -79,9 +78,9 @@ public:
         // for each task, request distance from move base plan server
             nav_msgs::GetPlan make_plan_srv;
             make_plan_srv.request.start.pose= robot_pose;
+            make_plan_srv.request.start.header.frame_id = "map";
             make_plan_srv.request.goal.pose = target_pose;
-            // make_plan_srv.request.start.header = task->goal.header;
-            // make_plan_srv.request.goal= task->goal;
+            make_plan_srv.request.goal.header.frame_id = "map";
             make_plan_srv.request.tolerance = 1;
 	        
             // request plan with start point and end point
@@ -170,9 +169,10 @@ public:
             if(req.last_task.task_id!=0) // if it has last task, reuse this task
                 reuse_task(req.last_task.task_id);
         }else{
-            update_tables(req.last_task.task_id,req.last_task.door_status);
-            
-            auto bt = get_best_task(req.pose);
+            if(req.last_task.task_id!=0) // if it has last task, update table
+                update_tables(req.last_task.task_id,req.last_task.door_status);
+
+            auto bt = get_best_task(req.pose,cur_time,req.battery_level);
             res.best_task.task_id = bt.first;
             res.best_task.goal = bt.second;
         }                
@@ -187,15 +187,33 @@ public:
 
     }
 
-    std::pair<char,geometry_msgs::PoseStamped> 
-    get_best_task(geometry_msgs::Pose robot_pose){
-       auto task_infos = sql_client.query_all_task_pose_time_open_pos();
-        for( std::tuple<char,geometry_msgs::Pose,string,double> tl : task_infos){
-            get<0>(tl);
-            CostFunction c;
-            c.distance = calculate_distance(get<1>(tl),robot_pose);
-            
+    std::pair<int,geometry_msgs::PoseStamped> 
+    get_best_task(geometry_msgs::Pose robot_pose,ros::Time t,double battery){
+       sql_client.insert_available_task_to_costs(t,battery);
+       auto infos = sql_client.query_all_pose_time_in_costs();
+       for(auto i : infos){
+           ROS_INFO_STREAM("Calculate cost for task "<< get<0>(i));
+           double dist = calculate_distance(get<2>(i),robot_pose); // calculate costs for tasks
+           sql_client.update_distances_in_costs(get<0>(i),dist);
+       }
+       int best_task = sql_client.query_task_id_highest_cost(); // get task with highest cost
+        sql_client.print_table("costs"); // show cost table
+        ROS_INFO_STREAM("Best task id = "<<best_task);
+        geometry_msgs::PoseStamped pst;
+           auto best = find_if( begin(infos), end(infos),
+                             [=](decltype(*begin(infos)) item )->int
+                             {
+                                 return get< 0 >( item ) == best_task;
+                             } );
+
+        if(best == infos.end()){
+            ROS_INFO_STREAM(" Find best Task failed");
+            exit(1);
         }
+        pst.header.frame_id = "map";
+        pst.header.stamp = get<1>(*best);
+        pst.pose = get<2>(*best);
+        return make_pair(best_task,pst);
     }
 
     

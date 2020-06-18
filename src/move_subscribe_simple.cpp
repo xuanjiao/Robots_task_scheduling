@@ -28,9 +28,7 @@ public:
     Demo():move_base_client("move_base", true){
         mode = 1;
         battery_level = 100;
-        ROS_INFO_STREAM("Current Office time: "<<TimeTransfer::convert_to_office_time_string(ros::Time::now()));
 	    ros::Duration(1).sleep();
-        ROS_INFO_STREAM("Current Office time: "<<TimeTransfer::convert_to_office_time_string(ros::Time::now()));
 
         // subscribe to door sensor node
         sensor_sub = 
@@ -80,13 +78,13 @@ public:
             next_mode(MODE::REQUEST,false);
             return;
         }
-        ROS_INFO_STREAM("Current office time: "<<TimeTransfer::convert_to_office_time_string(ros::Time::now())<<
+        ROS_INFO_STREAM(
                         "\nSimulation time: " <<ros::Time::now().sec <<
-                        "\nSleep until "<< TimeTransfer::convert_to_office_time_string(wake_up) <<
+                        "\nSleep until "<< Util::time_str(wake_up) <<
                         "\nSimulation time: " <<wake_up.sec
         );
         ros::Time::sleepUntil(wake_up - ros::Duration(0.1));                
-        ROS_INFO_STREAM("** Wake up. Current office time: "<<TimeTransfer::convert_to_office_time_string(ros::Time::now()));
+        ROS_INFO_STREAM("** Wake up.Simulation time: " <<ros::Time::now().sec );
         next_mode(MODE::RUN,true);
     }
 
@@ -106,8 +104,7 @@ public:
             return;
         }
         current_task = srv.response.best_task;
-        ROS_INFO_STREAM("receive response best task  "<<" time "<<TimeTransfer::convert_to_office_time_string(current_task.goal.header.stamp)
-            <<"Position "<<Util::pose_str(current_task.goal.pose));
+        ROS_INFO_STREAM("receive response\n"<<current_task);
         
         next_mode(MODE::SLEEP,true);
     }

@@ -19,8 +19,30 @@ TEST_F(MyTestSuite,example){
     ASSERT_EQ(1,1);
 }
 
+TEST_F(MyTestSuite,transfer_time){
+    ASSERT_EQ(ros::Time::now().sec,Util::str_ros_time(Util::time_str(ros::Time::now())).sec);
+}
+
 TEST_F(MyTestSuite,insert_task){
-    sql_client.insert_new_enter_room_tasks(5,tt.convert_to_office_time_string(ros::Time(30)));
+    sql_client.insert_new_enter_room_tasks(5,ros::Time::now(),ros::Duration(300));
+}
+
+TEST_F(MyTestSuite,insert_tasks_to_cost){
+    sql_client.insert_available_task_to_costs(ros::Time::now(),60);
+}
+
+// TEST_F(MyTestSuite,query_all_pos_in_cost){
+//     auto v = sql_client.query_all_pose_in_costs();
+//     ASSERT_GT(v.size(),0);
+// }
+
+TEST_F(MyTestSuite,update_distance){
+    sql_client.update_distances_in_costs(2,10);
+}
+
+TEST_F(MyTestSuite,query_best_task){
+    int id = sql_client.query_task_id_highest_cost();
+    ASSERT_GT(id,0)<<"id = "<<id;
 }
 
 // TEST_F(MyTestSuite,query_tasks){
@@ -85,8 +107,9 @@ int main(int argc, char** argv){
 
     std::thread t([]{while(ros::ok()) ros::spin();});
 
+    // ::testing::GTEST_FLAG(filter) = "insert_tasks_to_cost*";
     auto res = RUN_ALL_TESTS();
-
+    
     ros::shutdown();
     
     return res;

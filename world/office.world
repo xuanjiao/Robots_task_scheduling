@@ -15793,8 +15793,8 @@
       <static>1</static>
     </model>
     <state world_name='default'>
-      <sim_time>000 000000000</sim_time>
-      <real_time>000 000000000</real_time>
+      <sim_time>1590994800 000000000</sim_time>
+      <real_time>1590994800 000000000</real_time>
       <wall_time>1588583440 215144351</wall_time>
       <iterations>157572</iterations>
       <model name='ground_plane'>
