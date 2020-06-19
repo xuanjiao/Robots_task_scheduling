@@ -19,8 +19,11 @@ TEST_F(MyTestSuite,example){
     ASSERT_EQ(1,1);
 }
 
-TEST_F(MyTestSuite,transfer_time){
-    ASSERT_EQ(ros::Time::now().sec,Util::str_ros_time(Util::time_str(ros::Time::now())).sec);
+// TEST_F(MyTestSuite,transfer_time){
+//     ASSERT_EQ(ros::Time::now().sec,Util::str_ros_time(Util::time_str(ros::Time::now())).sec);
+// }
+TEST_F(MyTestSuite,set_expired_task_to_canceled){
+    sql_client.update_expired_tasks_canceled(ros::Time::now());
 }
 
 TEST_F(MyTestSuite,insert_task){
@@ -31,10 +34,15 @@ TEST_F(MyTestSuite,insert_tasks_to_cost){
     sql_client.insert_available_task_to_costs(ros::Time::now(),60);
 }
 
-// TEST_F(MyTestSuite,query_all_pos_in_cost){
-//     auto v = sql_client.query_all_pose_in_costs();
-//     ASSERT_GT(v.size(),0);
-// }
+TEST_F(MyTestSuite,query_charging_station){
+    auto v = sql_client.query_charging_station();
+    ASSERT_EQ(v.size(),3);
+}
+
+TEST_F(MyTestSuite,insert_charging_task){
+    int id = sql_client.insert_new_charging_task('w',ros::Time::now());
+    ASSERT_GT(id,0);
+}
 
 TEST_F(MyTestSuite,update_distance){
     sql_client.update_distances_in_costs(2,10);
@@ -43,6 +51,11 @@ TEST_F(MyTestSuite,update_distance){
 TEST_F(MyTestSuite,query_best_task){
     int id = sql_client.query_task_id_highest_cost();
     ASSERT_GT(id,0)<<"id = "<<id;
+}
+
+TEST_F(MyTestSuite,update_returned_task){
+    sql_client.update_returned_task(2,ros::Duration(70),2);
+    sql_client.update_returned_task(4,ros::Duration(70),4);
 }
 
 // TEST_F(MyTestSuite,query_tasks){
@@ -55,22 +68,6 @@ TEST_F(MyTestSuite,query_best_task){
 //     SQLClient sql_client("root","pi");
 //     sql_client.query_multiple_target_position(map,"Door");
 //     ASSERT_GT(map.size(),0);
-// }
-
-// TEST_F(MyTestSuite,sql_room){
-//     std::map<char,geometry_msgs::Pose> map;
-//     sql_client.query_rooms_position(map);    
-//     ASSERT_GT(map.size(),0);
-
-
-// TEST_F(MyTestSuite,sql_query_single_room){
-//     PossibilityTableRow table_row;
-//     DoorStatusListRow list_row;
-//     list_row.room_id ='a';
-//     list_row.date_time = "2020-06-01 13:30:00";
-//     sql_client.query_posibility_table_single_room(table_row,list_row);
-//     ASSERT_EQ(table_row.statistuc_open_pos,90);
-//     ASSERT_EQ(list_row.door_status,1);
 // }
 
 // TEST_F(MyTestSuite, time_increase){

@@ -11,13 +11,23 @@ sudo apt-get install libmysqlcppconn-dev
 
     `mysql -r root -p`
 
-3. create door open possibility table and some data in  door status list
+3. create tables
 ```
     source /home/[user_name]/catkin_ws/src/robot_navigation/sql/run.sql
 ```
 ![database](./img/robot-database.png)
 
-![table_list](./img/create_table_and_list.png)
+targets
+![targets](./img/targets.png)
+
+open_possibilities
+![open_pos](./img/open_possibilities.png)
+
+tasks
+![tasks](./img/tasks.png)
+
+cost
+![costs](./img/costs.png)
 
 ### 2.  Start sensor node:
 ```
@@ -43,18 +53,28 @@ use estimate position tool in rviz to estimate position
 
 cost_function.cost = 1.0 * distance + 0.2 * sec_diff + (-1.0) * statisic_open_possibility +(-10) * priority  +  (-1.0) * battery_level;
 
-## Idea of simulation time
-| Simulation time | door Simulator/ Centralized pool query in possibility table |
-------|------------|
-|   0:00:00 |   2020.06.01 06:00:00 | 
-|   0:00:30 |   2020.06.01 12:00:00 |
-|   0:00:59 |   2020.06.01 17:48:xx |
-|   0:00:60 |   2020.06.02 06:00:00 |
-|   ......     |
+robot choose task with lowest cost
 
-1s -12min
+## Problem 
+
+battery module
+
+Option 
+
+1.  Gazebo plug in 
+    
+    https://github.com/pooyanjamshidi/brass_gazebo_battery
+    
+2. Gazebo official battery class
+
+    http://osrf-distributions.s3.amazonaws.com/gazebo/api/dev/classgazebo_1_1common_1_1Battery.html
+
+3.   Calculate battery consume use angle of rotation and distance
 
 ## TO DO
 
 - simulation time issue
-- when centralized pool receive request, it may let robot to go to battery charging station
+- robot battery consume
+- continue sql part: update table with robor result
+- read paper
+
