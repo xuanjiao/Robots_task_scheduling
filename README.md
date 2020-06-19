@@ -15,18 +15,24 @@ sudo apt-get install libmysqlcppconn-dev
 ```
     source /home/[user_name]/catkin_ws/src/robot_navigation/sql/run.sql
 ```
+database 
+
 ![database](./img/robot-database.png)
 
 targets
+
 ![targets](./img/targets.png)
 
 open_possibilities
+
 ![open_pos](./img/open_possibilities.png)
 
 tasks
+
 ![tasks](./img/tasks.png)
 
 cost
+
 ![costs](./img/costs.png)
 
 ### 2.  Start sensor node:
@@ -55,6 +61,13 @@ cost_function.cost = 1.0 * distance + 0.2 * sec_diff + (-1.0) * statisic_open_po
 
 robot choose task with lowest cost
 
+
+## Relative work
+
+https://ieeexplore.ieee.org/abstract/document/7992870
+
+When the time of the server reaches the request time, the server performs the task allocation. 
+
 ## Problem 
 
 battery module
@@ -77,4 +90,17 @@ Option
 - robot battery consume
 - continue sql part: update table with robor result
 - read paper
+
+- Three types of tasks:
+
+1.  Enter room task. 
+    -   Not necessary to allocate every task
+    -   when out of date delete it
+
+2.  Deliver task  
+    -   Must allocate every task
+    -   start in 10s, go to room a pick up something and go to room b
+
+3. Charging task
+    -  centralized pool create and allocate immediately
 
