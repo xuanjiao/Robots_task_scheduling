@@ -3,10 +3,10 @@ drop procedure if exists createRawData;
 
 delimiter $$
 create procedure createRawData(
-    id char,
-	start_date_time datetime,
-    period time,
-    cnt_total int
+    in id char,
+	in start_date_time datetime,
+    in period time,
+    in cnt_total int
 )
 
 begin    	
@@ -15,13 +15,13 @@ begin
     declare door boolean;
     set cur_time = start_date_time;
 	while cnt < cnt_total do
-          insert into door_status_list
+          insert into door_status
           select 
             id,
-            if(rand()*100 < open_posibility,1,0), 
+            if(rand()*100 < open_pos,1,0), 
             cur_time -- create door status according to possibility table
-                from open_possibility_table
-		    where TIME(cur_time) between start_time and end_time and id = room_id and dayofweek(cur_time) = day_of_week;
+                from open_possibilities
+		    where TIME(cur_time) between start_time and end_time and id = door_id and dayofweek(cur_time) = day_of_week;
 			 -- call process_measurement_result(id,cur_time);
           set cur_time = addtime(cur_time,period);
           set cnt = cnt + 1;

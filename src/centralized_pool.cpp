@@ -71,17 +71,40 @@ public:
     
     bool process_robot_request(robot_navigation::make_task::Request &req,robot_navigation::make_task::Response &res){
         ros::Time cur_time = ros::Time::now();
-        ROS_INFO_STREAM( "Current time "<<Util::time_str(cur_time)<<
-                        "receive request from a robot.\n last task: "<<req.last_task<<
-                        "\nbettery level "<<req.battery_level<<
-                        "\ncurrent position "<<Util::pose_str(req.pose));
-        if(!req.last_task.is_completed){
-            if(req.last_task.task_id!=0) // if it has last task, reuse this task
-                reuse_task(req.last_task.task_id);
+        int task_id = req.last_task.task_id;
+        ROS_INFO_STREAM("Receive request from robot\n"<<req);
+       
+        if(task_id == 0){
+            ROS_INFO_STREAM("Get initial request from robot");
         }else{
-            if(req.last_task.task_id!=0) // if it has last task, update table
-                update_tables(req.last_task.task_id,req.last_task.door_status);
-        }  
+            auto p = sql_client.query_target_id_type_from_task(task_id);
+            
+            // Process enter room task
+            if(p.second == "EnterRoom"){
+                if(!req.last_task.is_completed){
+                    ROS_INFO_STREAM("Task failed");
+                    sql_client.update_task_status(task_id,"Error");
+                }else{
+                    ROS_INFO_STREAM("Task Succeed");
+                    use_task_result(task_id,p.first,req.last_task.m_time, req.last_task.door_status); 
+                    if(req.last_task.door_status == false){
+                        reuse_task(task_id);
+                    }                
+                }
+            }       
+
+            // Process charging task
+            else if(p.second == "Charging"){
+                if(!req.last_task.is_completed){
+                    ROS_INFO_STREAM("Robot charging failed");
+                }else{
+                    ROS_INFO_STREAM("Robot charging succedd");
+                }
+            }
+            
+        }
+
+        // Give robot new task 
         std::pair<int,geometry_msgs::PoseStamped> bt;
         if(req.battery_level < 20){ // If battery level too low, create a charging task in 20s
             bt = create_charging_task(cur_time + ros::Duration(20),req.pose); 
@@ -93,14 +116,17 @@ public:
         return true;             
     }
 
+
+
     void reuse_task(int task_id){
-        // change task status from Running to WaitingToRun, increase 3 priority and increase 30s start time 
-        sql_client.update_returned_task(task_id,ros::Duration(100),3);
+        // change task status from Running to WaitingToRun, increase 3 priority and increase 200s start time 
+        sql_client.update_returned_task(task_id,ros::Duration(200),3);
     }
 
-    void update_tables(char task_id,bool door_status){
-        // TO DO
+    void use_task_result(int task_id,char door_id, ros::Time m_time, bool door_status){
         sql_client.update_task_list_completed(task_id); // mark task as RanToCompletion
+        sql_client.insert_record_door_status_list(door_id,m_time,door_status); 
+        sql_client.update_open_pos_table(door_id,m_time);
     }
 
     std::pair<int,geometry_msgs::PoseStamped> 

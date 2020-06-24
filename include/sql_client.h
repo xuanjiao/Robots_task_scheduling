@@ -160,8 +160,9 @@ class SQLClient{
     }
     
     // Create new enter room tasks
-    void insert_new_enter_room_tasks(int num, ros::Time start, ros::Duration interval){
+    bool insert_new_enter_room_tasks(int num, ros::Time start, ros::Duration interval){
       sql::ResultSet* res;
+      bool ret;
       vector<char> doors;
       char id,priority;
       res = stmt->executeQuery("SELECT target_id  FROM targets WHERE target_type = 'Door'");
@@ -171,11 +172,12 @@ class SQLClient{
       for(int i = 0; i < num; i++){
         priority = rand()%4  + '1';     // 1-5
         id = doors[rand()%doors.size()];  
-        stmt->execute(
+        ret = stmt->execute(
             "INSERT INTO tasks(task_type, start_time, target_id, priority) VALUES('EnterRoom','" + Util::time_str(start + interval *i) + "','" + id + "'," + priority +")"
         );
       }
       delete res;
+      return ret;
     }
     
     // Create new charging task and return its task id
@@ -235,14 +237,73 @@ class SQLClient{
 
     }
 
-    void insert_door_status_list(int task_id){
-     // stmt->execute("INSERT INTO")
+    pair<char,string> query_target_id_type_from_task(int task_id){
+      sql::ResultSet* res;
+      string door,type;
+      // get door id
+      res = stmt->executeQuery("SELECT * FROM tasks WHERE task_id = "+ to_string(task_id));
+      res->next();
+      door = res->getString("target_id");
+      type = res->getString("task_type");
+      delete res;
+      return make_pair(door[0],type);
     }
 
+    bool insert_record_door_status_list(char door_id, ros::Time measure_time,bool door_status){
+      string mst = Util::time_str(measure_time);
+       bool result;
+      try{
+        // insert new record into door status table
+        ROS_INFO_STREAM(" insert "<<door_id<<" "<<measure_time<<" "<<door_status);
+        result = stmt->execute("INSERT INTO door_status(door_id,door_status,date_time) VALUES('" + string(1,door_id) + "', " +to_string(door_status)+", '"+ mst+"')");
+        print_table("door_status");
+      }catch(sql::SQLException e){
+        ROS_INFO_STREAM(e.what());
+      }
+      return result;
+    }
+
+    tuple<string,string,int> query_st_et_dw_from_open_pos(char door_id, ros::Time measure_time){
+      sql::ResultSet* res;
+      string st,et,mst = Util::time_str(measure_time);
+      int dw;
+
+      // select start time, end time, day of week from open possibility table
+      res = stmt->executeQuery(
+        "SELECT start_time, end_time, day_of_week FROM open_possibilities WHERE door_id = '" + string(1, door_id)+
+        "' AND DAYOFWEEK('" + mst + "') = day_of_week AND TIME('" + mst + "') BETWEEN start_time AND end_time"
+      );
+
+      res->next();
+      st = res->getString("start_time");
+      et = res->getString("end_time");
+      dw = res->getInt("day_of_week");
+      delete res;
+      return make_tuple(st,et,dw);
+    }
+    
+    void update_open_pos_table(char door_id, ros::Time measure_time){
+      auto t = query_st_et_dw_from_open_pos(door_id,measure_time);
+
+      // update open possibility table
+      stmt->executeUpdate(
+        "UPDATE open_possibilities o \
+          SET  o.open_pos_st = (SELECT SUM(door_status) / COUNT(door_status)  FROM  door_status ds \
+              WHERE ds.door_id = '" + string(1,door_id) + "' AND DAYOFWEEK(ds.date_time) = '" + to_string(get<2>(t)) + 
+              "' AND TIME(ds.date_time) BETWEEN '" + get<0>(t) + "' AND '"+ get<1>(t) +
+          "') WHERE o.door_id = '" + string(1,door_id) + "' AND o.day_of_week = '" + to_string(get<2>(t)) + "' AND o.start_time =' " + get<0>(t) + "' AND o.end_time = '"+ get<1>(t) +"'"       
+      );
+    }
+
+    void update_task_status(int task_id,string status){
+      stmt->executeUpdate("UPDATE tasks set cur_status = '"+ status + "' WHERE task_id = " + to_string(task_id));
+    }
+    // Change completed task status to 'RanToCompletion'
     void update_task_list_completed(int task_id){
       stmt->executeUpdate("UPDATE tasks set cur_status = 'RanToCompletion' WHERE task_id = " + to_string(task_id));
     }
 
+    // Change cancled task status to 'Canceled'
     void update_expired_tasks_canceled(ros::Time now){
       stmt->executeUpdate("UPDATE tasks set cur_status = 'Canceled' WHERE start_time < '" + Util::time_str(now)+"'");
     }

@@ -94,9 +94,10 @@ public:
         srv.request.battery_level = battery_level;
         srv.request.pose = current_pos;
         srv.request.last_task = current_task;
+        srv.request.last_task.m_time = ros::Time::now();
         srv.request.last_task.is_completed = is_complete;
         srv.request.last_task.door_status = current_task.door_status;
-        ROS_INFO_STREAM("send task request. start "<<Util::pose_str(srv.request.pose));
+        ROS_INFO_STREAM("send task request. Robot position: "<<Util::pose_str(srv.request.pose));
 
         if(!task_client.call(srv)){
             ROS_INFO_STREAM("Failed to send request");
@@ -127,7 +128,7 @@ public:
     void move_complete_callback(const actionlib::SimpleClientGoalState& state,
            const move_base_msgs::MoveBaseResult::ConstPtr& result ){
             ROS_INFO_STREAM(state.toString());
-            next_mode(MODE::REQUEST,((state == actionlib::SimpleClientGoalState::SUCCEEDED )&& current_task.door_status )?true:false);
+            next_mode(MODE::REQUEST,(state == actionlib::SimpleClientGoalState::SUCCEEDED )?true:false); //if robot reach the door task complete
     }
 
     void sensor_callback(const robot_navigation::sensor_data::ConstPtr& message){

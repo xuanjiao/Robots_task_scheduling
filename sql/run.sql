@@ -45,7 +45,8 @@ CREATE TABLE tasks (
     target_id CHAR(1),
     robot_id INT DEFAULT 0,
     priority INT DEFAULT 0,
-    cur_status ENUM('Created', 'WaitingToRun', 'Running', 'RanToCompletion', 'Canceled') DEFAULT 'Created',
+    cur_status ENUM('Created', 'WaitingToRun', 'Running', 'RanToCompletion', 'Canceled','Error') DEFAULT 'Created',
+    result varchar(255),
     PRIMARY KEY (task_id)
 );
 
@@ -87,105 +88,106 @@ insert targets values('v','ChargingStation',-7.19262782348, 3.11045426516, 0.631
 insert targets values('w','ChargingStation',-23.6736662051, 5.65008294198, -0.52025554613,  0.854010636187);
 
 -- Monday
-insert into open_possibilities values( 'a',2,'00:00:00','9:59:59',0,0);
-insert into open_possibilities values( 'a',2,'10:00:00','10:59:59',90,90);
-insert into open_possibilities values( 'a',2,'11:00:00','11:59:59',80,80);
-insert into open_possibilities values( 'a',2,'12:00:00','12:59:59',10,10);
-insert into open_possibilities values( 'a',2,'13:00:00','16:59:59',90,90);
+insert into open_possibilities values( 'a',2,'00:00:00','7:59:59',0,0);
+insert into open_possibilities values( 'a',2,'08:00:00','9:59:59',0.8,0.8);
+insert into open_possibilities values( 'a',2,'10:00:00','10:59:59',0.9,0.9);
+insert into open_possibilities values( 'a',2,'11:00:00','11:59:59',0.8,0.8);
+insert into open_possibilities values( 'a',2,'12:00:00','12:59:59',0.1,0.1);
+insert into open_possibilities values( 'a',2,'13:00:00','16:59:59',0.9,0.9);
 insert into open_possibilities values( 'a',2,'17:00:00','23:59:59',0,0);
 
-insert into open_possibilities values( 'b',2,'00:00:00','11:59:59',0,0);
-insert into open_possibilities values( 'b',2,'12:00:00','12:59:59',90,90);
-insert into open_possibilities values( 'b',2,'13:00:00','13:59:59',100,100);
-insert into open_possibilities values( 'b',2,'14:00:00','17:59:59',90,90);
+insert into open_possibilities values( 'b',2,'00:00:00','8:59:59',0,0);
+insert into open_possibilities values( 'b',2,'9:00:00','9:59:59',0.9,0.9);
+insert into open_possibilities values( 'b',2,'10:00:00','13:59:59',1.0,1.0);
+insert into open_possibilities values( 'b',2,'14:00:00','17:59:59',0.9,0.9);
 insert into open_possibilities values( 'b',2,'18:00:00','23:59:59',0,0);
 
 insert into open_possibilities values( 'c',2,'00:00:00','7:59:59',0,0);
-insert into open_possibilities values( 'c',2,'8:00:00','8:59:59',10,10);
-insert into open_possibilities values( 'c',2,'9:00:00','9:59:59',90,90);
-insert into open_possibilities values( 'c',2,'10:00:00','15:59:59',90,90);
+insert into open_possibilities values( 'c',2,'8:00:00','8:59:59',0.1,0.1);
+insert into open_possibilities values( 'c',2,'9:00:00','9:59:59',0.9,0.9);
+insert into open_possibilities values( 'c',2,'10:00:00','15:59:59',0.9,0.9);
 insert into open_possibilities values( 'c',2,'16:00:00','23:59:59',0,0);
 
 
 -- Tuesday
 insert into open_possibilities values( 'b',3,'00:00:00','9:59:59',0,0);
-insert into open_possibilities values( 'b',3,'10:00:00','10:59:59',90,90);
-insert into open_possibilities values( 'b',3,'11:00:00','11:59:59',80,80);
-insert into open_possibilities values( 'b',3,'12:00:00','12:59:59',10,10);
-insert into open_possibilities values( 'b',3,'13:00:00','13:59:59',90,90);
+insert into open_possibilities values( 'b',3,'10:00:00','10:59:59',0.9,0.9);
+insert into open_possibilities values( 'b',3,'11:00:00','11:59:59',0.8,0.8);
+insert into open_possibilities values( 'b',3,'12:00:00','12:59:59',0.1,0.1);
+insert into open_possibilities values( 'b',3,'13:00:00','13:59:59',0.9,0.9);
 insert into open_possibilities values( 'b',3,'14:00:00','23:59:59',0,0);
 
 insert into open_possibilities values( 'c',3,'00:00:00','11:59:59',0,0);
-insert into open_possibilities values( 'c',3,'12:00:00','12:59:59',90,90);
-insert into open_possibilities values( 'c',3,'13:00:00','13:59:59',100,100);
-insert into open_possibilities values( 'c',3,'14:00:00','16:59:59',90,90);
+insert into open_possibilities values( 'c',3,'12:00:00','12:59:59',0.9,0.9);
+insert into open_possibilities values( 'c',3,'13:00:00','13:59:59',1.0,1.0);
+insert into open_possibilities values( 'c',3,'14:00:00','16:59:59',0.9,0.9);
 insert into open_possibilities values( 'c',3,'17:00:00','23:59:59',0,0);
 
 insert into open_possibilities values( 'a',3,'00:00:00','7:59:59',0,0);
-insert into open_possibilities values( 'a',3,'8:00:00','8:59:59',90,90);
-insert into open_possibilities values( 'a',3,'9:00:00','9:59:59',100,100);
-insert into open_possibilities values( 'a',3,'10:00:00','10:59:59',90,90);
+insert into open_possibilities values( 'a',3,'8:00:00','8:59:59',0.9,0.9);
+insert into open_possibilities values( 'a',3,'9:00:00','9:59:59',1.0,1.0);
+insert into open_possibilities values( 'a',3,'10:00:00','10:59:59',0.9,0.9);
 insert into open_possibilities values( 'a',3,'11:00:00','23:59:59',0,0);
 
 -- Wednesday
 insert into open_possibilities values( 'a',4,'00:00:00','9:59:59',0,0);
-insert into open_possibilities values( 'a',4,'10:00:00','10:59:59',90,90);
-insert into open_possibilities values( 'a',4,'11:00:00','11:59:59',80,80);
-insert into open_possibilities values( 'a',4,'12:00:00','12:59:59',10,10);
-insert into open_possibilities values( 'a',4,'13:00:00','15:59:59',90,90);
+insert into open_possibilities values( 'a',4,'10:00:00','10:59:59',0.9,0.9);
+insert into open_possibilities values( 'a',4,'11:00:00','11:59:59',0.8,0.8);
+insert into open_possibilities values( 'a',4,'12:00:00','12:59:59',0.1,0.1);
+insert into open_possibilities values( 'a',4,'13:00:00','15:59:59',0.9,0.9);
 insert into open_possibilities values( 'a',4,'16:00:00','23:59:59',0,0);
 
 insert into open_possibilities values( 'b',4,'00:00:00','11:59:59',0,0);
-insert into open_possibilities values( 'b',4,'12:00:00','12:59:59',90,90);
-insert into open_possibilities values( 'b',4,'13:00:00','13:59:59',100,100);
-insert into open_possibilities values( 'b',4,'14:00:00','15:59:59',90,90);
+insert into open_possibilities values( 'b',4,'12:00:00','12:59:59',0.9,0.9);
+insert into open_possibilities values( 'b',4,'13:00:00','13:59:59',1.0,1.0);
+insert into open_possibilities values( 'b',4,'14:00:00','15:59:59',0.9,0.9);
 insert into open_possibilities values( 'b',4,'16:00:00','23:59:59',0,0);
 
 insert into open_possibilities values( 'c',4,'00:00:00','7:59:59',0,0);
-insert into open_possibilities values( 'c',4,'8:00:00','8:59:59',10,10);
-insert into open_possibilities values( 'c',4,'9:00:00','9:59:59',90,90);
-insert into open_possibilities values( 'c',4,'10:00:00','10:59:59',90,90);
+insert into open_possibilities values( 'c',4,'8:00:00','8:59:59',0.1,0.1);
+insert into open_possibilities values( 'c',4,'9:00:00','9:59:59',0.9,0.9);
+insert into open_possibilities values( 'c',4,'10:00:00','10:59:59',0.9,0.9);
 insert into open_possibilities values( 'c',4,'11:00:00','23:59:59',0,0);
 
 
 -- Tursday
 insert into open_possibilities values( 'b',5,'00:00:00','9:59:59',0,0);
-insert into open_possibilities values( 'b',5,'10:00:00','10:59:59',90,90);
-insert into open_possibilities values( 'b',5,'11:00:00','11:59:59',80,80);
-insert into open_possibilities values( 'b',5,'12:00:00','12:59:59',10,10);
-insert into open_possibilities values( 'b',5,'13:00:00','16:59:59',90,90);
+insert into open_possibilities values( 'b',5,'10:00:00','10:59:59',0.9,0.9);
+insert into open_possibilities values( 'b',5,'11:00:00','11:59:59',0.8,0.8);
+insert into open_possibilities values( 'b',5,'12:00:00','12:59:59',0.1,0.1);
+insert into open_possibilities values( 'b',5,'13:00:00','16:59:59',0.9,0.9);
 insert into open_possibilities values( 'b',5,'17:00:00','23:59:59',0,0);
 
 insert into open_possibilities values( 'c',5,'00:00:00','11:59:59',0,0);
-insert into open_possibilities values( 'c',5,'12:00:00','12:59:59',90,90);
-insert into open_possibilities values( 'c',5,'13:00:00','13:59:59',100,100);
-insert into open_possibilities values( 'c',5,'14:00:00','16:59:59',90,90);
+insert into open_possibilities values( 'c',5,'12:00:00','12:59:59',0.9,0.9);
+insert into open_possibilities values( 'c',5,'13:00:00','13:59:59',1.0,1.0);
+insert into open_possibilities values( 'c',5,'14:00:00','16:59:59',0.9,0.9);
 insert into open_possibilities values( 'c',5,'17:00:00','23:59:59',0,0);
 
 insert into open_possibilities values( 'a',5,'00:00:00','7:59:59',0,0);
-insert into open_possibilities values( 'a',5,'8:00:00','8:59:59',10,10);
-insert into open_possibilities values( 'a',5,'9:00:00','9:59:59',90,90);
-insert into open_possibilities values( 'a',5,'10:00:00','15:59:59',90,90);
+insert into open_possibilities values( 'a',5,'8:00:00','8:59:59',0.1,0.1);
+insert into open_possibilities values( 'a',5,'9:00:00','9:59:59',0.9,0.9);
+insert into open_possibilities values( 'a',5,'10:00:00','15:59:59',0.9,0.9);
 insert into open_possibilities values( 'a',5,'16:00:00','23:59:59',0,0);
 
 -- Friday
 insert into open_possibilities values( 'a',6,'00:00:00','9:59:59',0,0);
-insert into open_possibilities values( 'a',6,'10:00:00','10:59:59',90,90);
-insert into open_possibilities values( 'a',6,'11:00:00','11:59:59',80,80);
-insert into open_possibilities values( 'a',6,'12:00:00','12:59:59',10,10);
-insert into open_possibilities values( 'a',6,'13:00:00','16:59:59',90,90);
+insert into open_possibilities values( 'a',6,'10:00:00','10:59:59',0.9,0.9);
+insert into open_possibilities values( 'a',6,'11:00:00','11:59:59',0.8,0.8);
+insert into open_possibilities values( 'a',6,'12:00:00','12:59:59',0.1,0.1);
+insert into open_possibilities values( 'a',6,'13:00:00','16:59:59',0.9,0.9);
 insert into open_possibilities values( 'a',6,'17:00:00','23:59:59',0,0);
 
 insert into open_possibilities values( 'b',6,'00:00:00','11:59:59',0,0);
-insert into open_possibilities values( 'b',6,'12:00:00','12:59:59',90,90);
-insert into open_possibilities values( 'b',6,'13:00:00','13:59:59',100,100);
-insert into open_possibilities values( 'b',6,'14:00:00','14:59:59',90,90);
+insert into open_possibilities values( 'b',6,'12:00:00','12:59:59',0.9,0.9);
+insert into open_possibilities values( 'b',6,'13:00:00','13:59:59',1.0,1.0);
+insert into open_possibilities values( 'b',6,'14:00:00','14:59:59',0.9,0.9);
 insert into open_possibilities values( 'b',6,'15:00:00','23:59:59',0,0);
 
 insert into open_possibilities values( 'c',6,'00:00:00','7:59:59',0,0);
-insert into open_possibilities values( 'c',6,'8:00:00','8:59:59',10,10);
-insert into open_possibilities values( 'c',6,'9:00:00','9:59:59',90,90);
-insert into open_possibilities values( 'c',6,'10:00:00','16:59:59',90,90);
+insert into open_possibilities values( 'c',6,'8:00:00','8:59:59',0.1,0.1);
+insert into open_possibilities values( 'c',6,'9:00:00','9:59:59',0.9,0.9);
+insert into open_possibilities values( 'c',6,'10:00:00','16:59:59',0.9,0.9);
 insert into open_possibilities values( 'c',6,'17:00:00','23:59:59',0,0);
 
 -- Weekend
@@ -199,10 +201,10 @@ insert into open_possibilities values( 'c',1,'00:00:00','23:59:59',0,0);
 
 -- 
 -- -- -- create raw data with datetime and door status, 
--- call createRawData('a','2020-06-01 8:00:00','00:30:00',500);
--- call createRawData('b','2020-06-01 8:00:00','00:30:00',500);
--- call createRawData('c','2020-06-01 8:00:00','00:30:00',500);
-
+  call createRawData('a','2020-06-01 8:00:00','00:10:00',50);
+  call createRawData('b','2020-06-01 8:00:00','00:10:00',50);
+  call createRawData('c','2020-06-01 8:00:00','00:10:00',50);
+-- 
 SELECT 
     *
 FROM
