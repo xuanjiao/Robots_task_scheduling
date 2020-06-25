@@ -25,7 +25,7 @@ TEST_F(SqlTest,example){
 // }
 
 TEST_F(SqlTest,insert_task){
-    sql_client.insert_new_enter_room_tasks(5,ros::Time::now(),ros::Duration(300));
+    sql_client.insert_gather_info_tasks(5,ros::Time::now(),ros::Duration(300));
 }
 
 TEST_F(SqlTest,set_expired_task_to_canceled){

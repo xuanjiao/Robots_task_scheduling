@@ -84,23 +84,17 @@ Option
 
 3.   Calculate battery consume use angle of rotation and distance
 
+## Task type
+| Type             | target |possibile parent/child task type    | Priority | Can be interrupted | If can not arrive the goal        | If door closed       / charging station not empty                                                |   |
+|----------------------|----------|----------|----------|--------------------|--------------------------------------------------|-------------------------------------------------------------------------------|---|
+| GatherEnviromentInfo  | door | non | 1-3      | yes                | put task into table(Error) and get another best task                            | put task into table(RanToCompletion), update pos_table | 
+| GoToPoint              | any point |GoToPoint |4        | no                 | put task into table(Error), alarm                            | robot wait outside the door ,  alarm                                                  |   |
+| Charging               | charging station | non | 5        | no                 | put task into table(Error), alarm | check another station                           |   |
+
 ## TO DO
 
 - simulation time issue
 - robot battery consume
-- continue sql part: update table with robor result
 - read paper
-
-- Three types of tasks:
-
-1.  Enter room task. 
-    -   Not necessary to allocate every task
-    -   when out of date delete it
-
-2.  Deliver task  
-    -   Must allocate every task
-    -   start in 10s, go to room a pick up something and go to room b
-
-3. Charging task
-    -  centralized pool create and allocate immediately
-
+- implement GoToPoint task
+- 

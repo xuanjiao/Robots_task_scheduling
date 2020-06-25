@@ -40,7 +40,7 @@ CREATE TABLE targets (
 drop table if exists tasks;
 CREATE TABLE tasks (
     task_id INT AUTO_INCREMENT,
-    task_type ENUM('EnterRoom', 'Charging','Delivery'),
+    task_type ENUM('GatherEnviromentInfo', 'Charging','Delivery'),
     start_time DATETIME,
     target_id INT,
     target2_id INT,

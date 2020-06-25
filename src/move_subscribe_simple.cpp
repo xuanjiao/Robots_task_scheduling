@@ -96,6 +96,7 @@ public:
         srv.request.last_task = current_task;
         srv.request.last_task.m_time = ros::Time::now();
         srv.request.last_task.is_completed = is_complete;
+
         srv.request.last_task.door_status = current_task.door_status;
         ROS_INFO_STREAM("send task request. Robot position: "<<Util::pose_str(srv.request.pose));
 

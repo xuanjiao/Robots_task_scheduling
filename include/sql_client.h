@@ -160,7 +160,7 @@ class SQLClient{
     }
     
     // Create new enter room tasks
-    bool insert_new_enter_room_tasks(int num, ros::Time start, ros::Duration interval){
+    bool insert_gather_info_tasks(int num, ros::Time start, ros::Duration interval){
       sql::ResultSet* res;
       bool ret;
       vector<int> doors;
@@ -173,7 +173,7 @@ class SQLClient{
         priority = rand()%4  + 1;     // 1-5
         id = doors[rand()%doors.size()];  
         ret = stmt->execute(
-            "INSERT INTO tasks(task_type, start_time, target_id, priority) VALUES('EnterRoom','" + Util::time_str(start + interval *i) + "','" + to_string(id) + "'," + to_string(priority) +")"
+            "INSERT INTO tasks(task_type, start_time, target_id, priority) VALUES('GatherEnviromentInfo','" + Util::time_str(start + interval *i) + "','" + to_string(id) + "'," + to_string(priority) +")"
         );
       }
       delete res;
