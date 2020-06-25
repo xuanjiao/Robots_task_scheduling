@@ -23,12 +23,13 @@ TEST_F(SqlTest,example){
 // TEST_F(MyTestSuite,transfer_time){
 //     ASSERT_EQ(ros::Time::now().sec,Util::str_ros_time(Util::time_str(ros::Time::now())).sec);
 // }
-TEST_F(SqlTest,set_expired_task_to_canceled){
-    sql_client.update_expired_tasks_canceled(ros::Time::now());
-}
 
 TEST_F(SqlTest,insert_task){
     sql_client.insert_new_enter_room_tasks(5,ros::Time::now(),ros::Duration(300));
+}
+
+TEST_F(SqlTest,set_expired_task_to_canceled){
+    sql_client.update_expired_tasks_canceled(ros::Time::now());
 }
 
 
@@ -67,7 +68,7 @@ TEST_F(SqlTest,update_returned_task){
 // }
 
 TEST_F(SqlTest,create_database){
-    std::map<char,geometry_msgs::Pose> map;
+    std::map<int,geometry_msgs::Pose> map;
     SQLClient sql_client("root","pi");
     sql_client.query_multiple_target_position(map,"Door");
     ASSERT_GT(map.size(),0);
@@ -103,14 +104,14 @@ TEST_F(SqlTest,update_pos_table){
     ASSERT_EQ(p.second,"EnterRoom");
     sql_client.insert_record_door_status_list(p.first,now,0);
     auto t = sql_client.query_st_et_dw_from_open_pos(p.first,ros::Time::now());
-    ASSERT_EQ(get<0>(t),"16:00:00");
-    ASSERT_EQ(get<1>(t),"23:59:59");
-    ASSERT_EQ(get<2>(t),4);
+    // ASSERT_EQ(get<0>(t),"16:00:00");
+    // ASSERT_EQ(get<1>(t),"23:59:59");
+    ASSERT_EQ(get<2>(t),5);
     //sql_client.update_open_pos_table(target_id,now);
 }
 
 TEST_F(SqlTest,update_task_status){
-    sql_client.update_task_status()
+    sql_client.update_task_status(1,"Canceled");
 }
 
 TEST_F(SqlTest,insert_to_door_status){
@@ -128,8 +129,8 @@ int main(int argc, char** argv){
 
     std::thread t([]{while(ros::ok()) ros::spin();});
 
-    // ::testing::GTEST_FLAG(filter) = "SqlTest.insert_task";
-     ::testing::GTEST_FLAG(filter) = "SqlTest.update_pos_table";
+    ::testing::GTEST_FLAG(filter) = "SqlTest.insert_task";
+    //  ::testing::GTEST_FLAG(filter) = "SqlTest.update_pos_table";
     // ::testing::GTEST_FLAG(filter) = "SqlTest.insert_to_door_status";
     auto res = RUN_ALL_TESTS();
     

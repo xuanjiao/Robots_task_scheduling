@@ -123,7 +123,7 @@ public:
         sql_client.update_returned_task(task_id,ros::Duration(200),3);
     }
 
-    void use_task_result(int task_id,char door_id, ros::Time m_time, bool door_status){
+    void use_task_result(int task_id,int door_id, ros::Time m_time, bool door_status){
         sql_client.update_task_list_completed(task_id); // mark task as RanToCompletion
         sql_client.insert_record_door_status_list(door_id,m_time,door_status); 
         sql_client.update_open_pos_table(door_id,m_time);
@@ -165,7 +165,7 @@ public:
             exit(1);
         }
 
-        std::pair<char,double> best; // best charging station
+        std::pair<int,double> best; // best charging station
         for(auto i : v){
             double dist = calculate_distance(i.second,rp);
             if(dist>best.second){

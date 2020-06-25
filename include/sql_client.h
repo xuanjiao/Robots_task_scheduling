@@ -65,7 +65,7 @@ class SQLClient{
       ROS_INFO_STREAM(ss.str());
     }
 
-    int query_multiple_target_position(map<char,geometry_msgs::Pose> &map,std::string target_type){
+    int query_multiple_target_position(map<int,geometry_msgs::Pose> &map,std::string target_type){
       sql::ResultSet* res;
       int ret = -1;
       try
@@ -74,13 +74,13 @@ class SQLClient{
         ret = res->rowsCount();
         ROS_INFO_STREAM("Found " << ret << " target type "<< target_type);
         while(res->next()){
-          char id = res->getString("target_id")[0];
+          int id = res->getInt("target_id");
           geometry_msgs::Pose pose;
           pose.position.x = res->getDouble("position_x");
           pose.position.y = res->getDouble("position_y");
           pose.orientation.z = res->getDouble("orientation_z");
           pose.orientation.w = res->getDouble("orientation_w");
-          map.insert(pair<char,geometry_msgs::Pose>(id,pose)) ;
+          map.insert(pair<int,geometry_msgs::Pose>(id,pose)) ;
         }
       }
       catch(const exception& e)
@@ -93,10 +93,10 @@ class SQLClient{
         return ret;
     }
 
-    vector<tuple<char,geometry_msgs::Pose,long double>>
+    vector<tuple<int,geometry_msgs::Pose,long double>>
     query_target_pose_and_open_pos_st(string time){
       sql::ResultSet* res;
-      vector<tuple<char,geometry_msgs::Pose,long double>> v;
+      vector<tuple<int,geometry_msgs::Pose,long double>> v;
       try{
         res = stmt->executeQuery("select t.target_id,t.position_x, t.position_y, t.orientation_w, t.orientation_z, o.open_pos \
                                       from targets t \
@@ -112,8 +112,8 @@ class SQLClient{
         pose.orientation.z = res->getDouble("orientation_z");
         pose.orientation.w = res->getDouble("orientation_w");
         v.push_back(
-          tuple<char,geometry_msgs::Pose,long double>(
-            res->getString("target_id")[0], pose, res->getDouble("open_pos")
+          tuple<int,geometry_msgs::Pose,long double>(
+            res->getInt("target_id"), pose, res->getDouble("open_pos")
           )
         );
       }
@@ -150,7 +150,7 @@ class SQLClient{
         // Calculate cost
         int task_id = -1;
         sql::ResultSet* res;
-        stmt->executeUpdate("UPDATE costs SET cost = 1.0 * distance + 0.2 * time_diff + (-1.0) * open_pos_st +(-10) * priority  + (-1.0) * battery");
+        stmt->executeUpdate("UPDATE costs SET cost = 1.0 * distance + 0.2 * time_diff + (-100) * open_pos_st +(-10) * priority  + (-1.0) * battery");
         res = stmt->executeQuery("SELECT task_id FROM costs WHERE cost = (SELECT min(cost) FROM costs)");
         res->next();
         task_id = res->getInt("task_id"); // get task id which has highest cost
@@ -163,17 +163,17 @@ class SQLClient{
     bool insert_new_enter_room_tasks(int num, ros::Time start, ros::Duration interval){
       sql::ResultSet* res;
       bool ret;
-      vector<char> doors;
-      char id,priority;
+      vector<int> doors;
+      int id,priority;
       res = stmt->executeQuery("SELECT target_id  FROM targets WHERE target_type = 'Door'");
       while(res->next()){
-        doors.push_back(res->getString("target_id")[0]); // find available door id
+        doors.push_back(res->getInt("target_id")); // find available door id
       }
       for(int i = 0; i < num; i++){
-        priority = rand()%4  + '1';     // 1-5
+        priority = rand()%4  + 1;     // 1-5
         id = doors[rand()%doors.size()];  
         ret = stmt->execute(
-            "INSERT INTO tasks(task_type, start_time, target_id, priority) VALUES('EnterRoom','" + Util::time_str(start + interval *i) + "','" + id + "'," + priority +")"
+            "INSERT INTO tasks(task_type, start_time, target_id, priority) VALUES('EnterRoom','" + Util::time_str(start + interval *i) + "','" + to_string(id) + "'," + to_string(priority) +")"
         );
       }
       delete res;
@@ -181,11 +181,11 @@ class SQLClient{
     }
     
     // Create new charging task and return its task id
-    int insert_new_charging_task(char target_id,ros::Time start){
+    int insert_new_charging_task(int target_id,ros::Time start){
         sql::ResultSet* res;        
         int id = -1;
         stmt->execute(
-          "INSERT INTO tasks(task_type, target_id, start_time) VALUES('Charging','" + string(1,target_id) + "','" + Util::time_str(start)+"')"
+          "INSERT INTO tasks(task_type, target_id, start_time) VALUES('Charging','" + to_string(target_id) + "','" + Util::time_str(start)+"')"
           );
         res = stmt->executeQuery("SELECT last_insert_id() as id");
         res->next();
@@ -195,9 +195,9 @@ class SQLClient{
     }
 
     // Create charging task
-    vector<pair<char,geometry_msgs::Pose>>
+    vector<pair<int,geometry_msgs::Pose>>
     query_charging_station(){
-      vector<pair<char,geometry_msgs::Pose>> v;
+      vector<pair<int,geometry_msgs::Pose>> v;
       sql::ResultSet* res;
       res = stmt->executeQuery("SELECT * FROM targets WHERE target_type = 'ChargingStation'");
       while(res->next()){
@@ -206,7 +206,7 @@ class SQLClient{
         pose.position.y = res->getDouble("position_y");
         pose.orientation.z = res->getDouble("orientation_z");
         pose.orientation.w = res->getDouble("orientation_w");
-        v.push_back(make_pair(res->getString("target_id")[0],pose));
+        v.push_back(make_pair(res->getInt("target_id"),pose));
       }
       delete res;
       return v;
@@ -237,25 +237,26 @@ class SQLClient{
 
     }
 
-    pair<char,string> query_target_id_type_from_task(int task_id){
+    pair<int,string> query_target_id_type_from_task(int task_id){
       sql::ResultSet* res;
-      string door,type;
+      int door;
+      string type;
       // get door id
       res = stmt->executeQuery("SELECT * FROM tasks WHERE task_id = "+ to_string(task_id));
       res->next();
-      door = res->getString("target_id");
+      door = res->getInt("target_id");
       type = res->getString("task_type");
       delete res;
-      return make_pair(door[0],type);
+      return make_pair(door,type);
     }
 
-    bool insert_record_door_status_list(char door_id, ros::Time measure_time,bool door_status){
+    bool insert_record_door_status_list(int door_id, ros::Time measure_time,bool door_status){
       string mst = Util::time_str(measure_time);
        bool result;
       try{
         // insert new record into door status table
-        ROS_INFO_STREAM(" insert "<<door_id<<" "<<measure_time<<" "<<door_status);
-        result = stmt->execute("INSERT INTO door_status(door_id,door_status,date_time) VALUES('" + string(1,door_id) + "', " +to_string(door_status)+", '"+ mst+"')");
+        ROS_INFO_STREAM(" insert "<<to_string(door_id)<<" "<<measure_time<<" "<<door_status);
+        result = stmt->execute("INSERT INTO door_status(door_id,door_status,date_time) VALUES('" + to_string(door_id) + "', " +to_string(door_status)+", '"+ mst+"')");
         print_table("door_status");
       }catch(sql::SQLException e){
         ROS_INFO_STREAM(e.what());
@@ -263,14 +264,14 @@ class SQLClient{
       return result;
     }
 
-    tuple<string,string,int> query_st_et_dw_from_open_pos(char door_id, ros::Time measure_time){
+    tuple<string,string,int> query_st_et_dw_from_open_pos(int door_id, ros::Time measure_time){
       sql::ResultSet* res;
       string st,et,mst = Util::time_str(measure_time);
       int dw;
 
       // select start time, end time, day of week from open possibility table
       res = stmt->executeQuery(
-        "SELECT start_time, end_time, day_of_week FROM open_possibilities WHERE door_id = '" + string(1, door_id)+
+        "SELECT start_time, end_time, day_of_week FROM open_possibilities WHERE door_id = '" + to_string( door_id)+
         "' AND DAYOFWEEK('" + mst + "') = day_of_week AND TIME('" + mst + "') BETWEEN start_time AND end_time"
       );
 
@@ -282,16 +283,16 @@ class SQLClient{
       return make_tuple(st,et,dw);
     }
     
-    void update_open_pos_table(char door_id, ros::Time measure_time){
+    void update_open_pos_table(int door_id, ros::Time measure_time){
       auto t = query_st_et_dw_from_open_pos(door_id,measure_time);
 
       // update open possibility table
       stmt->executeUpdate(
         "UPDATE open_possibilities o \
           SET  o.open_pos_st = (SELECT SUM(door_status) / COUNT(door_status)  FROM  door_status ds \
-              WHERE ds.door_id = '" + string(1,door_id) + "' AND DAYOFWEEK(ds.date_time) = '" + to_string(get<2>(t)) + 
+              WHERE ds.door_id = '" + to_string(door_id) + "' AND DAYOFWEEK(ds.date_time) = '" + to_string(get<2>(t)) + 
               "' AND TIME(ds.date_time) BETWEEN '" + get<0>(t) + "' AND '"+ get<1>(t) +
-          "') WHERE o.door_id = '" + string(1,door_id) + "' AND o.day_of_week = '" + to_string(get<2>(t)) + "' AND o.start_time =' " + get<0>(t) + "' AND o.end_time = '"+ get<1>(t) +"'"       
+          "') WHERE o.door_id = '" + to_string(door_id) + "' AND o.day_of_week = '" + to_string(get<2>(t)) + "' AND o.start_time =' " + get<0>(t) + "' AND o.end_time = '"+ get<1>(t) +"'"       
       );
     }
 
