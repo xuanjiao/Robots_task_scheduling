@@ -22,7 +22,7 @@ class CentralizedPool{
 public:
     CentralizedPool():sql_client("centralized_pool","pass"){
         init();
-        create_enter_room_tasks(10);
+        create_gather_info_tasks(10);
     }
 
     void init(){
@@ -32,29 +32,13 @@ public:
         plan_client = nh.serviceClient<nav_msgs::GetPlan>("move_base/NavfnROS/make_plan");      
     }
 
-    void create_enter_room_tasks(int num){
+    void create_gather_info_tasks(int num){
         sql_client.print_table("targets");
         sql_client.truncate_costs_tasks(); // clear task table and cost table
         sql_client.insert_gather_info_tasks(num,ros::Time::now(),ros::Duration(30));
         sql_client.print_table("tasks");
     }
 
-    void create_delivery_task(){
-        ros::Time dtime = ros::Time::now()+ros::Duration(10);
-        geometry_msgs::Pose pick_up, send_to;
-
-        pick_up.position.x = -3.582148932;
-        pick_up.position.y = -3.582148932;
-        pick_up.orientation.z = -0.496143856313;
-        pick_up.orientation.w =  0.868240331845;
-        
-        send_to = pick_up;
-        send_to.position.x -=3;
-
-        int pick_up_id = sql_client.insert_target(pick_up,"PickUp");
-        int send_to_id = sql_client.insert_target(send_to,"SendTo");
-        sql_client.insert_delivery_task(pick_up_id,send_to_id,dtime);
-    }
 
     double calculate_distance(geometry_msgs::Pose target_pose, geometry_msgs::Pose robot_pose){
             double distance = 0;
