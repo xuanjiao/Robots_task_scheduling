@@ -162,9 +162,9 @@ target_link_libraries(door_status_advertiser
   mysqlcppconn
 )
 
-add_executable(move_subscribe_simple src/move_subscribe_simple.cpp)
-add_dependencies(move_subscribe_simple ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(move_subscribe_simple ${catkin_LIBRARIES})
+add_executable(robot_controller src/robot_controller.cpp)
+add_dependencies(robot_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(robot_controller ${catkin_LIBRARIES})
 
 
 add_executable(centralized_pool src/centralized_pool.cpp)

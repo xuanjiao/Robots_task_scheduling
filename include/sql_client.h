@@ -194,6 +194,23 @@ class SQLClient{
         return id;
     }
 
+    int insert_new_go_to_point_task(geometry_msgs::PoseStamped target, ros::Time start,){
+        sql::ResultSet* res;        
+        int id = -1;
+        stmt->execute(
+          "INSERT INTO "
+        );
+
+        stmt->execute(
+          "INSERT INTO tasks(task_type, target_id, start_time) VALUES('GoToPoint','" + to_string(target_id) + "','" + Util::time_str(start)+"')"
+          );
+        res = stmt->executeQuery("SELECT last_insert_id() as id");
+        res->next();
+        id = res->getInt("id");
+        delete res;
+        return id;
+    }
+
     // Create charging task
     vector<pair<int,geometry_msgs::Pose>>
     query_charging_station(){

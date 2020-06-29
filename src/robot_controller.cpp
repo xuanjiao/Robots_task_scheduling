@@ -21,17 +21,17 @@ enum MODE{
 
 typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
  
-class Demo{
+class RobotController{
 
 public:
-    Demo():move_base_client("move_base", true){
+    RobotController():move_base_client("move_base", true){
         mode = 1;
         battery_level = 100;
 	    ros::Duration(1).sleep();
 
         // subscribe to door sensor node
         sensor_sub = 
-            nh.subscribe<robot_navigation::sensor_data>("sensor_data",100,&Demo::sensor_callback,this);      
+            nh.subscribe<robot_navigation::sensor_data>("sensor_data",100,&RobotController::sensor_callback,this);      
         task_client = nh.serviceClient<robot_navigation::make_task>("make_task");
         move_base_client.waitForServer();
         request_current_pose();
@@ -114,9 +114,9 @@ public:
         move_base_msgs::MoveBaseGoal goal;
         goal.target_pose = current_task.goal;
         move_base_client.sendGoal(goal,
-                boost::bind(&Demo::move_complete_callback,this, _1, _2),
+                boost::bind(&RobotController::move_complete_callback,this, _1, _2),
                 MoveBaseClient::SimpleActiveCallback(),
-                boost::bind(&Demo::move_position_feedback,this, _1));        
+                boost::bind(&RobotController::move_position_feedback,this, _1));        
     }
 
     void move_position_feedback(const move_base_msgs::MoveBaseFeedbackConstPtr &feedback){
@@ -172,8 +172,8 @@ int main(int argc, char **argv){
 	ROS_INFO("Main function start");
         ros::init(argc,argv,"move_base_simple"); // Initializes Node Name
         
-    ROS_INFO("Demo run");
-        Demo demo;
+    ROS_INFO("RobotController run");
+        RobotController demo;
 
         ros::spin();      
 
