@@ -68,6 +68,14 @@ https://ieeexplore.ieee.org/abstract/document/7992870
 
 When the time of the server reaches the request time, the server performs the task allocation. 
 
+## About multi-robot system
+
+launch files
+ -- one_robot.launch
+ -- r
+
+
+
 ## Problem 
 
 battery module
@@ -84,12 +92,25 @@ Option
 
 3.   Calculate battery consume use angle of rotation and distance
 
-## Task type
+## Task type(plan)
 | Type             | target |possibile parent/child task type    | Priority | Can be interrupted | If can not arrive the goal        | If door closed       / charging station not empty                                                |   |
 |----------------------|----------|----------|----------|--------------------|--------------------------------------------------|-------------------------------------------------------------------------------|---|
 | GatherEnviromentInfo  | door/ sensors | non | 1-3      | yes                | put task into table(Error) and get another best task                            | put task into table(RanToCompletion), update pos_table | 
 | GoToPoint              | any point |GoToPoint |4        | no                 | put task into table(Error), alarm                            | robot wait outside the door ,  alarm                                                  |   |
 | Charging               | charging station | non | 5        | no                 | put task into table(Error), alarm | check another station                           |   |
+
+### How to give "Go to point" task to robot (plan)
+
+Require: 
+
+1.  Must run task at time point
+2.  Run a set of task continuesly
+
+Options:
+
+1. Give robot a task chain and robot store them into memory
+2. When system time = task start time, give robot first one. When first one finished, give robot the next one.
+
 
 ## TO DO
 

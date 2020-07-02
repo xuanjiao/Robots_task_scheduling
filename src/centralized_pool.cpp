@@ -39,7 +39,16 @@ public:
         sql_client.print_table("tasks");
     }
 
-
+    void create_go_to_point_task(){
+        geometry_msgs::PoseStamped goal;
+        goal.pose.position.x = -2;
+        goal.pose.position.y = -0.5;
+        goal.pose.position.z = -0;
+        goal.header.stamp = ros::Time::now();
+        goal.header.frame_id = "map";
+        sql_client.insert_new_go_to_point_task(goal);
+    }
+    
     double calculate_distance(geometry_msgs::Pose target_pose, geometry_msgs::Pose robot_pose){
             double distance = 0;
         // for each task, request distance from move base plan server
@@ -107,6 +116,7 @@ public:
 
         // Give robot new task 
         std::pair<int,geometry_msgs::PoseStamped> bt;
+
         if(req.battery_level < 20){ // If battery level too low, create a charging task in 20s
             bt = create_charging_task(cur_time + ros::Duration(20),req.pose); 
         }else{  // enough battery create enter room task
@@ -116,8 +126,6 @@ public:
         res.best_task.goal = bt.second; 
         return true;             
     }
-
-
 
     void reuse_task(int task_id){
         // change task status from Running to WaitingToRun, increase 3 priority and increase 200s start time 

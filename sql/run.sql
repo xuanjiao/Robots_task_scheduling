@@ -28,8 +28,8 @@ CREATE TABLE door_status (
 
 drop table if exists targets;
 CREATE TABLE targets (
-    target_id INT,
-    target_type ENUM('ChargingStation', 'Door'),
+    target_id INT AUTO_INCREMENT,
+    target_type ENUM('ChargingStation', 'Door','Point'),
     position_x DOUBLE DEFAULT 0,
     position_y DOUBLE DEFAULT 0,
     orientation_z DOUBLE DEFAULT 0,

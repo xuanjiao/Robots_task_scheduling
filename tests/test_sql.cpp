@@ -47,6 +47,16 @@ TEST_F(SqlTest,insert_charging_task){
     ASSERT_GT(id,0);
 }
 
+TEST_F(SqlTest,insert_new_go_to_point_task){
+    geometry_msgs::PoseStamped goal;
+    int id = sql_client.insert_new_go_to_point_task(goal);
+    ASSERT_GT(id,0);
+}
+
+TEST_F(SqlTest,query_earliest_go_to_point_task_if_exist){
+    auto t = sql_client.query_earliest_go_to_point_task_if_exist();
+}
+
 TEST_F(SqlTest,update_distance){
     sql_client.update_distances_in_costs(2,10);
 }
@@ -61,40 +71,12 @@ TEST_F(SqlTest,update_returned_task){
     sql_client.update_returned_task(4,ros::Duration(70),4);
 }
 
-
-// TEST_F(SqlTest,query_tasks){
-//     auto task_infos = sql_client.query_all_task_pose_time_open_pos();
-//     ASSERT_GT(task_infos.size(),0); 
-// }
-
 TEST_F(SqlTest,create_database){
     std::map<int,geometry_msgs::Pose> map;
     SQLClient sql_client("root","pi");
     sql_client.query_multiple_target_position(map,"Door");
     ASSERT_GT(map.size(),0);
 }
-
-// TEST_F(MyTestSuite, time_increase){
-//     TimeTransfer tt;  
-//     ASSERT_LT(tt.convert_to_office_time(ros::Time::now()),
-//                 tt.convert_to_office_time(ros::Time::now()+ros::Duration(1)));              
-// }
-
-// TEST_F(MyTestSuite, sec_0){
-//      ASSERT_EQ(tt.convert_to_office_time_string(ros::Time(0)),"2020-06-01 06:00:00"); 
-// }
-
-// TEST_F(MyTestSuite, sec_59){
-//     ASSERT_EQ(tt.convert_to_office_time_string(ros::Time(59)),"2020-06-01 17:48:00");
-// }
-
-// TEST_F(MyTestSuite, sec_60){
-//     ASSERT_EQ(tt.convert_to_office_time_string(ros::Time(60)),"2020-06-02 06:00:00");
-// }
-
-// TEST_F(MyTestSuite, sec_100){
-//     ASSERT_EQ(tt.convert_to_office_time_string(ros::Time(100)),"2020-06-02 14:00:00");
-// }
 
 TEST_F(SqlTest,update_pos_table){   
     ros::Time now = ros::Time::now();
@@ -129,9 +111,9 @@ int main(int argc, char** argv){
 
     std::thread t([]{while(ros::ok()) ros::spin();});
 
-    ::testing::GTEST_FLAG(filter) = "SqlTest.insert_task";
+    // ::testing::GTEST_FLAG(filter) = "SqlTest.insert_task";
     //  ::testing::GTEST_FLAG(filter) = "SqlTest.update_pos_table";
-    // ::testing::GTEST_FLAG(filter) = "SqlTest.insert_to_door_status";
+    ::testing::GTEST_FLAG(filter) = "SqlTest.insert_new_go_to_point_task";
     auto res = RUN_ALL_TESTS();
     
     ros::shutdown();

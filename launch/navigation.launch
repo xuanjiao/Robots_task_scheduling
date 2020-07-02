@@ -1,0 +1,26 @@
+<launch>
+  <arg name="model" default="$(env TURTLEBOT3_MODEL)" doc="model type [burger, waffle, waffle_pi]"/>
+  <arg name="map_file" default="$(find robot_navigation)/map/office.yaml"/>
+  <arg name="open_rviz" default="true"/>
+  <arg name="move_forward_only" default="false"/>
+
+  <!-- Map server -->
+  <node pkg="map_server" name="map_server" type="map_server" args="$(arg map_file)"/>
+
+  <group ns="robot1">
+    <param name="tf_prefix" value="robot1_tf" />
+    <param name="amcl/initial_pose_x" value="-2" />
+    <param name="amcl/initial_pose_y" value="0.5" />
+    <include file="$(find robot_navigation)/launch/move_base.launch" />
+  </group>
+
+  <group ns="robot2">
+    <param name="tf_prefix" value="robot2_tf" />
+    <param name="amcl/initial_pose_x" value="-4" />
+    <param name="amcl/initial_pose_y" value="5" />
+    <include file="$(find robot_navigation)/launch/move_base.launch" />
+  </group>
+
+  <node pkg="rviz" type="rviz" name="rviz"/>
+
+</launch>

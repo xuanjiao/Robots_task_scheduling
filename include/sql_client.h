@@ -12,6 +12,14 @@
 
 using namespace std;
 
+typedef struct {
+    int task_id;
+    string task_type;
+    int target_id;
+    geometry_msgs::PoseStamped goal; // distination and timestamp
+}Task;
+
+
 class SQLClient{
   public:
     SQLClient(string user_name, string pass):user_name(user_name),pass(pass){
@@ -93,6 +101,30 @@ class SQLClient{
         return ret;
     }
 
+
+
+    // Task query_go_to_point_tasks(){
+    //   sql::ResultSet* res;
+    //   vector<Task> v;
+    //   geometry_msgs::PoseStamped goal;
+      
+    //   res = stmt->executeQuery(
+    //     "SELECT * FROM tasks INNER JOIN targets ON tasks.target_id = targets.target_id WHERE tasks.task_type = 'GoToPoint'"
+    //   );
+    //   if(res->rowsCount()!=0){
+
+    //     while(res->next()){
+    //       Task task;
+    //       task.goal.header.stamp = Util::str_ros_time(res->getString("start_time"));
+    //       task.goal.header.frame_id = "map";
+    //       task.target_id = res->getInt("target_id");
+    //       task.task_id =  res->getInt("task_id");
+    //     }
+      
+    //   }
+    
+    //}
+    
     vector<tuple<int,geometry_msgs::Pose,long double>>
     query_target_pose_and_open_pos_st(string time){
       sql::ResultSet* res;
@@ -194,21 +226,27 @@ class SQLClient{
         return id;
     }
 
-    int insert_new_go_to_point_task(geometry_msgs::PoseStamped target, ros::Time start,){
+    int insert_new_go_to_point_task(geometry_msgs::PoseStamped target){
         sql::ResultSet* res;        
-        int id = -1;
+        int target_id = -1,task_id = -1;
         stmt->execute(
-          "INSERT INTO "
+          "INSERT INTO targets(target_type, position_x, position_y, orientation_z, orientation_w) \
+            VALUES('Point'," + to_string(target.pose.position.x) + "," + to_string(target.pose.position.y) + "," + to_string(target.pose.orientation.z) +","+to_string(target.pose.orientation.w)
+            +")"
         );
 
-        stmt->execute(
-          "INSERT INTO tasks(task_type, target_id, start_time) VALUES('GoToPoint','" + to_string(target_id) + "','" + Util::time_str(start)+"')"
-          );
-        res = stmt->executeQuery("SELECT last_insert_id() as id");
+        res = stmt->executeQuery("SELECT last_insert_id() as target_id");
         res->next();
-        id = res->getInt("id");
+        target_id = res->getInt("target_id");
+
+        stmt->execute(
+          "INSERT INTO tasks(task_type, priority, target_id, start_time) VALUES('GoToPoint',4,'" + to_string(target_id) + "','" + Util::time_str(target.header.stamp)+"')"
+          );
+        res = stmt->executeQuery("SELECT last_insert_id() as task_id");
+        res->next();
+        task_id = res->getInt("task_id");
         delete res;
-        return id;
+        return task_id;
     }
 
     // Create charging task
