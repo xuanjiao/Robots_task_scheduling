@@ -35,18 +35,34 @@ cost
 
 ![costs](./img/costs.png)
 
-### 2.  Start sensor node:
+### 2. Set up
+
+run Gazebo world
+
 ```
-    roslaunch robot_navigation office_world.launch
+    roslaunch robot_navigation simulation.launch
+```
+Use keyboard to controll one robot 
+
+```
+rosrun teleop_twist_keyboard teleop_twist_keyboard.py /cmd_vel:=/tb3_1/cmd_vel
+```
+
+Start sensor node
+
+```
     rosrun rosrun robot_navigation door_status_advertiser
+	
 ```
-## 3. Start navigation stack
+Start navigation stack
+
 ```
-    roslaunch robot_navigation robot_navigation.launch
+    roslaunch turtlebot3_navigation turtlebot3_navigation_multi.launch
+
 ```
 use estimate position tool in rviz to estimate position
 
-## 4. run demo
+## 3. run demo
 ```
     roslaunch robot_navigation move_demo.launch
 ```

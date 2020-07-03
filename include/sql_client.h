@@ -4,7 +4,13 @@
 #include <iostream>
 #include <ros/ros.h>
 #include <vector>
-#include <mysql/jdbc.h>
+#include <iostream>
+#include "mysql_connection.h"
+#include <cppconn/driver.h>
+#include <cppconn/exception.h>
+#include <cppconn/resultset.h>
+#include <cppconn/statement.h>
+
 #include "util.h"
 
 #define   DATABASE_NAME                                   "sensor_db"
@@ -27,7 +33,7 @@ class SQLClient{
     }
       
     void connect_to_database(){
-      driver = sql::mysql::get_driver_instance();
+      driver = get_driver_instance();
       con = driver->connect(URI,user_name,pass);
       if(con->isValid()){
         ROS_INFO_STREAM("Connected to "<< DATABASE_NAME);
