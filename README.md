@@ -68,29 +68,21 @@ https://ieeexplore.ieee.org/abstract/document/7992870
 
 When the time of the server reaches the request time, the server performs the task allocation. 
 
-## About multi-robot system
+https://www.cs.utexas.edu/~pstone/Papers/bib2html-links/AAMAS17-Zhang.pdf
 
-launch files
- -- one_robot.launch
- -- r
+https://ieeexplore.ieee.org/abstract/document/8461113
 
 
+## battery module
 
-## Problem 
+Calculate battery consume use angle of rotation and distance
 
-battery module
+```
+distance = ......
+double angle = 2 * acos(feedback->base_position.pose.orientation.w);
+battery_level=  battery_level - 0.01 * distance - 0.001 * angle;
 
-Option 
-
-1.  Gazebo plug in 
-    
-    https://github.com/pooyanjamshidi/brass_gazebo_battery
-    
-2. Gazebo official battery class
-
-    http://osrf-distributions.s3.amazonaws.com/gazebo/api/dev/classgazebo_1_1common_1_1Battery.html
-
-3.   Calculate battery consume use angle of rotation and distance
+```
 
 ## Task type(plan)
 | Type             | target |possibile parent/child task type    | Priority | Can be interrupted | If can not arrive the goal        | If door closed       / charging station not empty                                                |   |
@@ -114,8 +106,6 @@ Options:
 
 ## TO DO
 
-- simulation time issue
-- robot battery consume
+
 - read paper
-- implement GoToPoint task
-- 
+

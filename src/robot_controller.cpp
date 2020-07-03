@@ -123,7 +123,9 @@ public:
             double distance = sqrt(pow((feedback->base_position.pose.position.x - current_pos.position.x),2) + 
                                     pow((feedback->base_position.pose.position.y - current_pos.position.y),2));
             current_pos = feedback->base_position.pose;
-            battery_level-= distance * 0.01;
+
+            double angle = 2 * acos(feedback->base_position.pose.orientation.w);
+            battery_level=  battery_level - 0.01 * distance - 0.001 * angle;
      }
      
     void move_complete_callback(const actionlib::SimpleClientGoalState& state,
