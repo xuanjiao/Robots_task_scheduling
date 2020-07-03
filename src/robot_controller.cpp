@@ -126,6 +126,7 @@ public:
 
             double angle = 2 * acos(feedback->base_position.pose.orientation.w);
             battery_level=  battery_level - 0.01 * distance - 0.001 * angle;
+            ROS_INFO_STREAM("angle "<<angle << "distance" << distance << "battery_level"<<battery_level);
      }
      
     void move_complete_callback(const actionlib::SimpleClientGoalState& state,
