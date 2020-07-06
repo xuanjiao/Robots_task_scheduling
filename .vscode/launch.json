@@ -8,7 +8,7 @@
         {
             "name": "ROS: Launch",
             "request": "launch",
-            "target": "/home/jiao/catkin_ws/src/robot_navigation/launch/move_demo.launch",
+            "target": "/home/roboticserver/catkin_ws/src/robot_navigation/launch/move_demo.launch",
             "type": "ros"
         }
     ]

@@ -7,14 +7,19 @@
 #include "sql_client.h"
 #include <tuple>
 #include <string>
+#include <queue>
 
-typedef struct{
-    double distance = 0;
-    double sec_diff = 0;
-    int priority = 0;
-    int    open_pos_st = 0;
-    double battery_level = 0;
-    double cost;
+typedef struct cost_st{
+    double _distance = 0;
+    double _sec_diff = 0;
+    int _priority = 0;
+    double    _open_pos_st = 0;
+    double _battery_level = 0;
+    double _cost;
+    cost_st(double distance,double sec_diff,double priority,double open_pos_st,double battery_level):
+        _distance(distance),_sec_diff(sec_diff),_priority(priority),_open_pos_st(open_pos_st),_battery_level(battery_level){
+            _cost = 1.0 * _distance + 0.2 * _sec_diff + (-100) * _open_pos_st +(-10) * _priority  + (-1.0) * _battery_level;
+        }
 }CostFunction;
 
 class CentralizedPool{
@@ -102,7 +107,6 @@ public:
                     }                
                 }
             }       
-
             // Process charging task
             else if(p.second == "Charging"){
                 if(!req.last_task.is_completed){
@@ -111,19 +115,17 @@ public:
                     ROS_INFO_STREAM("Robot charging succedd");
                 }
             }
-            
         }
 
         // Give robot new task 
-        std::pair<int,geometry_msgs::PoseStamped> bt;
-
-        if(req.battery_level < 20){ // If battery level too low, create a charging task in 20s
-            bt = create_charging_task(cur_time + ros::Duration(20),req.pose); 
-        }else{  // enough battery create enter room task
-            bt = get_best_task(req.pose,cur_time,req.battery_level);
-        }
-        res.best_task.task_id = bt.first;
-        res.best_task.goal = bt.second; 
+        Task bt = get_best_task(req.pose,cur_time,req.battery_level);
+        sql_client.print_table("tasks"); 
+        ROS_INFO_STREAM("Best task id = "<<bt.task_id<<" ,cost = "<< bt.cost);
+        res.best_task.task_id = bt.task_id;
+        res.best_task.goal = bt.goal; 
+        res.best_task.room_id = bt.target_id;
+        res.best_task.task_type = bt.task_type;
+        
         return true;             
     }
 
@@ -138,32 +140,42 @@ public:
         sql_client.update_open_pos_table(door_id,m_time);
     }
 
-    std::pair<int,geometry_msgs::PoseStamped> 
+    Task 
     get_best_task(geometry_msgs::Pose robot_pose,ros::Time t,double battery){
+        vector<Task> v;
+
         sql_client.update_expired_tasks_canceled(t); // set exired task to canceled
         sql_client.print_table("tasks"); 
-       sql_client.insert_available_task_to_costs(t,battery);
-       auto infos = sql_client.query_all_pose_time_in_costs();
-       for(auto i : infos){
-           ROS_INFO_STREAM("Calculate cost for task "<< get<0>(i));
-           double dist = calculate_distance(get<2>(i),robot_pose); // calculate costs for tasks
-           sql_client.update_distances_in_costs(get<0>(i),dist);
-       }
-       int best_task = sql_client.query_task_id_highest_cost(); // get task with highest cost
-        sql_client.print_table("costs"); // show cost table
-        ROS_INFO_STREAM("Best task id = "<<best_task);
-        geometry_msgs::PoseStamped pst;
-           auto best = find_if( begin(infos), end(infos),
-                             [=](decltype(*begin(infos)) item )->int
-                             { return get< 0 >( item ) == best_task;} );
-        if(best == infos.end()){
-            ROS_INFO_STREAM(" Find best Task failed");
-            exit(1);
+
+        if(battery < 20){ // charging
+            // create_charging_task(t,robot_pose);
+        }else{
+            // find if there are execute task
+            
+            v = sql_client.query_runable_tasks("ExecuteTask");
+            
+            if(v.size() !=0){
+                v = sql_client.query_runable_tasks("GatherEnviromentInfo");
+            }
         }
-        pst.header.frame_id = "map";
-        pst.header.stamp = get<1>(*best);
-        pst.pose = get<2>(*best);
-        return make_pair(best_task,pst);
+
+        for(auto i :v){
+               CostFunction cf(
+                   calculate_distance(i.goal.pose,robot_pose),
+                   (i.goal.header.stamp- t).sec,
+                   i.priority,
+                   i.open_pos,
+                   battery
+                );
+                i.cost = cf._cost;
+        }
+
+        std::sort(v.begin(),v.end(),
+        [](const Task& a, const Task&b)->bool
+        {
+                return a.cost <b.cost;
+        });
+        return v.back();
     }
 
     std::pair<int,geometry_msgs::PoseStamped> 

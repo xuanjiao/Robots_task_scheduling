@@ -22,7 +22,10 @@ typedef struct {
     int task_id;
     string task_type;
     int target_id;
+    double open_pos;
+    int priority;
     geometry_msgs::PoseStamped goal; // distination and timestamp
+    double cost;
 }Task;
 
 
@@ -160,6 +163,40 @@ class SQLClient{
     }
     
     // get task info to calculate cost
+    vector<Task>
+    query_runable_tasks(string type){
+      sql::ResultSet* res;
+      vector<Task> v;
+      res = stmt->executeQuery(
+       "SELECT * FROM targets tg \
+        INNER JOIN tasks ON tasks.target_id = tg.target_id \
+        INNER JOIN open_possibilities o WHERE tg.target_id = o.door_id \
+        AND DAYOFWEEK(tasks.start_time) = o.day_of_week \
+        AND TIME(tasks.start_time) BETWEEN o.start_time AND o.end_time \
+        AND tasks.cur_status IN ('Created' , 'WaitingToRun') \
+        AND tasks.task_type = 'GatherEnviromentInfo'"
+      );
+      while(res->next()){
+        Task t;
+        t.priority = res->getInt("priority");
+        t.open_pos = res->getDouble("open_pos_st");
+        t.target_id = res->getInt("target_id");
+        t.task_id = res->getInt("task_id");
+        t.task_type = res->getString("task_type");
+
+        t.goal.header.frame_id = "map";
+        t.goal.header.stamp = Util::str_ros_time(res->getString("start_time"));
+        t.goal.pose.position.x = res->getDouble("position_x");
+        t.goal.pose.position.y = res->getDouble("position_y");
+        t.goal.pose.orientation.z = res->getDouble("orientation_z");
+        t.goal.pose.orientation.w = res->getDouble("orientation_w");
+        v.push_back(t);
+      }
+      delete res;
+      return v;
+    }
+
+    // get task info to calculate cost
     vector<tuple<int,ros::Time,geometry_msgs::Pose>>
     query_all_pose_time_in_costs(){
       sql::ResultSet* res;
@@ -167,7 +204,7 @@ class SQLClient{
       res = stmt->executeQuery(
         " SELECT c.task_id, tasks.start_time, t.position_x, t.position_y, t.orientation_w, t.orientation_z FROM targets t \
         inner join costs c, tasks \
-        where tasks.target_id = t.target_id and c.task_id = tasks.task_id"
+        ON tasks.target_id = t.target_id and c.task_id = tasks.task_id"
       );
       while(res->next()){
         geometry_msgs::Pose pose;
@@ -195,6 +232,25 @@ class SQLClient{
         stmt->executeUpdate("UPDATE tasks SET cur_status = 'Running' WHERE task_id = "+to_string(task_id));
         delete res;
         return task_id;
+    }
+
+        // get best task id
+    Task query_task_highest_cost(){
+        Task task;
+        int task_id = -1;
+        sql::ResultSet* res;
+        stmt->executeUpdate("UPDATE costs SET cost = 1.0 * distance + 0.2 * time_diff + (-100) * open_pos_st +(-10) * priority  + (-1.0) * battery");
+    res = stmt->executeQuery("SELECT * FROM costs c INNER JOIN tasks t ON t.task_id = c.task_id WHERE c.cost = (SELECT min(cost) FROM costs)");
+        if(res->rowsCount() == 1){
+          
+          task.task_id = res->getInt("task_id"); // get task id which has highest cost
+          task.target_id = res->getInt("target_id");
+          task.task_type = res->getString("task_type");
+          stmt->executeUpdate("UPDATE tasks SET cur_status = 'Running' WHERE task_id = "+to_string(task_id));
+        }
+       
+        delete res;
+        return task;
     }
     
     // Create new enter room tasks

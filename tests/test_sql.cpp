@@ -28,6 +28,12 @@ TEST_F(SqlTest,insert_task){
     sql_client.insert_gather_info_tasks(5,ros::Time::now(),ros::Duration(300));
 }
 
+TEST_F(SqlTest,query_runable_task){
+    auto v = sql_client.query_runable_tasks("GatherEnviromentInfo");
+    ASSERT_GT(v.size(),0);
+}
+
+
 TEST_F(SqlTest,set_expired_task_to_canceled){
     sql_client.update_expired_tasks_canceled(ros::Time::now());
 }
@@ -52,11 +58,6 @@ TEST_F(SqlTest,insert_new_go_to_point_task){
     int id = sql_client.insert_new_go_to_point_task(goal);
     ASSERT_GT(id,0);
 }
-
-TEST_F(SqlTest,query_earliest_go_to_point_task_if_exist){
-    auto t = sql_client.query_earliest_go_to_point_task_if_exist();
-}
-
 TEST_F(SqlTest,update_distance){
     sql_client.update_distances_in_costs(2,10);
 }
@@ -112,11 +113,12 @@ int main(int argc, char** argv){
     std::thread t([]{while(ros::ok()) ros::spin();});
 
     // ::testing::GTEST_FLAG(filter) = "SqlTest.insert_task";
-    //  ::testing::GTEST_FLAG(filter) = "SqlTest.update_pos_table";
-    ::testing::GTEST_FLAG(filter) = "SqlTest.insert_new_go_to_point_task";
+     ::testing::GTEST_FLAG(filter) = "SqlTest.query_runable_task";
+
     auto res = RUN_ALL_TESTS();
     
     ros::shutdown();
     
     return res;
-}
+}                                                                                                                                                                                  
+
