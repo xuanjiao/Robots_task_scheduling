@@ -40,10 +40,9 @@ CREATE TABLE targets (
 drop table if exists tasks;
 CREATE TABLE tasks (
     task_id INT AUTO_INCREMENT,
-    task_type ENUM('GatherEnviromentInfo', 'Charging','GoToPoint'),
+    task_type ENUM('GatherEnviromentInfo', 'Charging','ExecuteTask'),
     start_time DATETIME,
     target_id INT,
-    target2_id INT,
     robot_id INT DEFAULT 0,
     priority INT DEFAULT 0,
     cur_status ENUM('Created', 'WaitingToRun', 'Running', 'RanToCompletion', 'Canceled','Error') DEFAULT 'Created',

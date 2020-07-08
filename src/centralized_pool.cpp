@@ -81,6 +81,7 @@ public:
                 distance += sqrt(pow((dists[i].pose.position.x - dists[i-1].pose.position.x),2) + 
                                     pow((dists[i].pose.position.y - dists[i-1].pose.position.y),2));
             }   
+
             return distance;    
     }
     
@@ -120,7 +121,7 @@ public:
         // Give robot new task 
         Task bt = get_best_task(req.pose,cur_time,req.battery_level);
         sql_client.print_table("tasks"); 
-        ROS_INFO_STREAM("Best task id = "<<bt.task_id<<" ,cost = "<< bt.cost);
+        ROS_INFO_STREAM("Best task id = "<<bt.task_id<<" ,cost = "<< fixed << setprecision(3) << setw(6)<< bt.cost);
         res.best_task.task_id = bt.task_id;
         res.best_task.goal = bt.goal; 
         res.best_task.room_id = bt.target_id;
@@ -145,7 +146,6 @@ public:
         vector<Task> v;
 
         sql_client.update_expired_tasks_canceled(t); // set exired task to canceled
-        sql_client.print_table("tasks"); 
 
         if(battery < 20){ // charging
             // create_charging_task(t,robot_pose);
@@ -153,28 +153,45 @@ public:
             // find if there are execute task
             
             v = sql_client.query_runable_tasks("ExecuteTask");
-            
-            if(v.size() !=0){
+            ROS_INFO_STREAM("found "<<v.size()<<" execute tasks");
+            if(v.size() ==0){
                 v = sql_client.query_runable_tasks("GatherEnviromentInfo");
+                ROS_INFO_STREAM("found "<<v.size()<<"gather enviroment info tasks");
             }
         }
+        if(v.size()==0){
+            Task task;
+            task.task_id = -1;
+            return task;
+        }
 
-        for(auto i :v){
+        ROS_INFO_STREAM("Task_id  Task_type Target_id Priority Open_pos Distance Sec_diff Cost");
+        ROS_INFO("-----------------------------------------------------------------------------");
+        for(auto &i :v){
                CostFunction cf(
                    calculate_distance(i.goal.pose,robot_pose),
-                   (i.goal.header.stamp- t).sec,
+                   i.goal.header.stamp.sec - t.sec,
                    i.priority,
                    i.open_pos,
                    battery
                 );
                 i.cost = cf._cost;
+
+                ROS_INFO_STREAM(
+                    setw(3) <<i.task_id <<" "<<setw(5)<<i.task_type <<setw(4) << i.target_id << setw(2) << i.priority << setprecision(3)<< setw(4) << 
+                    i.open_pos << " " << setprecision(3)<< setw(5) << cf._distance << " "<<fixed<<setprecision(3) << setw(10) <<cf._sec_diff<< " " <<fixed << setprecision(3) << setw(6) <<i.cost 
+                );
         }
 
         std::sort(v.begin(),v.end(),
         [](const Task& a, const Task&b)->bool
         {
-                return a.cost <b.cost;
+                return a.cost >b.cost;
         });
+
+        for(auto j:v){
+            ROS_INFO_STREAM(j.task_id<<" "<<j.cost);
+        }
         return v.back();
     }
 

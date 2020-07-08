@@ -29,8 +29,10 @@ TEST_F(SqlTest,insert_task){
 }
 
 TEST_F(SqlTest,query_runable_task){
+    ASSERT_GT(Util::str_ros_time("2020-07-08 12:20:00"),ros::Time::now());
     auto v = sql_client.query_runable_tasks("GatherEnviromentInfo");
     ASSERT_GT(v.size(),0);
+    ASSERT_LT(v.back().goal.header.stamp,ros::Time::now());
 }
 
 
@@ -38,10 +40,6 @@ TEST_F(SqlTest,set_expired_task_to_canceled){
     sql_client.update_expired_tasks_canceled(ros::Time::now());
 }
 
-
-TEST_F(SqlTest,insert_tasks_to_cost){
-    sql_client.insert_available_task_to_costs(ros::Time::now(),5);
-}
 
 TEST_F(SqlTest,query_charging_station){
     auto v = sql_client.query_charging_station();
@@ -58,14 +56,7 @@ TEST_F(SqlTest,insert_new_go_to_point_task){
     int id = sql_client.insert_new_go_to_point_task(goal);
     ASSERT_GT(id,0);
 }
-TEST_F(SqlTest,update_distance){
-    sql_client.update_distances_in_costs(2,10);
-}
 
-TEST_F(SqlTest,query_best_task){
-    int id = sql_client.query_task_id_highest_cost();
-    ASSERT_GT(id,0)<<"id = "<<id;
-}
 
 TEST_F(SqlTest,update_returned_task){
     sql_client.update_returned_task(2,ros::Duration(70),2);
@@ -104,11 +95,10 @@ TEST_F(SqlTest,insert_to_door_status){
 }
 
 int main(int argc, char** argv){
+    testing::InitGoogleTest(&argc,argv);
     ros::init(argc,argv,"TestNode");
 
     ros::NodeHandle nh;
-
-    testing::InitGoogleTest(&argc,argv);
 
     std::thread t([]{while(ros::ok()) ros::spin();});
 

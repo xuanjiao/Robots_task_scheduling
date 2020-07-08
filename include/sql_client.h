@@ -111,29 +111,6 @@ class SQLClient{
     }
 
 
-
-    // Task query_go_to_point_tasks(){
-    //   sql::ResultSet* res;
-    //   vector<Task> v;
-    //   geometry_msgs::PoseStamped goal;
-      
-    //   res = stmt->executeQuery(
-    //     "SELECT * FROM tasks INNER JOIN targets ON tasks.target_id = targets.target_id WHERE tasks.task_type = 'GoToPoint'"
-    //   );
-    //   if(res->rowsCount()!=0){
-
-    //     while(res->next()){
-    //       Task task;
-    //       task.goal.header.stamp = Util::str_ros_time(res->getString("start_time"));
-    //       task.goal.header.frame_id = "map";
-    //       task.target_id = res->getInt("target_id");
-    //       task.task_id =  res->getInt("task_id");
-    //     }
-      
-    //   }
-    
-    //}
-    
     vector<tuple<int,geometry_msgs::Pose,long double>>
     query_target_pose_and_open_pos_st(string time){
       sql::ResultSet* res;
@@ -168,7 +145,8 @@ class SQLClient{
       sql::ResultSet* res;
       vector<Task> v;
       res = stmt->executeQuery(
-       "SELECT * FROM targets tg \
+       "SELECT tasks.priority, o.open_pos_st, tasks.target_id, tasks.task_id, tasks.task_type, tasks.start_time, \
+        tg.position_x, tg.position_y, tg.orientation_z, tg.orientation_w FROM targets tg \
         INNER JOIN tasks ON tasks.target_id = tg.target_id \
         INNER JOIN open_possibilities o WHERE tg.target_id = o.door_id \
         AND DAYOFWEEK(tasks.start_time) = o.day_of_week \
@@ -220,39 +198,6 @@ class SQLClient{
       return infos;
     }
 
-    // get best task id
-    int query_task_id_highest_cost(){
-        // Calculate cost
-        int task_id = -1;
-        sql::ResultSet* res;
-        stmt->executeUpdate("UPDATE costs SET cost = 1.0 * distance + 0.2 * time_diff + (-100) * open_pos_st +(-10) * priority  + (-1.0) * battery");
-        res = stmt->executeQuery("SELECT task_id FROM costs WHERE cost = (SELECT min(cost) FROM costs)");
-        res->next();
-        task_id = res->getInt("task_id"); // get task id which has highest cost
-        stmt->executeUpdate("UPDATE tasks SET cur_status = 'Running' WHERE task_id = "+to_string(task_id));
-        delete res;
-        return task_id;
-    }
-
-        // get best task id
-    Task query_task_highest_cost(){
-        Task task;
-        int task_id = -1;
-        sql::ResultSet* res;
-        stmt->executeUpdate("UPDATE costs SET cost = 1.0 * distance + 0.2 * time_diff + (-100) * open_pos_st +(-10) * priority  + (-1.0) * battery");
-    res = stmt->executeQuery("SELECT * FROM costs c INNER JOIN tasks t ON t.task_id = c.task_id WHERE c.cost = (SELECT min(cost) FROM costs)");
-        if(res->rowsCount() == 1){
-          
-          task.task_id = res->getInt("task_id"); // get task id which has highest cost
-          task.target_id = res->getInt("target_id");
-          task.task_type = res->getString("task_type");
-          stmt->executeUpdate("UPDATE tasks SET cur_status = 'Running' WHERE task_id = "+to_string(task_id));
-        }
-       
-        delete res;
-        return task;
-    }
-    
     // Create new enter room tasks
     bool insert_gather_info_tasks(int num, ros::Time start, ros::Duration interval){
       sql::ResultSet* res;
@@ -328,24 +273,6 @@ class SQLClient{
       delete res;
       return v;
     } 
-
-    // insert infomation except distance to cost table
-    void insert_available_task_to_costs(ros::Time cur_time, double battery){
-        stmt->execute("TRUNCATE costs");
-        stmt->execute(
-          " INSERT INTO costs(task_id,robot_id,priority, open_pos_st,time_diff, battery) \
-            SELECT t.task_id, t.robot_id, t.priority, o.open_pos_st, TIMESTAMPDIFF(SECOND,'" + Util::time_str(cur_time) + "',t.start_time)," + to_string(battery) +" FROM open_possibilities o \
-            INNER JOIN tasks t \
-            WHERE t.cur_status IN('Created','WaitingToRun') AND t.target_id = o.door_id AND dayofweek(t.start_time) = o.day_of_week AND TIME(t.start_time) BETWEEN o.start_time AND o.end_time"
-        );
-    }
-
-    // insert distance to cost table
-    void update_distances_in_costs(int id,double dist){
-          stmt->executeUpdate(
-            "UPDATE costs SET distance = " + to_string(dist) + " WHERE task_id = " + to_string(id)
-          );
-    }
 
     // returned task
     void update_returned_task(int task_id, ros::Duration d, int pri_inc){

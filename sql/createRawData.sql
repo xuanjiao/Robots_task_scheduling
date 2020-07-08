@@ -18,7 +18,7 @@ begin
           insert into door_status
           select 
             id,
-            if(rand()*100 < open_pos,1,0), 
+            if(rand()< open_pos,1,0), 
             cur_time -- create door status according to possibility table
                 from open_possibilities
 		    where TIME(cur_time) between start_time and end_time and id = door_id and dayofweek(cur_time) = day_of_week;

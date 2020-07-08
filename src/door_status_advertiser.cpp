@@ -35,7 +35,7 @@ class Advertiser{
                 robot_navigation::sensor_data msg;
                 msg.id = get<0>(tl);
                 msg.pose = get<1>(tl).position;
-                msg.door_status = rand()%100 < (get<2>(tl))?1:0;
+                msg.door_status = rand()%100 /(double)100< (get<2>(tl))?1:0;
                 msg.stamp  = now;
                 pub.publish(msg);
                 ROS_INFO_STREAM(time << "publish a message:\n " <<msg);
