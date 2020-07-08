@@ -1,10 +1,13 @@
 #include "ros/ros.h"
 #include "robot_navigation/sensor_data.h"
 #include "robot_navigation/make_task.h"
+#include "robot_navigation/RequestTask.h"
+#include "robot_navigation/GoToTargetAction.h"
 #include <cmath>
 #include <sstream>
 #include <move_base_msgs/MoveBaseAction.h>
 #include <actionlib/client/simple_action_client.h>
+
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <nav_msgs/Path.h>
@@ -20,20 +23,27 @@ enum MODE{
 };
 
 typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
- 
+typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
+
 class RobotController{
 
 public:
-    RobotController():move_base_client("move_base", true){
+    RobotController():
+    _mbc("move_base", true)
+    
+    {
         mode = 1;
         battery_level = 100;
 	    ros::Duration(1).sleep();
 
         // subscribe to door sensor node
-        sensor_sub = 
-            nh.subscribe<robot_navigation::sensor_data>("sensor_data",100,&RobotController::sensor_callback,this);      
-        task_client = nh.serviceClient<robot_navigation::make_task>("make_task");
-        move_base_client.waitForServer();
+        _ss = 
+            _nh.subscribe<robot_navigation::sensor_data>("sensor_data",100,&RobotController::sensor_callback,this);      
+        // _tc = nh.serviceClient<robot_navigation::make_task>("make_task");
+        _tc = _nh.serviceClient<robot_navigation::RequestTask>("RequestTask");
+
+
+        _mbc.waitForServer();
         request_current_pose();
         
         // request a best task from centralized pool and do this task
@@ -46,7 +56,7 @@ public:
     void request_current_pose(){
         // try to get its current location
         boost::shared_ptr<geometry_msgs::PoseWithCovarianceStamped const> sharedPtr =
-             ros::topic::waitForMessage<geometry_msgs::PoseWithCovarianceStamped>("amcl_pose",nh);
+             ros::topic::waitForMessage<geometry_msgs::PoseWithCovarianceStamped>("amcl_pose",_nh);
         if(sharedPtr == NULL){
            ROS_DEBUG("Failed to get current position");
            return;
@@ -55,11 +65,11 @@ public:
         ROS_INFO_STREAM("Robot get current position "<<Util::pose_str(current_pos));       
     }
 
-    void next_mode(MODE mode,bool result){
+    void next_mode(MODE mode,bool result, int param = 0){
         this->mode = mode;
         switch(mode){
             case MODE::SLEEP:
-               go_to_sleep();
+               go_to_sleep(param);
                break;
             case MODE::RUN:
                 run_task();
@@ -70,7 +80,7 @@ public:
         }
     }
 
-    void go_to_sleep(){
+    void go_to_sleep(int sec = 0){
         ros::Time wake_up = current_task.goal.header.stamp - ros::Duration(0.1);
         if( wake_up < ros::Time::now()){
             ROS_INFO_STREAM("Task is expired");
@@ -100,20 +110,39 @@ public:
         srv.request.last_task.door_status = current_task.door_status;
         ROS_INFO_STREAM("send task request. Robot position: "<<Util::pose_str(srv.request.pose));
 
-        if(!task_client.call(srv)){
+        if(!_tc.call(srv)){
             ROS_INFO_STREAM("Failed to send request");
             return;
         }
         current_task = srv.response.best_task;
         ROS_INFO_STREAM("receive response\n"<<current_task);
         
+        // next_mode(MODE::SLEEP,true);
+    }
+
+    // request a task from centralized pool
+    bool request_task(){
+        robot_navigation::RequestTask srv;
+        srv.request.battery_level =  battery_level;
+        srv.request.last_task_id = current_task.task_id;
+        srv.request.pose = current_pos;
+
+        if(!_tc.call(srv)){
+            ROS_INFO_STREAM("Failed to send request");
+            return;
+        }
+        ROS_INFO_STREAM("receive response: "<<srv.response.has_task?"has task":"no task");
+
         next_mode(MODE::SLEEP,true);
     }
 
+    void report_task_result(){
+
+    }
     void run_task(){
         move_base_msgs::MoveBaseGoal goal;
         goal.target_pose = current_task.goal;
-        move_base_client.sendGoal(goal,
+        _mbc.sendGoal(goal,
                 boost::bind(&RobotController::move_complete_callback,this, _1, _2),
                 MoveBaseClient::SimpleActiveCallback(),
                 boost::bind(&RobotController::move_position_feedback,this, _1));        
@@ -148,21 +177,22 @@ public:
             }
     }
 
+
 private:
     
     // Note handle
-    ros::NodeHandle nh;
+    ros::NodeHandle _nh;
     
     // Publisher
-    ros::Publisher move_base_pub;
+    ros::Publisher _mbp;
 
     // Subscriber 
-    ros::Subscriber pos_sub;
-    ros::Subscriber sensor_sub;
+    ros::Subscriber _ps;
+    ros::Subscriber _ss;
 
     // client
-    ros::ServiceClient task_client;
-    MoveBaseClient move_base_client;
+    ros::ServiceClient _tc;
+    MoveBaseClient _mbc;
 
     geometry_msgs::Pose current_pos;
     robot_navigation::task_info current_task;

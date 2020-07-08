@@ -1,0 +1,5 @@
+geometry_msgs/Pose pose # current position
+int16 battery_level     
+int8 last_task_id
+---
+bool has_task

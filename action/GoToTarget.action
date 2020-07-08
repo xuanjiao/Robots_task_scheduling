@@ -1,0 +1,14 @@
+#goal definition
+geometry_msgs/PoseStamped goal
+int8 target_id 
+string task_type
+int8 task_id
+---
+#result definition
+bool isCompleted
+int8 task_id
+---
+#feedback
+int8 door_id 
+time m_time
+uint8 door_status
