@@ -1,6 +1,6 @@
 #include "ros/ros.h"
-#include "robot_navigation/make_task.h"
-#include "robot_navigation/RequestTask.h"
+// #include "robot_navigation/make_task.h"
+#include "robot_navigation/GetATask.h"
 #include "robot_navigation/GoToTargetAction.h"
 #include <geometry_msgs/PoseStamped.h>
 #include <actionlib/client/simple_action_client.h>
@@ -31,7 +31,7 @@ class CentralizedPool{
 public:
  CentralizedPool():
         _sc("centralized_pool","pass"),
-        _gac("GoToTargetActionClient",true) //  spins up a thread to service this action's subscriptions. 
+        _gac("GoToTargetAction",true) //  spins up a thread to service this action's subscriptions. 
     {
         init();
         create_gather_info_tasks(10);
@@ -41,7 +41,7 @@ public:
 	    ros::Duration(1).sleep();
         ROS_INFO_STREAM("Current office time: "<<Util::time_str(ros::Time::now()));
         // _ts = _nh.advertiseService("make_task",&CentralizedPool::process_robot_request,this);
-        _ts = _nh.advertiseService("RequestTask",&CentralizedPool::when_robot_request_task,this);
+        _ts = _nh.advertiseService("GetATask",&CentralizedPool::WhenRobotRequestTask,this);
         _pc = _nh.serviceClient<nav_msgs::GetPlan>("move_base/NavfnROS/make_plan");      
     
     }
@@ -63,6 +63,48 @@ public:
         _sc.insert_new_go_to_point_task(goal);
     }
     
+    // call back when receive robot request for task
+    bool WhenRobotRequestTask(robot_navigation::GetATask::Request &req, 
+        robot_navigation::GetATask::Response &res){  
+        ROS_INFO_STREAM("Receive request from robot\n"<<req);
+        _sc.print_table("tasks"); 
+        ros::Time cur_time = ros::Time::now();
+        Task bt = get_best_task(req.pose,cur_time,req.battery_level);
+        if(bt.task_id == -1){
+            res.has_task = false; // send a invalid task (task id = -1)
+        }else{
+            ROS_INFO_STREAM("Best task id = "<<bt.task_id<<" ,cost = "<< fixed << setprecision(3) << setw(6)<< bt.cost);
+            res.has_task = true;
+            send_robot_action(bt); 
+        }
+        return true;
+    }
+
+     // call when receive a door status from robot
+    void WhenReceiveInfoFromRobot(const robot_navigation::GoToTargetFeedbackConstPtr &feedback){
+        ROS_INFO_STREAM("Update door list and possibility table. [Time]:"<<
+            Util::time_str(feedback->m_time)<<" [Door] " << to_string(feedback->door_id) << 
+            " [status] "<<to_string(feedback->door_status));
+        _sc.insert_record_door_status_list(feedback->door_id,feedback->m_time,feedback->door_status); 
+        _sc.update_open_pos_table(feedback->door_id,feedback->m_time);
+    }
+
+    // call when robot receive a goal
+    void WhenActionActive(){
+        ROS_INFO_STREAM("Goal arrived to robot");
+    }
+
+    // Call when receive a complet event from robot
+    void WhenRobotFinishGoal(const actionlib::SimpleClientGoalState& state,
+           const robot_navigation::GoToTargetResult::ConstPtr &result){
+        ROS_INFO_STREAM("State "<<state.toString());
+        if(result->isCompleted){
+             ROS_INFO_STREAM("Mark task <<"<<result->task_id<<" as completed");
+             _sc.update_task_status(result->task_id,"RanToCompletion");// Mark task as RanToCompletion
+        }
+    }
+
+
     double calculate_distance(geometry_msgs::Pose target_pose, geometry_msgs::Pose robot_pose){
             double distance = 0;
         // for each task, request distance from move base plan server
@@ -144,66 +186,7 @@ public:
         return v.back();
     }
 
-    bool process_robot_request(robot_navigation::make_task::Request &req,robot_navigation::make_task::Response &res){
-        ros::Time cur_time = ros::Time::now();
-        int task_id = req.last_task.task_id;
-        ROS_INFO_STREAM("Receive request from robot\n"<<req);
-       
-        if(task_id == 0){
-            ROS_INFO_STREAM("Get initial request from robot");
-        }else{
-            auto p = _sc.query_target_id_type_from_task(task_id);
-            
-            // Process enter room task
-            if(p.second == "GatherEnviromentInfo"){
-                if(!req.last_task.is_completed){
-                    ROS_INFO_STREAM("Task failed");
-                    _sc.update_task_status(task_id,"Error");
-                }else{
-                    ROS_INFO_STREAM("Task Succeed");
-                    use_task_result(task_id,p.first,req.last_task.m_time, req.last_task.door_status); 
-                    if(req.last_task.door_status == false){
-                        reuse_task(task_id);
-                    }                
-                }
-            }       
-            // Process charging task
-            else if(p.second == "Charging"){
-                if(!req.last_task.is_completed){
-                    ROS_INFO_STREAM("Robot charging failed");
-                }else{
-                    ROS_INFO_STREAM("Robot charging succedd");
-                }
-            }
-        }
 
-        // Give robot new task 
-        Task bt = get_best_task(req.pose,cur_time,req.battery_level);
-        _sc.print_table("tasks"); 
-        ROS_INFO_STREAM("Best task id = "<<bt.task_id<<" ,cost = "<< fixed << setprecision(3) << setw(6)<< bt.cost);
-        res.best_task.task_id = bt.task_id;
-        res.best_task.goal = bt.goal; 
-        res.best_task.room_id = bt.target_id;
-        res.best_task.task_type = bt.task_type;
-        
-        return true;             
-    }
-
-    // call back when receive robot request for task
-    bool when_robot_request_task(robot_navigation::RequestTask::Request &req, 
-        robot_navigation::RequestTask::Response &res){  
-        ROS_INFO_STREAM("Receive request from robot\n"<<req);
-        _sc.print_table("tasks"); 
-        ros::Time cur_time = ros::Time::now();
-        Task bt = get_best_task(req.pose,cur_time,req.battery_level);
-        if(bt.task_id == -1){
-            res.has_task = false;
-        }else{
-            ROS_INFO_STREAM("Best task id = "<<bt.task_id<<" ,cost = "<< fixed << setprecision(3) << setw(6)<< bt.cost);
-            res.has_task = true;
-            send_robot_action(bt); 
-        }
-    }
 
     // Send robot new task 
     void send_robot_action(Task &bt){
@@ -211,18 +194,19 @@ public:
         g.goal = bt.goal;
         g.target_id = bt.target_id;
         g.task_type = bt.task_type;
-        g.target_id = bt.target_id;
+        g.task_id = bt.task_id;
+        
+        _gac.sendGoal(g,
+                boost::bind(&CentralizedPool::WhenRobotFinishGoal,this,_1,_2),
+                boost::bind(&CentralizedPool::WhenActionActive,this),
+                boost::bind(&CentralizedPool::WhenReceiveInfoFromRobot,this,_1)
+        );
+        ROS_INFO_STREAM("Send a goal\n"<<g);
     }
 
     void reuse_task(int task_id){
         // change task status from Running to WaitingToRun, increase 3 priority and increase 200s start time 
         _sc.update_returned_task(task_id,ros::Duration(200),3);
-    }
-
-    void use_task_result(int task_id,int door_id, ros::Time m_time, bool door_status){
-        _sc.update_task_list_completed(task_id); // mark task as RanToCompletion
-        _sc.insert_record_door_status_list(door_id,m_time,door_status); 
-        _sc.update_open_pos_table(door_id,m_time);
     }
 
  

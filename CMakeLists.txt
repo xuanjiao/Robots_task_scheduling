@@ -68,8 +68,8 @@ add_message_files(
 ## Generate services in the 'srv' folder
 add_service_files(
   FILES
-  make_task.srv
-  RequestTask.srv
+  # make_task.srv
+  GetATask.srv
 )
 
 ## Generate actions in the 'action' folder

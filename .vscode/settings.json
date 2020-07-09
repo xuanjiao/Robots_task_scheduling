@@ -61,7 +61,10 @@
         "iterator": "cpp",
         "*.ipp": "cpp",
         "forward_list": "cpp",
-        "string": "cpp"
+        "string": "cpp",
+        "core": "cpp",
+        "random": "cpp",
+        "*.txx": "cpp"
     },
     "cmake.configureOnOpen": false,
     "editor.tokenColorCustomizations": {

@@ -301,7 +301,7 @@ class SQLClient{
         // insert new record into door status table
         ROS_INFO_STREAM(" insert "<<to_string(door_id)<<" "<<measure_time<<" "<<door_status);
         result = stmt->execute("INSERT INTO door_status(door_id,door_status,date_time) VALUES('" + to_string(door_id) + "', " +to_string(door_status)+", '"+ mst+"')");
-        print_table("door_status");
+        // print_table("door_status");
       }catch(sql::SQLException e){
         ROS_INFO_STREAM(e.what());
       }
@@ -342,10 +342,6 @@ class SQLClient{
 
     void update_task_status(int task_id,string status){
       stmt->executeUpdate("UPDATE tasks set cur_status = '"+ status + "' WHERE task_id = " + to_string(task_id));
-    }
-    // Change completed task status to 'RanToCompletion'
-    void update_task_list_completed(int task_id){
-      stmt->executeUpdate("UPDATE tasks set cur_status = 'RanToCompletion' WHERE task_id = " + to_string(task_id));
     }
 
     // Change cancled task status to 'Canceled'

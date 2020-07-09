@@ -9,6 +9,7 @@ bool isCompleted
 int8 task_id
 ---
 #feedback
+int8 robot_id
 int8 door_id 
 time m_time
 uint8 door_status
