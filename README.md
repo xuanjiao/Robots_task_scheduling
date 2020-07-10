@@ -40,7 +40,7 @@ cost
 run Gazebo world
 
 ```
-    roslaunch robot_navigation simulation.launch
+    roslaunch robot_navigation single_robot_simulation.launch
 ```
 Use keyboard to controll one robot 
 
@@ -57,7 +57,7 @@ Start sensor node
 Start navigation stack
 
 ```
-    roslaunch turtlebot3_navigation turtlebot3_navigation_multi.launch
+    roslaunch turtlebot3_navigation turtlebot3_navigation.launch
 
 ```
 use estimate position tool in rviz to estimate position
@@ -67,11 +67,11 @@ use estimate position tool in rviz to estimate position
     roslaunch robot_navigation move_demo.launch
 ```
 ## Structure
+![robot_communication](./img/robot-communication.png)
 
-![structure](./img/robot-ros_structure.png)
+![robot_controller](./img/robot-robotController.png)
 
-## work flow
-![work flow](./img/robot-ros_workflow.png)
+![robot_database](./img/robot-database.png)
 
 cost_function.cost = 1.0 * distance + 0.2 * sec_diff + (-1.0) * statisic_open_possibility +(-10) * priority  +  (-1.0) * battery_level;
 
@@ -103,25 +103,13 @@ battery_level=  battery_level - 0.01 * distance - 0.001 * angle;
 ## Task type(plan)
 | Type             | target |possibile parent/child task type    | Priority | Can be interrupted | If can not arrive the goal        | If door closed       / charging station not empty                                                |   |
 |----------------------|----------|----------|----------|--------------------|--------------------------------------------------|-------------------------------------------------------------------------------|---|
-| GatherEnviromentInfo  | door/ sensors | non | 1-3      | yes                | put task into table(Error) and get another best task                            | put task into table(RanToCompletion), update pos_table | 
-| GoToPoint              | any point |GoToPoint |4        | no                 | put task into table(Error), alarm                            | robot wait outside the door ,  alarm                                                  |   |
+| GatherEnviromentInfo  | door/ sensors | non | 1-2      | yes                | put task into table(Error) and get another best task                            | put task into table(RanToCompletion), update pos_table | 
+| Execute task             | any point |Execute task |4        | no                 | put task into table(Error), alarm                            | robot wait outside the door ,  alarm                                                  |   |
 | Charging               | charging station | non | 5        | no                 | put task into table(Error), alarm | check another station                           |   |
-
-### How to give "Go to point" task to robot (plan)
-
-Require: 
-
-1.  Must run task at time point
-2.  Run a set of task continuesly
-
-Options:
-
-1. Give robot a task chain and robot store them into memory
-2. When system time = task start time, give robot first one. When first one finished, give robot the next one.
 
 
 ## TO DO
 
-
+- establish multi robot simulation
 - read paper
 
