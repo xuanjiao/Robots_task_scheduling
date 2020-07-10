@@ -111,5 +111,7 @@ battery_level=  battery_level - 0.01 * distance - 0.001 * angle;
 ## TO DO
 
 - establish multi robot simulation
+- optimize battery charging task
+- task ganerator
 - read paper
 
