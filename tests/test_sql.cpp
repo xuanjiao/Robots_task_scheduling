@@ -25,42 +25,42 @@ TEST_F(SqlTest,example){
 // }
 
 TEST_F(SqlTest,insert_task){
-    sql_client.insert_gather_info_tasks(5,ros::Time::now(),ros::Duration(300));
+    sql_client.InsertMultipleGatherInfoTasks(5,ros::Time::now(),ros::Duration(300));
 }
 
 TEST_F(SqlTest,query_runable_task){
     ASSERT_GT(Util::str_ros_time("2020-07-08 12:20:00"),ros::Time::now());
-    auto v = sql_client.query_runable_tasks("GatherEnviromentInfo");
+    auto v = sql_client.QueryRunableTasks("GatherEnviromentInfo");
     ASSERT_GT(v.size(),0);
     ASSERT_LT(v.back().goal.header.stamp,ros::Time::now());
 }
 
 
 TEST_F(SqlTest,set_expired_task_to_canceled){
-    sql_client.update_expired_tasks_canceled(ros::Time::now());
+    sql_client.UpdateExpiredTaskCanceled(ros::Time::now());
 }
 
 
-TEST_F(SqlTest,query_charging_station){
-    auto v = sql_client.query_charging_station();
+TEST_F(SqlTest,QueryChargingStations){
+    auto v = sql_client.QueryChargingStations();
     ASSERT_EQ(v.size(),3);
 }
 
 TEST_F(SqlTest,insert_charging_task){
-    int id = sql_client.insert_new_charging_task('w',ros::Time::now());
+    int id = sql_client.InsertAChargingTask('w',ros::Time::now());
     ASSERT_GT(id,0);
 }
 
-TEST_F(SqlTest,insert_new_go_to_point_task){
+TEST_F(SqlTest,InsertAExecuteTask){
     geometry_msgs::PoseStamped goal;
-    int id = sql_client.insert_new_go_to_point_task(goal);
+    int id = sql_client.InsertAExecuteTask(goal);
     ASSERT_GT(id,0);
 }
 
 
-TEST_F(SqlTest,update_returned_task){
-    sql_client.update_returned_task(2,ros::Duration(70),2);
-    sql_client.update_returned_task(4,ros::Duration(70),4);
+TEST_F(SqlTest,UpdateReturnedTask){
+    sql_client.UpdateReturnedTask(2,ros::Duration(70),2);
+    sql_client.UpdateReturnedTask(4,ros::Duration(70),4);
 }
 
 TEST_F(SqlTest,create_database){
@@ -72,25 +72,24 @@ TEST_F(SqlTest,create_database){
 
 TEST_F(SqlTest,update_pos_table){   
     ros::Time now = ros::Time::now();
-    sql_client.update_task_list_completed(2);
     auto p = sql_client.query_target_id_type_from_task(2);
     ASSERT_EQ(p.first,'b');
     ASSERT_EQ(p.second,"EnterRoom");
-    sql_client.insert_record_door_status_list(p.first,now,0);
-    auto t = sql_client.query_st_et_dw_from_open_pos(p.first,ros::Time::now());
+    sql_client.InsertDoorStatusRecord(p.first,now,0);
+    auto t = sql_client.QueryStartTimeEndTimeDayFromOpenPossibilitiesTable(p.first,ros::Time::now());
     // ASSERT_EQ(get<0>(t),"16:00:00");
     // ASSERT_EQ(get<1>(t),"23:59:59");
     ASSERT_EQ(get<2>(t),5);
-    //sql_client.update_open_pos_table(target_id,now);
+    //sql_client.UpdateOpenPossibilities(target_id,now);
 }
 
-TEST_F(SqlTest,update_task_status){
-    sql_client.update_task_status(1,"Canceled");
+TEST_F(SqlTest,UpdateTaskStatus){
+    sql_client.UpdateTaskStatus(1,"Canceled");
 }
 
 TEST_F(SqlTest,insert_to_door_status){
     ros::Time now = ros::Time::now();
-    sql_client.insert_record_door_status_list('a',now,false);
+    sql_client.InsertDoorStatusRecord('a',now,false);
     
 }
 

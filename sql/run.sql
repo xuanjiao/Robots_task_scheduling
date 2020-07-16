@@ -37,6 +37,13 @@ CREATE TABLE targets (
     PRIMARY KEY (target_id)
 );
 
+DROP TABLE IF EXISTS  charging_stations;
+CREATE TABLE charging_stations(
+	station_id INT REFERENCES targets(target_id),
+    isFree BOOLEAN DEFAULT true,
+    PRIMARY KEY (station_id)
+);
+
 drop table if exists tasks;
 CREATE TABLE tasks (
     task_id INT AUTO_INCREMENT,
@@ -201,21 +208,19 @@ insert into open_possibilities values( 1,1,'00:00:00','23:59:59',0,0);
 insert into open_possibilities values( 2,1,'00:00:00','23:59:59',0,0);
 insert into open_possibilities values( 3,1,'00:00:00','23:59:59',0,0);
 
--- 
+-- insert charging station to table
+INSERT INTO charging_stations(station_id)
+SELECT target_id FROM targets WHERE target_type = 'ChargingStation';
+
+ 
 -- -- -- create raw data with datetime and door status, 
   call createRawData(1,'2020-06-01 8:00:00','00:10:00',50);
   call createRawData(2,'2020-06-01 8:00:00','00:10:00',50);
   call createRawData(3,'2020-06-01 8:00:00','00:10:00',50);
 -- 
-SELECT 
-    *
-FROM
-    door_status;
-SELECT 
-    *
-FROM
-    open_possibilities;
-SELECT 
-    *
-FROM
-    targets;
+
+
+SELECT * FROM door_status;
+SELECT * FROM open_possibilities;
+SELECT * FROM targets;
+SELECT * FROM charging_stations;

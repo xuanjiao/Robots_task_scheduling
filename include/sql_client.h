@@ -32,10 +32,10 @@ typedef struct {
 class SQLClient{
   public:
     SQLClient(string user_name, string pass):user_name(user_name),pass(pass){
-      connect_to_database();
+      ConnectToDatabase();
     }
       
-    void connect_to_database(){
+    void ConnectToDatabase(){
       driver = get_driver_instance();
       con = driver->connect(URI,user_name,pass);
       if(con->isValid()){
@@ -48,13 +48,13 @@ class SQLClient{
       stmt = con->createStatement();
     }
 
-    // truncate costs table and task table
-    void truncate_costs_tasks(){
-      stmt->execute("TRUNCATE tasks");
-      stmt->execute("TRUNCATE costs");
+    // truncate table
+    void TruncateTable(string name){
+      stmt->execute("TRUNCATE "+name);
     }
 
-    void print_table(string table_name){
+    // Print table include columns and data
+    void PrintTable(string table_name){
       
       sql::ResultSet *res;
       stringstream ss;
@@ -82,37 +82,8 @@ class SQLClient{
       ROS_INFO_STREAM(ss.str());
     }
 
-    int query_multiple_target_position(map<int,geometry_msgs::Pose> &map,std::string target_type){
-      sql::ResultSet* res;
-      int ret = -1;
-      try
-      { 
-        res = stmt->executeQuery("SELECT * FROM targets WHERE target_type = " + target_type);
-        ret = res->rowsCount();
-        ROS_INFO_STREAM("Found " << ret << " target type "<< target_type);
-        while(res->next()){
-          int id = res->getInt("target_id");
-          geometry_msgs::Pose pose;
-          pose.position.x = res->getDouble("position_x");
-          pose.position.y = res->getDouble("position_y");
-          pose.orientation.z = res->getDouble("orientation_z");
-          pose.orientation.w = res->getDouble("orientation_w");
-          map.insert(pair<int,geometry_msgs::Pose>(id,pose)) ;
-        }
-      }
-      catch(const exception& e)
-      {
-        ROS_INFO_STREAM( e.what() );
-        delete res; 
-        exit(1);
-      }      
-        delete res; 
-        return ret;
-    }
-
-
     vector<tuple<int,geometry_msgs::Pose,long double>>
-    query_target_pose_and_open_pos_st(string time){
+    QueryTargetPositionAndOpenPossibilities(string time){
       sql::ResultSet* res;
       vector<tuple<int,geometry_msgs::Pose,long double>> v;
       try{
@@ -141,7 +112,7 @@ class SQLClient{
     
     // get task info to calculate cost
     vector<Task>
-    query_runable_tasks(string type){
+    QueryRunableTasks(string type){
       sql::ResultSet* res;
       vector<Task> v;
       res = stmt->executeQuery(
@@ -174,32 +145,9 @@ class SQLClient{
       return v;
     }
 
-    // get task info to calculate cost
-    vector<tuple<int,ros::Time,geometry_msgs::Pose>>
-    query_all_pose_time_in_costs(){
-      sql::ResultSet* res;
-    vector<tuple<int,ros::Time,geometry_msgs::Pose>> infos;
-      res = stmt->executeQuery(
-        " SELECT c.task_id, tasks.start_time, t.position_x, t.position_y, t.orientation_w, t.orientation_z FROM targets t \
-        inner join costs c, tasks \
-        ON tasks.target_id = t.target_id and c.task_id = tasks.task_id"
-      );
-      while(res->next()){
-        geometry_msgs::Pose pose;
-        string time = res->getString("start_time");
-        pose.position.x = res->getDouble("position_x");
-        pose.position.y = res->getDouble("position_y");
-        pose.orientation.z = res->getDouble("orientation_z");
-        pose.orientation.w = res->getDouble("orientation_w");
-        
-        infos.push_back(make_tuple(res->getInt("task_id"),Util::str_ros_time(time),pose));
-      }
-      delete res;
-      return infos;
-    }
 
     // Create new enter room tasks
-    bool insert_gather_info_tasks(int num, ros::Time start, ros::Duration interval){
+    bool InsertMultipleGatherInfoTasks(int num, ros::Time start, ros::Duration interval){
       sql::ResultSet* res;
       bool ret;
       vector<int> doors;
@@ -220,7 +168,7 @@ class SQLClient{
     }
     
     // Create new charging task and return its task id
-    int insert_new_charging_task(int target_id,ros::Time start){
+    int InsertAChargingTask(int target_id,ros::Time start){
         sql::ResultSet* res;        
         int id = -1;
         stmt->execute(
@@ -233,7 +181,7 @@ class SQLClient{
         return id;
     }
 
-    int insert_new_go_to_point_task(geometry_msgs::PoseStamped target){
+    int InsertAExecuteTask(geometry_msgs::PoseStamped target){
         sql::ResultSet* res;        
         int target_id = -1,task_id = -1;
         stmt->execute(
@@ -258,7 +206,7 @@ class SQLClient{
 
     // Create charging task
     vector<pair<int,geometry_msgs::Pose>>
-    query_charging_station(){
+    QueryChargingStations(){
       vector<pair<int,geometry_msgs::Pose>> v;
       sql::ResultSet* res;
       res = stmt->executeQuery("SELECT * FROM targets WHERE target_type = 'ChargingStation'");
@@ -274,41 +222,53 @@ class SQLClient{
       return v;
     } 
 
-    // returned task
-    void update_returned_task(int task_id, ros::Duration d, int pri_inc){
+    // Change time and Priority of a returned task
+    void UpdateReturnedTask(int task_id, ros::Duration d, int pri_inc){
       stmt->executeUpdate("UPDATE tasks set priority = if((priority + " + to_string(pri_inc) +  ")>5,5,priority + "
                 + to_string(pri_inc) + ") , cur_status = 'WaitingToRun', start_time  = DATE_ADD(start_time, INTERVAL "+to_string(d.sec)+" SECOND) where task_id = "+to_string(task_id));
 
     }
 
-    pair<int,string> query_target_id_type_from_task(int task_id){
-      sql::ResultSet* res;
-      int door;
-      string type;
-      // get door id
-      res = stmt->executeQuery("SELECT * FROM tasks WHERE task_id = "+ to_string(task_id));
-      res->next();
-      door = res->getInt("target_id");
-      type = res->getString("task_type");
-      delete res;
-      return make_pair(door,type);
-    }
-
-    bool insert_record_door_status_list(int door_id, ros::Time measure_time,bool door_status){
+    // Insert a record in door status list
+    bool InsertDoorStatusRecord(int door_id, ros::Time measure_time,bool door_status){
       string mst = Util::time_str(measure_time);
        bool result;
       try{
         // insert new record into door status table
         ROS_INFO_STREAM(" insert "<<to_string(door_id)<<" "<<measure_time<<" "<<door_status);
         result = stmt->execute("INSERT INTO door_status(door_id,door_status,date_time) VALUES('" + to_string(door_id) + "', " +to_string(door_status)+", '"+ mst+"')");
-        // print_table("door_status");
+        // PrintTable("door_status");
       }catch(sql::SQLException e){
         ROS_INFO_STREAM(e.what());
       }
       return result;
     }
 
-    tuple<string,string,int> query_st_et_dw_from_open_pos(int door_id, ros::Time measure_time){
+    // Find all records from this time and day of weeks, and calculate new open possibilities
+    void UpdateOpenPossibilities(int door_id, ros::Time measure_time){
+      auto t = QueryStartTimeEndTimeDayFromOpenPossibilitiesTable(door_id,measure_time);
+
+      // update open possibility table
+      stmt->executeUpdate(
+        "UPDATE open_possibilities o \
+          SET  o.open_pos_st = (SELECT SUM(door_status) / COUNT(door_status)  FROM  door_status ds \
+              WHERE ds.door_id = '" + to_string(door_id) + "' AND DAYOFWEEK(ds.date_time) = '" + to_string(get<2>(t)) + 
+              "' AND TIME(ds.date_time) BETWEEN '" + get<0>(t) + "' AND '"+ get<1>(t) +
+          "') WHERE o.door_id = '" + to_string(door_id) + "' AND o.day_of_week = '" + to_string(get<2>(t)) + "' AND o.start_time =' " + get<0>(t) + "' AND o.end_time = '"+ get<1>(t) +"'"       
+      );
+    }
+
+    // Change task status in tasks table
+    void UpdateTaskStatus(int task_id,string status){
+      stmt->executeUpdate("UPDATE tasks set cur_status = '"+ status + "' WHERE task_id = " + to_string(task_id));
+    }
+
+    // Change cancled task status to 'Canceled'
+    void UpdateExpiredTaskCanceled(ros::Time now){
+      stmt->executeUpdate("UPDATE tasks set cur_status = 'Canceled' WHERE start_time < '" + Util::time_str(now)+"'");
+    }
+
+    tuple<string,string,int> QueryStartTimeEndTimeDayFromOpenPossibilitiesTable(int door_id, ros::Time measure_time){
       sql::ResultSet* res;
       string st,et,mst = Util::time_str(measure_time);
       int dw;
@@ -326,33 +286,12 @@ class SQLClient{
       delete res;
       return make_tuple(st,et,dw);
     }
-    
-    void update_open_pos_table(int door_id, ros::Time measure_time){
-      auto t = query_st_et_dw_from_open_pos(door_id,measure_time);
 
-      // update open possibility table
-      stmt->executeUpdate(
-        "UPDATE open_possibilities o \
-          SET  o.open_pos_st = (SELECT SUM(door_status) / COUNT(door_status)  FROM  door_status ds \
-              WHERE ds.door_id = '" + to_string(door_id) + "' AND DAYOFWEEK(ds.date_time) = '" + to_string(get<2>(t)) + 
-              "' AND TIME(ds.date_time) BETWEEN '" + get<0>(t) + "' AND '"+ get<1>(t) +
-          "') WHERE o.door_id = '" + to_string(door_id) + "' AND o.day_of_week = '" + to_string(get<2>(t)) + "' AND o.start_time =' " + get<0>(t) + "' AND o.end_time = '"+ get<1>(t) +"'"       
-      );
-    }
-
-    void update_task_status(int task_id,string status){
-      stmt->executeUpdate("UPDATE tasks set cur_status = '"+ status + "' WHERE task_id = " + to_string(task_id));
-    }
-
-    // Change cancled task status to 'Canceled'
-    void update_expired_tasks_canceled(ros::Time now){
-      stmt->executeUpdate("UPDATE tasks set cur_status = 'Canceled' WHERE start_time < '" + Util::time_str(now)+"'");
-    }
 
     ~SQLClient(){
        delete stmt;
     }
-
+    
    private:
     string user_name;
     string pass;

@@ -47,10 +47,9 @@ public:
     }
 
     void create_gather_info_tasks(int num){
-        _sc.print_table("targets");
-        _sc.truncate_costs_tasks(); // clear task table and cost table
-        _sc.insert_gather_info_tasks(num,ros::Time::now(),ros::Duration(30));
-        _sc.print_table("tasks");
+        _sc.TruncateTable("tasks"); // clear task table and cost table
+        _sc.InsertMultipleGatherInfoTasks(num,ros::Time::now(),ros::Duration(30));
+        _sc.PrintTable("tasks");
     }
 
     void create_go_to_point_task(){
@@ -60,14 +59,14 @@ public:
         goal.pose.position.z = -0;
         goal.header.stamp = ros::Time::now();
         goal.header.frame_id = "map";
-        _sc.insert_new_go_to_point_task(goal);
+        _sc.InsertAExecuteTask(goal);
     }
     
     // call back when receive robot request for task
     bool WhenRobotRequestTask(robot_navigation::GetATask::Request &req, 
         robot_navigation::GetATask::Response &res){  
         ROS_INFO_STREAM("Receive request from robot\n"<<req);
-        _sc.print_table("tasks"); 
+        _sc.PrintTable("tasks"); 
         ros::Time cur_time = ros::Time::now();
         Task bt = get_best_task(req.pose,cur_time,req.battery_level);
         if(bt.task_id == -1){
@@ -85,8 +84,8 @@ public:
         ROS_INFO_STREAM("Update door list and possibility table. [Time]:"<<
             Util::time_str(feedback->m_time)<<" [Door] " << to_string(feedback->door_id) << 
             " [status] "<<to_string(feedback->door_status));
-        _sc.insert_record_door_status_list(feedback->door_id,feedback->m_time,feedback->door_status); 
-        _sc.update_open_pos_table(feedback->door_id,feedback->m_time);
+        _sc.InsertDoorStatusRecord(feedback->door_id,feedback->m_time,feedback->door_status); 
+        _sc.UpdateOpenPossibilities(feedback->door_id,feedback->m_time);
     }
 
     // call when robot receive a goal
@@ -100,7 +99,7 @@ public:
         ROS_INFO_STREAM("State "<<state.toString());
         if(result->isCompleted){
              ROS_INFO_STREAM("Mark task <<"<<result->task_id<<" as completed");
-             _sc.update_task_status(result->task_id,"RanToCompletion");// Mark task as RanToCompletion
+             _sc.UpdateTaskStatus(result->task_id,"RanToCompletion");// Mark task as RanToCompletion
         }
     }
 
@@ -138,15 +137,15 @@ public:
     
     Task get_best_task(geometry_msgs::Pose robot_pose,ros::Time t,double battery){
         vector<Task> v;
-        _sc.update_expired_tasks_canceled(t); // set exired task to canceled
+        _sc.UpdateExpiredTaskCanceled(t); // set exired task to canceled
         if(battery < 20){ // charging
             // create_charging_task(t,robot_pose);
         }else{
             // find if there are execute task    
-            v = _sc.query_runable_tasks("ExecuteTask");
+            v = _sc.QueryRunableTasks("ExecuteTask");
             ROS_INFO_STREAM("found "<<v.size()<<" execute tasks");
             if(v.size() ==0){
-                v = _sc.query_runable_tasks("GatherEnviromentInfo");
+                v = _sc.QueryRunableTasks("GatherEnviromentInfo");
                 ROS_INFO_STREAM("found "<<v.size()<<"gather enviroment info tasks");
             }
         }
@@ -206,13 +205,13 @@ public:
 
     void reuse_task(int task_id){
         // change task status from Running to WaitingToRun, increase 3 priority and increase 200s start time 
-        _sc.update_returned_task(task_id,ros::Duration(200),3);
+        _sc.UpdateReturnedTask(task_id,ros::Duration(200),3);
     }
 
  
     std::pair<int,geometry_msgs::PoseStamped> 
     create_charging_task(ros::Time t,geometry_msgs::Pose rp){
-        auto v = _sc.query_charging_station();
+        auto v = _sc.QueryChargingStations();
         if(v.size()==0){
             ROS_INFO_STREAM("Failed to load charging station");
             exit(1);
@@ -226,7 +225,7 @@ public:
                 best.second = dist;
             }
         }
-        int id = _sc.insert_new_charging_task(best.first,t);
+        int id = _sc.InsertAChargingTask(best.first,t);
 
         auto p = find_if( begin(v), end(v),
                              [=](decltype(*begin(v)) item )->int

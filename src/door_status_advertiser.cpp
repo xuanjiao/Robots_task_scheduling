@@ -17,8 +17,8 @@ class Advertiser{
         ros::Duration(1).sleep();
         ROS_INFO_STREAM("Current time "<<ros::Time::now());
        
-        sql_client.connect_to_database();
-        sql_client.print_table("targets");
+        sql_client.ConnectToDatabase();
+        sql_client.PrintTable("targets");
         // load_room_position();
         pub = nh.advertise<robot_navigation::sensor_data>("sensor_data",100);
     }
@@ -26,7 +26,7 @@ class Advertiser{
     void query_publush_door_status(){
         ros::Time now = ros::Time::now();
         string time = Util::time_str(now);
-        auto v = sql_client.query_target_pose_and_open_pos_st(time);
+        auto v = sql_client.QueryTargetPositionAndOpenPossibilities(time);
         if(!v.size()){
  			ROS_INFO_STREAM("No result. Current time: "<<time);
             exit(1);
