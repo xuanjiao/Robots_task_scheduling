@@ -115,11 +115,8 @@ battery_level=  battery_level - 0.01 * distance - 0.001 * angle;
 ```
 
 ## Task type
-| Type             | target |possibile parent/child task type    | Priority | Can be interrupted | If task failed                                               |   |
-|----------------------|----------|----------|----------|--------------------|--------------------------------------------------|-------------------------------------------------------------------------------|---|
-| GatherEnviromentInfo  | door/ sensors | non | 1      | yes                |put task into table(Canceled))| 
-| Execute task             | any point |Execute task |2-4        | no                 |  put task into table(ToRerun)                                            |   |
-| Charging               | charging station | non | 5        | no                 | put task into table(ToRerun) |   |
+
+![TaskTypes](./img/robot-TaskTypes.png)
 
 ## TO DO
 
