@@ -124,7 +124,7 @@ class SQLClient{
        "SELECT tasks.priority, tasks.target_id, tasks.task_id, tasks.task_type, tasks.start_time, \
         tg.position_x, tg.position_y, tg.orientation_z, tg.orientation_w FROM targets tg \
         INNER JOIN tasks ON tasks.target_id = tg.target_id \
-        AND tasks.cur_status IN ('Created' , 'WaitingToRun') \
+        AND tasks.cur_status IN ('Created' ) \
         AND tasks.task_type = 'ExecuteTask'"
       );
       if(res->rowsCount()!=0){
@@ -161,7 +161,7 @@ class SQLClient{
         INNER JOIN open_possibilities o WHERE tg.target_id = o.door_id \
         AND DAYOFWEEK(tasks.start_time) = o.day_of_week \
         AND TIME(tasks.start_time) BETWEEN o.start_time AND o.end_time \
-        AND tasks.cur_status IN ('Created' , 'WaitingToRun') \
+        AND tasks.cur_status IN ('Created' ,'ToReRun') \
         AND tasks.task_type = 'GatherEnviromentInfo'"
       );
       if(res->rowsCount()!=0){
@@ -261,7 +261,7 @@ class SQLClient{
     // Change time and Priority of a returned task
     void UpdateReturnedTask(int task_id, ros::Duration d, int pri_inc){
       stmt->executeUpdate("UPDATE tasks set priority = if((priority + " + to_string(pri_inc) +  ")>5,5,priority + "
-                + to_string(pri_inc) + ") , cur_status = 'WaitingToRun', start_time  = DATE_ADD(start_time, INTERVAL "+to_string(d.sec)+" SECOND) where task_id = "+to_string(task_id));
+                + to_string(pri_inc) + ") , cur_status = 'ToReRun', start_time  = DATE_ADD(start_time, INTERVAL "+to_string(d.sec)+" SECOND) where task_id = "+to_string(task_id));
 
     }
 

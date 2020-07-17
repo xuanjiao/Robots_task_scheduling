@@ -34,6 +34,7 @@ CREATE TABLE targets (
     position_y DOUBLE DEFAULT 0,
     orientation_z DOUBLE DEFAULT 0,
     orientation_w DOUBLE DEFAULT 0,
+    CONSTRAINT Pose UNIQUE(position_x,position_y,orientation_z,orientation_w),
     PRIMARY KEY (target_id)
 );
 
@@ -52,23 +53,10 @@ CREATE TABLE tasks (
     target_id INT,
     robot_id INT DEFAULT 0,
     priority INT DEFAULT 0,
-    cur_status ENUM('Created', 'WaitingToRun', 'Running', 'RanToCompletion', 'Canceled','Error') DEFAULT 'Created',
+    cur_status ENUM('Created', 'WaitingToRun', 'Running', 'RanToCompletion', 'Canceled','Error','ToReRun') DEFAULT 'Created',
     parent_task INT,
     child_task INT,
     result varchar(255),
-    PRIMARY KEY (task_id)
-);
-
-drop table if exists costs;
-CREATE TABLE costs (
-    task_id INT,
-    robot_id INT,
-    priority INT,
-    open_pos_st DOUBLE,
-    time_diff DOUBLE,
-    battery DOUBLE,
-    cost DOUBLE,
-     distance DOUBLE,
     PRIMARY KEY (task_id)
 );
 

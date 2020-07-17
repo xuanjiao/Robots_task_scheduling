@@ -153,7 +153,7 @@ public:
         Task bt = GetBestTask(v,req.pose,cur_time,req.battery_level);
         ROS_INFO_STREAM("Best task id = "<<bt.task_id<<" ,cost = "<< fixed << setprecision(3) << setw(6)<< bt.cost);
         res.has_task = true;
-        _sc.UpdateTaskStatus(bt.task_id,"Running");
+        _sc.UpdateTaskStatus(bt.task_id,"WaitingToRun");
         SendRobotActionGoal(bt); 
     }
 
