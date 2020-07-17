@@ -103,8 +103,8 @@ battery_level=  battery_level - 0.01 * distance - 0.001 * angle;
 ## Task type(plan)
 | Type             | target |possibile parent/child task type    | Priority | Can be interrupted | If can not arrive the goal        | If door closed       / charging station not empty                                                |   |
 |----------------------|----------|----------|----------|--------------------|--------------------------------------------------|-------------------------------------------------------------------------------|---|
-| GatherEnviromentInfo  | door/ sensors | non | 1-2      | yes                | put task into table(Error) and get another best task                            | put task into table(RanToCompletion), update pos_table | 
-| Execute task             | any point |Execute task |4        | no                 | put task into table(Error), alarm                            | robot wait outside the door ,  alarm                                                  |   |
+| GatherEnviromentInfo  | door/ sensors | non | 1      | yes                | put task into table(Error) and get another best task                            | put task into table(RanToCompletion), update pos_table | 
+| Execute task             | any point |Execute task |2-4        | no                 | put task into table(Error), alarm                            | robot wait outside the door ,  alarm                                                  |   |
 | Charging               | charging station | non | 5        | no                 | put task into table(Error), alarm | check another station                           |   |
 
 

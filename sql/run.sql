@@ -40,7 +40,7 @@ CREATE TABLE targets (
 DROP TABLE IF EXISTS  charging_stations;
 CREATE TABLE charging_stations(
 	station_id INT REFERENCES targets(target_id),
-    isFree BOOLEAN DEFAULT true,
+    is_free BOOLEAN DEFAULT true,
     PRIMARY KEY (station_id)
 );
 

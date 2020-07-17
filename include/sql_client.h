@@ -19,13 +19,13 @@
 using namespace std;
 
 typedef struct {
-    int task_id;
-    string task_type;
-    int target_id;
-    double open_pos;
-    int priority;
+    int task_id = 0;
+    string task_type = "";
+    int target_id = 0;
+    double open_pos = 0.0;
+    int priority = 0;
     geometry_msgs::PoseStamped goal; // distination and timestamp
-    double cost;
+    double cost = 0.0;
 }Task;
 
 
@@ -60,7 +60,7 @@ class SQLClient{
       stringstream ss;
       list<sql::SQLString> column_names;
       try{         
-          ss << "\n-----------------------------------------------------------------------\n";
+          ss << "\nPrint table " << table_name << ":\n-----------------------------------------------------------------------\n";
             res = stmt->executeQuery("SHOW COLUMNS FROM " + table_name);
             while (res->next()){
               column_names.push_back(res->getString("Field"));   
@@ -68,11 +68,13 @@ class SQLClient{
             }
             ss << "\n---------------------------------------------------------------------\n";
             res = stmt->executeQuery("SELECT * FROM " + table_name);
-            while(res->next()){
-              for(sql::SQLString c : column_names){
-                  ss << res->getString(c)<<"  ";
+            if(res->rowsCount()!=0){
+              while(res->next()){
+                for(sql::SQLString c : column_names){
+                    ss << res->getString(c)<<"  ";
+                }
+                ss<< "\n";
               }
-              ss<< "\n";
             }
       }catch(const sql::SQLException &e){
         ROS_INFO_STREAM(e.what());
@@ -94,25 +96,62 @@ class SQLClient{
       }catch(sql::SQLException e){
         ROS_INFO_STREAM( e.what() );
       }
-      while(res->next()){
-        geometry_msgs::Pose pose;
-        pose.position.x = res->getDouble("position_x");
-        pose.position.y = res->getDouble("position_y");
-        pose.orientation.z = res->getDouble("orientation_z");
-        pose.orientation.w = res->getDouble("orientation_w");
-        v.push_back(
-          tuple<int,geometry_msgs::Pose,long double>(
-            res->getInt("target_id"), pose, res->getDouble("open_pos")
-          )
-        );
+      if(res->rowsCount()){
+        while(res->next()){
+          geometry_msgs::Pose pose;
+          pose.position.x = res->getDouble("position_x");
+          pose.position.y = res->getDouble("position_y");
+          pose.orientation.z = res->getDouble("orientation_z");
+          pose.orientation.w = res->getDouble("orientation_w");
+          v.push_back(
+            tuple<int,geometry_msgs::Pose,long double>(
+              res->getInt("target_id"), pose, res->getDouble("open_pos")
+            )
+          );
+        }
       }
+
       delete res;
       return v;
     }
     
+        // get task info to calculate cost
+    vector<Task>
+    QueryRunableExecuteTasks(){
+      sql::ResultSet* res;
+      vector<Task> v;
+      res = stmt->executeQuery(
+       "SELECT tasks.priority, tasks.target_id, tasks.task_id, tasks.task_type, tasks.start_time, \
+        tg.position_x, tg.position_y, tg.orientation_z, tg.orientation_w FROM targets tg \
+        INNER JOIN tasks ON tasks.target_id = tg.target_id \
+        AND tasks.cur_status IN ('Created' , 'WaitingToRun') \
+        AND tasks.task_type = 'ExecuteTask'"
+      );
+      if(res->rowsCount()!=0){
+        while(res->next()){
+          Task t;
+          t.priority = res->getInt("priority");
+          t.target_id = res->getInt("target_id");
+          t.task_id = res->getInt("task_id");
+          t.task_type = res->getString("task_type");
+
+          t.goal.header.frame_id = "map";
+          t.goal.header.stamp = Util::str_ros_time(res->getString("start_time"));
+          t.goal.pose.position.x = res->getDouble("position_x");
+          t.goal.pose.position.y = res->getDouble("position_y");
+          t.goal.pose.orientation.z = res->getDouble("orientation_z");
+          t.goal.pose.orientation.w = res->getDouble("orientation_w");
+          v.push_back(t);
+        } 
+      }
+
+      delete res;
+      return v;
+    }
+
     // get task info to calculate cost
     vector<Task>
-    QueryRunableTasks(string type){
+    QueryRunableGatherEnviromentInfoTasks(){
       sql::ResultSet* res;
       vector<Task> v;
       res = stmt->executeQuery(
@@ -125,22 +164,25 @@ class SQLClient{
         AND tasks.cur_status IN ('Created' , 'WaitingToRun') \
         AND tasks.task_type = 'GatherEnviromentInfo'"
       );
-      while(res->next()){
-        Task t;
-        t.priority = res->getInt("priority");
-        t.open_pos = res->getDouble("open_pos_st");
-        t.target_id = res->getInt("target_id");
-        t.task_id = res->getInt("task_id");
-        t.task_type = res->getString("task_type");
+      if(res->rowsCount()!=0){
+        while(res->next()){
+          Task t;
+          t.priority = res->getInt("priority");
+          t.open_pos = res->getDouble("open_pos_st");
+          t.target_id = res->getInt("target_id");
+          t.task_id = res->getInt("task_id");
+          t.task_type = res->getString("task_type");
 
-        t.goal.header.frame_id = "map";
-        t.goal.header.stamp = Util::str_ros_time(res->getString("start_time"));
-        t.goal.pose.position.x = res->getDouble("position_x");
-        t.goal.pose.position.y = res->getDouble("position_y");
-        t.goal.pose.orientation.z = res->getDouble("orientation_z");
-        t.goal.pose.orientation.w = res->getDouble("orientation_w");
-        v.push_back(t);
+          t.goal.header.frame_id = "map";
+          t.goal.header.stamp = Util::str_ros_time(res->getString("start_time"));
+          t.goal.pose.position.x = res->getDouble("position_x");
+          t.goal.pose.position.y = res->getDouble("position_y");
+          t.goal.pose.orientation.z = res->getDouble("orientation_z");
+          t.goal.pose.orientation.w = res->getDouble("orientation_w");
+          v.push_back(t);
+        } 
       }
+
       delete res;
       return v;
     }
@@ -167,23 +209,22 @@ class SQLClient{
       return ret;
     }
     
-    // Create new charging task and return its task id
-    int InsertAChargingTask(int target_id,ros::Time start){
+    // Create new task and return its task id
+    int InsertATaskAssignId(Task& t){
         sql::ResultSet* res;        
-        int id = -1;
         stmt->execute(
-          "INSERT INTO tasks(task_type, target_id, start_time) VALUES('Charging','" + to_string(target_id) + "','" + Util::time_str(start)+"')"
+          "INSERT INTO tasks(task_type, target_id, start_time) VALUES('"+ t.task_type +"','" + to_string(t.target_id) + "','" + Util::time_str(t.goal.header.stamp)+"')"
           );
         res = stmt->executeQuery("SELECT last_insert_id() as id");
         res->next();
-        id = res->getInt("id");
+        t.task_id = res->getInt("id");
         delete res;
-        return id;
+        return t.task_id;
     }
 
-    int InsertAExecuteTask(geometry_msgs::PoseStamped target){
+    int InsertATargetAssignId(geometry_msgs::PoseStamped target){
         sql::ResultSet* res;        
-        int target_id = -1,task_id = -1;
+        int target_id = -1;
         stmt->execute(
           "INSERT INTO targets(target_type, position_x, position_y, orientation_z, orientation_w) \
             VALUES('Point'," + to_string(target.pose.position.x) + "," + to_string(target.pose.position.y) + "," + to_string(target.pose.orientation.z) +","+to_string(target.pose.orientation.w)
@@ -194,32 +235,27 @@ class SQLClient{
         res->next();
         target_id = res->getInt("target_id");
 
-        stmt->execute(
-          "INSERT INTO tasks(task_type, priority, target_id, start_time) VALUES('GoToPoint',4,'" + to_string(target_id) + "','" + Util::time_str(target.header.stamp)+"')"
-          );
-        res = stmt->executeQuery("SELECT last_insert_id() as task_id");
-        res->next();
-        task_id = res->getInt("task_id");
-        delete res;
-        return task_id;
+        return target_id;
     }
 
     // Create charging task
-    vector<pair<int,geometry_msgs::Pose>>
-    QueryChargingStations(){
-      vector<pair<int,geometry_msgs::Pose>> v;
+    // vector<pair<int,geometry_msgs::Pose>>
+    map<int,geometry_msgs::Pose>
+    QueryAvailableChargingStations(){
+      // vector<pair<int,geometry_msgs::Pose>> v;
+      map<int,geometry_msgs::Pose> map;
       sql::ResultSet* res;
-      res = stmt->executeQuery("SELECT * FROM targets WHERE target_type = 'ChargingStation'");
+      res = stmt->executeQuery("SELECT * FROM targets tg INNER JOIN charging_stations cs ON tg.target_id = cs.station_id WHERE target_type = 'ChargingStation' AND is_free = 1");
       while(res->next()){
         geometry_msgs::Pose pose;
         pose.position.x = res->getDouble("position_x");
         pose.position.y = res->getDouble("position_y");
         pose.orientation.z = res->getDouble("orientation_z");
         pose.orientation.w = res->getDouble("orientation_w");
-        v.push_back(make_pair(res->getInt("target_id"),pose));
+        map.insert(make_pair(res->getInt("target_id"),pose));
       }
       delete res;
-      return v;
+      return map;
     } 
 
     // Change time and Priority of a returned task
@@ -264,8 +300,14 @@ class SQLClient{
     }
 
     // Change cancled task status to 'Canceled'
-    void UpdateExpiredTaskCanceled(ros::Time now){
-      stmt->executeUpdate("UPDATE tasks set cur_status = 'Canceled' WHERE start_time < '" + Util::time_str(now)+"'");
+    void UpdateExpiredTask(ros::Time now){
+      try{
+        stmt->executeUpdate("UPDATE tasks set cur_status = 'Canceled' WHERE start_time < '" + Util::time_str(now)+"' AND task_type = 'GatherEnviromentInfo' AND cur_status IN ('Created','WaitingToRun')");
+        stmt->executeUpdate("UPDATE tasks set start_time = '"+Util::time_str(now + ros::Duration(20))+"' WHERE start_time < '" + Util::time_str(now)+"' AND task_type = 'ExecuteTask' AND cur_status NOT IN ('RanToCompletion')");
+      }catch(sql::SQLException e){
+        ROS_INFO_STREAM(e.what());
+        exit(1);
+      }
     }
 
     tuple<string,string,int> QueryStartTimeEndTimeDayFromOpenPossibilitiesTable(int door_id, ros::Time measure_time){

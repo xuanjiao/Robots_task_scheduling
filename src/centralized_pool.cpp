@@ -34,7 +34,8 @@ public:
         _gac("GoToTargetAction",true) //  spins up a thread to service this action's subscriptions. 
     {
         init();
-        create_gather_info_tasks(10);
+        // create_gather_info_tasks(10);
+        CreateASampleExecuteTask();
     }
 
     void init(){
@@ -42,44 +43,38 @@ public:
         ROS_INFO_STREAM("Current office time: "<<Util::time_str(ros::Time::now()));
         // _ts = _nh.advertiseService("make_task",&CentralizedPool::process_robot_request,this);
         _ts = _nh.advertiseService("GetATask",&CentralizedPool::WhenRobotRequestTask,this);
-        _pc = _nh.serviceClient<nav_msgs::GetPlan>("move_base/NavfnROS/make_plan");      
-    
+        _pc = _nh.serviceClient<nav_msgs::GetPlan>("move_base/NavfnROS/make_plan"); 
+        _sc.TruncateTable("tasks");     
     }
 
-    void create_gather_info_tasks(int num){
-        _sc.TruncateTable("tasks"); // clear task table and cost table
-        _sc.InsertMultipleGatherInfoTasks(num,ros::Time::now(),ros::Duration(30));
-        _sc.PrintTable("tasks");
-    }
-
-    void create_go_to_point_task(){
-        geometry_msgs::PoseStamped goal;
-        goal.pose.position.x = -2;
-        goal.pose.position.y = -0.5;
-        goal.pose.position.z = -0;
-        goal.header.stamp = ros::Time::now();
-        goal.header.frame_id = "map";
-        _sc.InsertAExecuteTask(goal);
+    void CreateASampleExecuteTask(){
+        Task t;
+        t.task_type = "ExecuteTask";
+        t.priority = 4;
+        t.goal.pose.position.x = -1.43263357857;
+        t.goal.pose.position.y = -3.65467268359;
+        t.goal.pose.orientation.z = 0.42598373778;
+        t.goal.pose.orientation.w = 0.904730819165;
+        t.goal.header.stamp = ros::Time::now()+ros::Duration(20);
+        t.goal.header.frame_id = "map";
+        t.target_id = _sc.InsertATargetAssignId(t.goal);
+        _sc.InsertATaskAssignId(t);       
     }
     
-    // call back when receive robot request for task
+    // call back when receive robot request for task //
     bool WhenRobotRequestTask(robot_navigation::GetATask::Request &req, 
         robot_navigation::GetATask::Response &res){  
         ROS_INFO_STREAM("Receive request from robot\n"<<req);
-        _sc.PrintTable("tasks"); 
-        ros::Time cur_time = ros::Time::now();
-        Task bt = get_best_task(req.pose,cur_time,req.battery_level);
-        if(bt.task_id == -1){
-            res.has_task = false; // send a invalid task (task id = -1)
+        
+        if(req.last_task_id==0 ||  req.battery_level < 20){ // charging
+            ResponceChargingTask(req,res);
         }else{
-            ROS_INFO_STREAM("Best task id = "<<bt.task_id<<" ,cost = "<< fixed << setprecision(3) << setw(6)<< bt.cost);
-            res.has_task = true;
-            send_robot_action(bt); 
+            ResponceTaskWithLowestCost(req,res);
         }
         return true;
     }
 
-     // call when receive a door status from robot
+     // call back when receive a door status from robot 
     void WhenReceiveInfoFromRobot(const robot_navigation::GoToTargetFeedbackConstPtr &feedback){
         ROS_INFO_STREAM("Update door list and possibility table. [Time]:"<<
             Util::time_str(feedback->m_time)<<" [Door] " << to_string(feedback->door_id) << 
@@ -88,21 +83,79 @@ public:
         _sc.UpdateOpenPossibilities(feedback->door_id,feedback->m_time);
     }
 
-    // call when robot receive a goal
+    // Call back when robot receive a goal                                                                                                       all when robot receive a goal
     void WhenActionActive(){
         ROS_INFO_STREAM("Goal arrived to robot");
-    }
+    }   
 
     // Call when receive a complet event from robot
     void WhenRobotFinishGoal(const actionlib::SimpleClientGoalState& state,
            const robot_navigation::GoToTargetResult::ConstPtr &result){
-        ROS_INFO_STREAM("State "<<state.toString());
+        ROS_INFO_STREAM("State "<<state.toString()<<" result = "<<*result);
         if(result->isCompleted){
-             ROS_INFO_STREAM("Mark task <<"<<result->task_id<<" as completed");
              _sc.UpdateTaskStatus(result->task_id,"RanToCompletion");// Mark task as RanToCompletion
+             ROS_INFO("Mark task %d as completed",result->task_id);
+        }else{
+            // change task status from Running to WaitingToRun, increase 3 priority and increase 200s start time 
+            _sc.UpdateReturnedTask(result->task_id,ros::Duration(200),3);
         }
     }
 
+    // Create Respon to robot
+    void ResponceChargingTask(robot_navigation::GetATask::Request &req,robot_navigation::GetATask::Response &res ){
+        std::map<int,geometry_msgs::Pose> map = _sc.QueryAvailableChargingStations();
+        geometry_msgs::Pose rp = req.pose;
+        ros::Time now = ros::Time::now();
+        if(map.size()==0){
+            ROS_INFO_STREAM("All charging station are busy");
+        }
+        
+        std::pair<int,double> best; // best charging station (id,distance) 
+        best.second = 1000;  
+            for(auto i : map){
+            double dist = calculate_distance(i.second,rp);
+            if(dist<best.second){
+                best.first = i.first;
+                best.second = dist;
+            }
+        }
+        
+        Task bt;
+        bt.task_type = "Charging";
+        bt.priority = 5;
+        bt.goal.header.stamp = now + ros::Duration(10); // create a charging task that start after 10s
+        bt.goal.header.frame_id = "map";
+        bt.goal.pose = map[best.first];
+
+        _sc.InsertATaskAssignId(bt); // insert task into database
+
+        SendRobotActionGoal(bt); // send goal to robot
+        ROS_INFO_STREAM("Send robot a charging task");
+    }
+
+    void ResponceTaskWithLowestCost(robot_navigation::GetATask::Request &req,robot_navigation::GetATask::Response &res){
+        ros::Time cur_time = ros::Time::now();
+         _sc.PrintTable("tasks");
+        ROS_INFO("Handle expired tasks...");
+        _sc.UpdateExpiredTask(cur_time);
+        ROS_INFO("Handle expired tasks finished");
+        _sc.PrintTable("tasks"); 
+        std::vector<Task> v;
+        v = _sc.QueryRunableExecuteTasks();    // find if there are execute task    
+        ROS_INFO_STREAM("found "<<v.size()<<" execute tasks");
+        if(v.size() == 0){
+            while((v = _sc.QueryRunableGatherEnviromentInfoTasks()).size() == 0){  // if no execute task, create some gather enviroment info task
+                _sc.InsertMultipleGatherInfoTasks(5,cur_time + ros::Duration(20),ros::Duration(50));
+                ROS_INFO_STREAM("Create 5 tasks");
+            }
+            ROS_INFO_STREAM("found "<<v.size()<<"gather enviroment info tasks");
+        }
+        Task bt = GetBestTask(v,req.pose,cur_time,req.battery_level);
+        ROS_INFO_STREAM("Best task id = "<<bt.task_id<<" ,cost = "<< fixed << setprecision(3) << setw(6)<< bt.cost);
+        res.has_task = true;
+        _sc.UpdateTaskStatus(bt.task_id,"Running");
+        SendRobotActionGoal(bt); 
+    }
 
     double calculate_distance(geometry_msgs::Pose target_pose, geometry_msgs::Pose robot_pose){
             double distance = 0;
@@ -135,26 +188,7 @@ public:
             return distance;    
     }
     
-    Task get_best_task(geometry_msgs::Pose robot_pose,ros::Time t,double battery){
-        vector<Task> v;
-        _sc.UpdateExpiredTaskCanceled(t); // set exired task to canceled
-        if(battery < 20){ // charging
-            // create_charging_task(t,robot_pose);
-        }else{
-            // find if there are execute task    
-            v = _sc.QueryRunableTasks("ExecuteTask");
-            ROS_INFO_STREAM("found "<<v.size()<<" execute tasks");
-            if(v.size() ==0){
-                v = _sc.QueryRunableTasks("GatherEnviromentInfo");
-                ROS_INFO_STREAM("found "<<v.size()<<"gather enviroment info tasks");
-            }
-        }
-        if(v.size()==0){
-            Task task;
-            task.task_id = -1;
-            return task;
-        }
-
+    Task GetBestTask(vector<Task> & v,geometry_msgs::Pose robot_pose,ros::Time t,double battery){
         ROS_INFO_STREAM("Task_id  Task_type Target_id Priority Open_pos Distance Sec_diff Cost");
         ROS_INFO("-----------------------------------------------------------------------------");
         for(auto &i :v){
@@ -185,10 +219,8 @@ public:
         return v.back();
     }
 
-
-
     // Send robot new task 
-    void send_robot_action(Task &bt){
+    void SendRobotActionGoal(Task &bt){
         robot_navigation::GoToTargetGoal g;
         g.goal = bt.goal;
         g.target_id = bt.target_id;
@@ -201,44 +233,6 @@ public:
                 boost::bind(&CentralizedPool::WhenReceiveInfoFromRobot,this,_1)
         );
         ROS_INFO_STREAM("Send a goal\n"<<g);
-    }
-
-    void reuse_task(int task_id){
-        // change task status from Running to WaitingToRun, increase 3 priority and increase 200s start time 
-        _sc.UpdateReturnedTask(task_id,ros::Duration(200),3);
-    }
-
- 
-    std::pair<int,geometry_msgs::PoseStamped> 
-    create_charging_task(ros::Time t,geometry_msgs::Pose rp){
-        auto v = _sc.QueryChargingStations();
-        if(v.size()==0){
-            ROS_INFO_STREAM("Failed to load charging station");
-            exit(1);
-        }
-
-        std::pair<int,double> best; // best charging station
-        for(auto i : v){
-            double dist = calculate_distance(i.second,rp);
-            if(dist>best.second){
-                best.first = i.first;
-                best.second = dist;
-            }
-        }
-        int id = _sc.InsertAChargingTask(best.first,t);
-
-        auto p = find_if( begin(v), end(v),
-                             [=](decltype(*begin(v)) item )->int
-                             { return get< 0 >( item ) == best.first;} );
-        if(p == end(v)) {
-            ROS_INFO_STREAM("Failed to find best charging station");
-            exit(0);
-        }
-        geometry_msgs::PoseStamped pst;
-        pst.pose = (*p).second;
-        pst.header.frame_id = "map";
-        pst.header.stamp = t;
-        return make_pair(id,pst);
     }
 
 private:
