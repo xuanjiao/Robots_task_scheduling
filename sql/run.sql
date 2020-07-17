@@ -4,6 +4,7 @@ create user if not exists 'door_simulator'@'localhost' identified by 'pass';
 
 grant all on sensor_db.* to 'centralized_pool'@'localhost';
 grant all on sensor_db.* to 'door_simulator'@'localhost';
+grant all on sensor_db.* to 'task_generator'@'localhost';
 
 use sensor_db;
 

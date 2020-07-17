@@ -15,6 +15,12 @@ sudo apt-get install libmysqlcppconn-dev
 ```
     source /home/[user_name]/catkin_ws/src/robot_navigation/sql/run.sql
 ```
+
+Node Database
+
+![NodeDatabase](./img/robot-NodeAndDatabase.png)
+
+
 database 
 
 ![database](./img/robot-database.png)
@@ -67,6 +73,7 @@ use estimate position tool in rviz to estimate position
     roslaunch robot_navigation move_demo.launch
 ```
 ## Structure
+
 ![robot_communication](./img/robot-communication.png)
 
 ![request](./img/robot-CentralizedPoolTaskRequest.png)
@@ -78,6 +85,7 @@ use estimate position tool in rviz to estimate position
 ![robot_database](./img/robot-database.png)
 
 ![robot_controller](./img/robot-robotController.png)
+
 
 cost_function.cost = 1.0 * distance + 0.2 * sec_diff + (-1.0) * statisic_open_possibility +(-10) * priority  +  (-1.0) * battery_level;
 
@@ -113,11 +121,7 @@ battery_level=  battery_level - 0.01 * distance - 0.001 * angle;
 | Execute task             | any point |Execute task |2-4        | no                 |  put task into table(ToRerun)                                            |   |
 | Charging               | charging station | non | 5        | no                 | put task into table(ToRerun) |   |
 
-## Doing
-- task ganerator
-
 ## TO DO
 
 - establish multi robot simulation
 - read paper
-

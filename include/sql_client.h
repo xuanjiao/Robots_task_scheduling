@@ -213,7 +213,7 @@ class SQLClient{
     int InsertATaskAssignId(Task& t){
         sql::ResultSet* res;        
         stmt->execute(
-          "INSERT INTO tasks(task_type, target_id, start_time) VALUES('"+ t.task_type +"','" + to_string(t.target_id) + "','" + Util::time_str(t.goal.header.stamp)+"')"
+          "INSERT  IGNORE INTO tasks(task_type, target_id, start_time) VALUES('"+ t.task_type +"','" + to_string(t.target_id) + "','" + Util::time_str(t.goal.header.stamp)+"')"
           );
         res = stmt->executeQuery("SELECT last_insert_id() as id");
         res->next();
