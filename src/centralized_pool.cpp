@@ -97,7 +97,10 @@ public:
              ROS_INFO("Mark task %d as completed",result->task_id);
         }else{
             // change task status from Running to WaitingToRun, increase 3 priority and increase 200s start time 
-            _sc.UpdateReturnedTask(result->task_id,ros::Duration(200),3);
+            // TODO
+            
+            _sc.UpdatePriority(result->task_id,3);
+            _sc.UpdateTaskStatus(result->task_id,"ToReRun");
         }
     }
 

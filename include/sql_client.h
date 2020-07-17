@@ -259,9 +259,9 @@ class SQLClient{
     } 
 
     // Change time and Priority of a returned task
-    void UpdateReturnedTask(int task_id, ros::Duration d, int pri_inc){
+    void UpdatePriority(int task_id, int pri_inc){
       stmt->executeUpdate("UPDATE tasks set priority = if((priority + " + to_string(pri_inc) +  ")>5,5,priority + "
-                + to_string(pri_inc) + ") , cur_status = 'ToReRun', start_time  = DATE_ADD(start_time, INTERVAL "+to_string(d.sec)+" SECOND) where task_id = "+to_string(task_id));
+                + to_string(pri_inc) + ") ");
 
     }
 
