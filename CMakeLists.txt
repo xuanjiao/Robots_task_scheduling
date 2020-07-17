@@ -170,6 +170,12 @@ add_executable(centralized_pool src/centralized_pool.cpp)
 add_dependencies(centralized_pool ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(centralized_pool mysqlcppconn ${catkin_LIBRARIES})
 
+
+add_executable(TaskGenerator src/TaskGenerator.cpp)
+add_dependencies(TaskGenerator ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(TaskGenerator mysqlcppconn ${catkin_LIBRARIES})
+
+
 ## Rename C++ execu(table without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
