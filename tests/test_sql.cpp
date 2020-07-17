@@ -55,8 +55,8 @@ TEST_F(SqlTest,InsertATargetAssignId){
 
 
 TEST_F(SqlTest,UpdateReturnedTask){
-    sql_client.UpdateReturnedTask(2,ros::Duration(70),2);
-    sql_client.UpdateReturnedTask(4,ros::Duration(70),4);
+    sql_client.UpdatePriority(2,2);
+    sql_client.UpdatePriority(4,4);
 }
 
 // TEST_F(SqlTest,create_database){

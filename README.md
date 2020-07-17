@@ -69,9 +69,15 @@ use estimate position tool in rviz to estimate position
 ## Structure
 ![robot_communication](./img/robot-communication.png)
 
-![robot_controller](./img/robot-robotController.png)
+![request](./img/robot-CentralizedPoolTaskRequest.png)
+
+![feed_back](./img/robot-CentralizedPoolActionFeedback.png)
+
+![action_result](./img/robot-CentralizedPoolActionResult.png)
 
 ![robot_database](./img/robot-database.png)
+
+![robot_controller](./img/robot-robotController.png)
 
 cost_function.cost = 1.0 * distance + 0.2 * sec_diff + (-1.0) * statisic_open_possibility +(-10) * priority  +  (-1.0) * battery_level;
 
@@ -100,18 +106,18 @@ battery_level=  battery_level - 0.01 * distance - 0.001 * angle;
 
 ```
 
-## Task type(plan)
-| Type             | target |possibile parent/child task type    | Priority | Can be interrupted | If can not arrive the goal        | If door closed       / charging station not empty                                                |   |
+## Task type
+| Type             | target |possibile parent/child task type    | Priority | Can be interrupted | If task failed                                               |   |
 |----------------------|----------|----------|----------|--------------------|--------------------------------------------------|-------------------------------------------------------------------------------|---|
-| GatherEnviromentInfo  | door/ sensors | non | 1      | yes                | put task into table(Error) and get another best task                            | put task into table(RanToCompletion), update pos_table | 
-| Execute task             | any point |Execute task |2-4        | no                 | put task into table(Error), alarm                            | robot wait outside the door ,  alarm                                                  |   |
-| Charging               | charging station | non | 5        | no                 | put task into table(Error), alarm | check another station                           |   |
+| GatherEnviromentInfo  | door/ sensors | non | 1      | yes                |put task into table(Canceled))| 
+| Execute task             | any point |Execute task |2-4        | no                 |  put task into table(ToRerun)                                            |   |
+| Charging               | charging station | non | 5        | no                 | put task into table(ToRerun) |   |
 
+## Doing
+- task ganerator
 
 ## TO DO
 
 - establish multi robot simulation
-- optimize battery charging task
-- task ganerator
 - read paper
 
