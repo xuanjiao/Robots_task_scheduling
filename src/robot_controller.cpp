@@ -120,7 +120,7 @@ void ExecuteCallback(const robot_navigation::GoToTargetGoalConstPtr &goal){
     // void talk_to_centralized_pool(bool is_complete){
     //     // request a best task
     //     robot_navigation::make_task srv;
-    //     srv.request.battery_level = battery_level;
+    //     srv.request.batteryLevel= battery_level;
     //     srv.request.pose = current_pos;
     //     srv.request.last_task = current_task;
     //     srv.request.last_task.m_time = ros::Time::now();
@@ -142,14 +142,14 @@ void ExecuteCallback(const robot_navigation::GoToTargetGoalConstPtr &goal){
     // request a task from centralized pool
     void RequestTask(){
         robot_navigation::GetATask srv;
-        srv.request.battery_level =  _battery;
-        srv.request.last_task_id = _taskId;
+        srv.request.batteryLevel=  _battery;
+        srv.request.lastTaskId = (int8_t)_taskId;
         srv.request.pose = _cp.pose;
         if(!_tc.call(srv)){
             ROS_INFO_STREAM("Failed to send request");
             State = &RobotController::RequestTask;
         }else{
-            ROS_INFO_STREAM("receive response: has task? "<<srv.response.has_task);
+            ROS_INFO_STREAM("receive response: has task? "<<srv.response.hasTask?"Yes":"No");
         }
 
         ros::spinOnce(); // wait for goal client
@@ -177,10 +177,6 @@ void ExecuteCallback(const robot_navigation::GoToTargetGoalConstPtr &goal){
     void StateMoving(){
         // ROS_INFO("Task running");
          
-    }
-
-    void MoveBaseActionCallback(){
-
     }
 
     void MoveBasePositionFeedback(const move_base_msgs::MoveBaseFeedbackConstPtr &feedback){

@@ -1,6 +1,7 @@
 #include "ros/ros.h"
 // #include "robot_navigation/make_task.h"
 #include "robot_navigation/GetATask.h"
+#include <boost/thread/mutex.hpp>
 #include "robot_navigation/GoToTargetAction.h"
 #include <geometry_msgs/PoseStamped.h>
 #include <actionlib/client/simple_action_client.h>
@@ -11,6 +12,8 @@
 #include <tuple>
 #include <string>
 #include <queue>
+
+#define CHECK_DB_PERIOD 60
 
 typedef actionlib::SimpleActionClient<robot_navigation::GoToTargetAction> GoToTargetActionClient;                                                                                                                                                                                  ;
 typedef struct cost_st{                                                                                                         
@@ -44,7 +47,9 @@ public:
         // _ts = _nh.advertiseService("make_task",&CentralizedPool::process_robot_request,this);
         _ts = _nh.advertiseService("GetATask",&CentralizedPool::WhenRobotRequestTask,this);
         _pc = _nh.serviceClient<nav_msgs::GetPlan>("move_base/NavfnROS/make_plan"); 
+        _sqlMtx.lock();
         _sc.TruncateTable("tasks");     
+        _sqlMtx.unlock();
     }
 
     void CreateASampleExecuteTask(){
@@ -57,16 +62,19 @@ public:
         t.goal.pose.orientation.w = 0.904730819165;
         t.goal.header.stamp = ros::Time::now()+ros::Duration(20);
         t.goal.header.frame_id = "map";
+        _sqlMtx.lock();
         t.target_id = _sc.InsertATargetAssignId(t.goal);
         _sc.InsertATaskAssignId(t);       
+        _sqlMtx.unlock();
     }
-    
+
+
     // call back when receive robot request for task //
     bool WhenRobotRequestTask(robot_navigation::GetATask::Request &req, 
         robot_navigation::GetATask::Response &res){  
         ROS_INFO_STREAM("Receive request from robot\n"<<req);
         
-        if(req.last_task_id==0 ||  req.battery_level < 20){ // charging
+        if(req.lastTaskId==0 ||  req.batteryLevel < 20){ // charging
             ResponceChargingTask(req,res);
         }else{
             ResponceTaskWithLowestCost(req,res);
@@ -79,8 +87,10 @@ public:
         ROS_INFO_STREAM("Update door list and possibility table. [Time]:"<<
             Util::time_str(feedback->m_time)<<" [Door] " << to_string(feedback->door_id) << 
             " [status] "<<to_string(feedback->door_status));
+        _sqlMtx.lock();
         _sc.InsertDoorStatusRecord(feedback->door_id,feedback->m_time,feedback->door_status); 
         _sc.UpdateOpenPossibilities(feedback->door_id,feedback->m_time);
+        _sqlMtx.unlock();
     }
 
     // Call back when robot receive a goal                                                                                                       all when robot receive a goal
@@ -92,20 +102,20 @@ public:
     void WhenRobotFinishGoal(const actionlib::SimpleClientGoalState& state,
            const robot_navigation::GoToTargetResult::ConstPtr &result){
         ROS_INFO_STREAM("State "<<state.toString()<<" result = "<<*result);
-        if(result->isCompleted){
+         _sqlMtx.lock();
+         if(result->isCompleted){  
              _sc.UpdateTaskStatus(result->task_id,"RanToCompletion");// Mark task as RanToCompletion
              ROS_INFO("Mark task %d as completed",result->task_id);
         }else{
-            // change task status from Running to WaitingToRun, increase 3 priority and increase 200s start time 
-            // TODO
-            
-            _sc.UpdatePriority(result->task_id,3);
-            _sc.UpdateTaskStatus(result->task_id,"ToReRun");
+            // change task status from Running to ToReRun, increase priority 3 and increase 200s start time 
+            _sc.UpdateReturnedTask(result->task_id,3,ros::Duration(200));
         }
+        _sqlMtx.unlock();
     }
 
     // Create Respon to robot
     void ResponceChargingTask(robot_navigation::GetATask::Request &req,robot_navigation::GetATask::Response &res ){
+        _sqlMtx.lock();
         std::map<int,geometry_msgs::Pose> map = _sc.QueryAvailableChargingStations();
         geometry_msgs::Pose rp = req.pose;
         ros::Time now = ros::Time::now();
@@ -130,21 +140,27 @@ public:
         bt.goal.header.frame_id = "map";
         bt.goal.pose = map[best.first];
 
+        
         _sc.InsertATaskAssignId(bt); // insert task into database
 
         SendRobotActionGoal(bt); // send goal to robot
+        _sqlMtx.unlock();
         ROS_INFO_STREAM("Send robot a charging task");
     }
 
     void ResponceTaskWithLowestCost(robot_navigation::GetATask::Request &req,robot_navigation::GetATask::Response &res){
         ros::Time cur_time = ros::Time::now();
+        ROS_INFO_STREAM("current time =  "<<cur_time);
+        _sqlMtx.lock();
          _sc.PrintTable("tasks");
         ROS_INFO("Handle expired tasks...");
-        _sc.UpdateExpiredTask(cur_time);
+        _sc.UpdateExpiredTask(cur_time+ ros::Duration(20));
         ROS_INFO("Handle expired tasks finished");
         _sc.PrintTable("tasks"); 
         std::vector<Task> v;
-        v = _sc.QueryRunableExecuteTasks();    // find if there are execute task    
+
+    
+        v = _sc.QueryRunableExecuteTasksBeforeDateTime(cur_time + ros::Duration(CHECK_DB_PERIOD));  // find if there are execute task    
         ROS_INFO_STREAM("found "<<v.size()<<" execute tasks");
         if(v.size() == 0){
             while((v = _sc.QueryRunableGatherEnviromentInfoTasks()).size() == 0){  // if no execute task, create some gather enviroment info task
@@ -153,11 +169,12 @@ public:
             }
             ROS_INFO_STREAM("found "<<v.size()<<"gather enviroment info tasks");
         }
-        Task bt = GetBestTask(v,req.pose,cur_time,req.battery_level);
+        Task bt = GetBestTask(v,req.pose,cur_time,req.batteryLevel);
         ROS_INFO_STREAM("Best task id = "<<bt.task_id<<" ,cost = "<< fixed << setprecision(3) << setw(6)<< bt.cost);
-        res.has_task = true;
+        res.hasTask = true;
         _sc.UpdateTaskStatus(bt.task_id,"WaitingToRun");
         SendRobotActionGoal(bt); 
+        _sqlMtx.unlock();
     }
 
     double calculate_distance(geometry_msgs::Pose target_pose, geometry_msgs::Pose robot_pose){
@@ -243,6 +260,7 @@ private:
     ros::ServiceClient _pc;
     GoToTargetActionClient _gac;
     SQLClient _sc;
+    boost::mutex _sqlMtx;
     ros::NodeHandle _nh;
 };
 

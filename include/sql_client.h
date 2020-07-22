@@ -43,7 +43,6 @@ class SQLClient{
         con->setSchema(DATABASE_NAME);
       }else{
         ROS_INFO_STREAM("Connected to "<< DATABASE_NAME<<" failed");
-        exit(1);
       }
       stmt = con->createStatement();
     }
@@ -117,14 +116,15 @@ class SQLClient{
     
         // get task info to calculate cost
     vector<Task>
-    QueryRunableExecuteTasks(){
+    QueryRunableExecuteTasksBeforeDateTime(ros::Time limit){
       sql::ResultSet* res;
       vector<Task> v;
       res = stmt->executeQuery(
        "SELECT tasks.priority, tasks.target_id, tasks.task_id, tasks.task_type, tasks.start_time, \
         tg.position_x, tg.position_y, tg.orientation_z, tg.orientation_w FROM targets tg \
         INNER JOIN tasks ON tasks.target_id = tg.target_id \
-        AND tasks.cur_status IN ('Created' ) \
+        AND tasks.start_time < '" + Util::time_str(limit)+ "' \
+        AND tasks.cur_status IN ('Created','ToReRun') \
         AND tasks.task_type = 'ExecuteTask'"
       );
       if(res->rowsCount()!=0){
@@ -226,7 +226,7 @@ class SQLClient{
         sql::ResultSet* res;        
         int target_id = -1;
         stmt->execute(
-          "INSERT INTO targets(target_type, position_x, position_y, orientation_z, orientation_w) \
+          "INSERT IGNORE INTO targets(target_type, position_x, position_y, orientation_z, orientation_w) \
             VALUES('Point'," + to_string(target.pose.position.x) + "," + to_string(target.pose.position.y) + "," + to_string(target.pose.orientation.z) +","+to_string(target.pose.orientation.w)
             +")"
         );
@@ -259,10 +259,12 @@ class SQLClient{
     } 
 
     // Change time and Priority of a returned task
-    void UpdatePriority(int task_id, int pri_inc){
-      stmt->executeUpdate("UPDATE tasks set priority = if((priority + " + to_string(pri_inc) +  ")>5,5,priority + "
-                + to_string(pri_inc) + ") ");
-
+    void UpdateReturnedTask(int task_id, int priority_inc, ros::Duration time_inc){
+      stmt->executeUpdate("UPDATE tasks \
+              SET priority = IF((priority + " + to_string(priority_inc) +  ")>5,5,priority + " + to_string(priority_inc) + 
+        "), start_time = TIMESTAMPADD(SECOND," + to_string(time_inc.sec) + 
+        ",start_time), cur_status = 'ToReRun' WHERE task_id = "+ to_string(task_id)
+        );
     }
 
     // Insert a record in door status list
@@ -299,14 +301,14 @@ class SQLClient{
       stmt->executeUpdate("UPDATE tasks set cur_status = '"+ status + "' WHERE task_id = " + to_string(task_id));
     }
 
-    // Change cancled task status to 'Canceled'
-    void UpdateExpiredTask(ros::Time now){
+    // Change expired "Created", "WaitingToRun" getEnviromentInfo task status to 'Canceled'
+    // Change expired and uncompleted Execute Task status to a new time
+    void UpdateExpiredTask(ros::Time newTime){
       try{
-        stmt->executeUpdate("UPDATE tasks set cur_status = 'Canceled' WHERE start_time < '" + Util::time_str(now)+"' AND task_type = 'GatherEnviromentInfo' AND cur_status IN ('Created','WaitingToRun')");
-        stmt->executeUpdate("UPDATE tasks set start_time = '"+Util::time_str(now + ros::Duration(20))+"' WHERE start_time < '" + Util::time_str(now)+"' AND task_type = 'ExecuteTask' AND cur_status NOT IN ('RanToCompletion')");
+        stmt->executeUpdate("UPDATE tasks set cur_status = 'Canceled' WHERE start_time < '" + Util::time_str(newTime)+"' AND task_type = 'GatherEnviromentInfo' AND cur_status IN ('Created','WaitingToRun','ToReRun')");
+        stmt->executeUpdate("UPDATE tasks set start_time = '"+Util::time_str(newTime)+"' WHERE start_time < '" + Util::time_str(newTime)+"' AND task_type = 'ExecuteTask' AND cur_status NOT IN ('RanToCompletion')");
       }catch(sql::SQLException e){
         ROS_INFO_STREAM(e.what());
-        exit(1);
       }
     }
 

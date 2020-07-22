@@ -28,11 +28,12 @@ TEST_F(SqlTest,insert_task){
     sql_client.InsertMultipleGatherInfoTasks(5,ros::Time::now(),ros::Duration(300));
 }
 
-TEST_F(SqlTest,query_runable_task){
-    ASSERT_GT(Util::str_ros_time("2020-07-08 12:20:00"),ros::Time::now());
+TEST_F(SqlTest,QueryRunableTask){
     auto v = sql_client.QueryRunableGatherEnviromentInfoTasks();
     ASSERT_GT(v.size(),0);
     ASSERT_LT(v.back().goal.header.stamp,ros::Time::now());
+    auto v2 = sql_client.QueryRunableExecuteTasksBeforeDateTime(ros::Time::now());
+    ASSERT_GT(v2.size(),0);
 }
 
 
@@ -55,8 +56,7 @@ TEST_F(SqlTest,InsertATargetAssignId){
 
 
 TEST_F(SqlTest,UpdateReturnedTask){
-    sql_client.UpdatePriority(2,2);
-    sql_client.UpdatePriority(4,4);
+    sql_client.UpdateReturnedTask(1,3,ros::Duration(2000));
 }
 
 // TEST_F(SqlTest,create_database){
@@ -80,12 +80,12 @@ TEST_F(SqlTest,UpdateReturnedTask){
 // }
 
 TEST_F(SqlTest,UpdateTaskStatus){
-    sql_client.UpdateTaskStatus(1,"Canceled");
+    // sql_client.UpdateTaskStatus(1,"Canceled");
 }
 
 TEST_F(SqlTest,insert_to_door_status){
     ros::Time now = ros::Time::now();
-    sql_client.InsertDoorStatusRecord('a',now,false);
+    // sql_client.InsertDoorStatusRecord('a',now,false);
     
 }
 
@@ -98,7 +98,7 @@ int main(int argc, char** argv){
     std::thread t([]{while(ros::ok()) ros::spin();});
 
     // ::testing::GTEST_FLAG(filter) = "SqlTest.insert_task";
-     ::testing::GTEST_FLAG(filter) = "SqlTest.UpdateExpiredTask";
+     ::testing::GTEST_FLAG(filter) = "SqlTest.QueryRunableTask";
 
     auto res = RUN_ALL_TESTS();
     
