@@ -3,7 +3,8 @@
 
   <!-- start world -->
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
-    <arg name="world_name" value="$(find robot_navigation)/world/office.world"/>
+    <arg name="world_name" value="$(find robot_navigation)/world/office3.world"/>
+    <!--arg name="world_name" value="$(find turtlebot3_gazebo)/worlds/empty.world"/-->
     <arg name="paused" value="false"/>
     <arg name="use_sim_time" value="true"/>
     <arg name="gui" value="true"/>
