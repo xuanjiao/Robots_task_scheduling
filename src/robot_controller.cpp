@@ -35,18 +35,11 @@ public:
     {
         _robotId = 1;
         _battery = 100;
-        
-	    // ros::Duration(1).sleep();
-        
 
-        // subscribe to door sensor node
         _ss = _nh.subscribe<robot_navigation::sensor_data>("sensor_data",100,&RobotController::ListenSensorCallback,this);      
-        // _tc = nh.serviceClient<robot_navigation::make_task>("make_task");
         _tc = _nh.serviceClient<robot_navigation::GetATask>("GetATask");
-        
-        // start receive goal from server
-        _gas.start();
-
+       
+        _gas.start();  // start receive goal from server
         State = &RobotController::RequestCurrentPosition;
     }
 
@@ -70,21 +63,14 @@ public:
 
     void GoToSleep(){
         ros::Time wake_up = _tp.header.stamp - ros::Duration(0.1);
-        if( wake_up < ros::Time::now()){
-            ROS_INFO_STREAM("Task is expired");
-            // next_mode(State::REQUEST,false);
-            return;
-        }
         ROS_INFO_STREAM(
-                        "\nSimulation time: " <<ros::Time::now().sec <<
-                        "\nSleep until "<< Util::time_str(wake_up) <<
-                        "\nSimulation time: " <<wake_up.sec
+                        "\nTime: " <<Util::time_str(ros::Time::now()) <<
+                        "\nSleep until "<< Util::time_str(wake_up)
         );
         ros::Time::sleepUntil(wake_up - ros::Duration(0.1));                
-        ROS_INFO_STREAM("** Wake up.Simulation time: " <<ros::Time::now().sec );
+        ROS_INFO_STREAM("** Wake up. Time: " <<Util::time_str(ros::Time::now()));
         
         State = &RobotController::SendGoalToMoveBase;
-        // next_mode(State::MOVING,true);
     }
 
 // called in a separate thread whenever a new goal is received
@@ -98,46 +84,26 @@ void ExecuteCallback(const robot_navigation::GoToTargetGoalConstPtr &goal){
         if(_tp.header.stamp < ros::Time::now()){
             ROS_INFO_STREAM("Task is expired");
             _gas.setAborted(_rs);
-            State = &RobotController::RequestTask;
+            State = &RobotController::RequestCurrentPosition;
             return;
-        }
-        State = &RobotController::GoToSleep;
-        
-        _movCv.wait(_movLock);
-        
-        ros::Rate loop(5);
-        if(_rs.isCompleted){
+        // }
+        // else if (_tp.header.stamp > ros::Time::now()){
+        //     State = &RobotController::GoToSleep;  // main thread go to sleep
+        }else{
+             State = &RobotController::SendGoalToMoveBase; // main thread send goal
+            _movCv.wait(_movLock); // Wait until robot arrive goal
+            if(_rs.isCompleted){
                 _rs.task_id = _taskId;
                 _gas.setSucceeded(_rs);
             }else{
                 ROS_INFO_STREAM("Failed to go to target");
                 _gas.setAborted(_rs);
+            }
+            ROS_INFO_STREAM("report task result "<<_rs);       
+            State = &RobotController::RequestTask;
         }
-        ROS_INFO_STREAM("report task result "<<_rs);       
-        State = &RobotController::RequestTask;
-    }
-
-    // void talk_to_centralized_pool(bool is_complete){
-    //     // request a best task
-    //     robot_navigation::make_task srv;
-    //     srv.request.batteryLevel= battery_level;
-    //     srv.request.pose = current_pos;
-    //     srv.request.last_task = current_task;
-    //     srv.request.last_task.m_time = ros::Time::now();
-    //     srv.request.last_task.is_completed = is_complete;
-
-    //     srv.request.last_task.door_status = current_task.door_status;
-    //     ROS_INFO_STREAM("send task request. Robot position: "<<Util::pose_str(srv.request.pose));
-
-    //     if(!_tc.call(srv)){
-    //         ROS_INFO_STREAM("Failed to send request");
-    //         return;
-    //     }
-    //     current_task = srv.response.best_task;
-    //     ROS_INFO_STREAM("receive response\n"<<current_task);
         
-    //     // next_mode(State::SLEEP,true);
-    // }
+    }
 
     // request a task from centralized pool
     void RequestTask(){
@@ -151,13 +117,7 @@ void ExecuteCallback(const robot_navigation::GoToTargetGoalConstPtr &goal){
         }else{
             ROS_INFO_STREAM("receive response: has task? "<<srv.response.hasTask?"Yes":"No");
         }
-
-        ros::spinOnce(); // wait for goal client
-
-        
-        //  state = &RobotController::request_task;
-        // next_mode(State::SLEEP,true);
-       
+        ros::spinOnce(); // wait for goal client 
     }
 
 
