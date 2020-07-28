@@ -17,6 +17,7 @@
 #include <boost/thread/condition_variable.hpp>
 
 #define SENSOR_RANGE 1
+using namespace std;
 
 enum State{
     SLEEP = 0,
@@ -29,11 +30,12 @@ class RobotController{
 
 public:
     RobotController():
-    _mbc("move_base", true),
+    _robotId(0),
+    _mbc("/tb3_"+ to_string(_robotId) + "/move_base", true),
     _gas(_nh,"GoToTargetAction",boost::bind(&RobotController::ExecuteCallback,this,_1),false),
     _movLock(_mtx)
     {
-        _robotId = 1;
+        
         _battery = 100;
 
         _ss = _nh.subscribe<robot_navigation::sensor_data>("sensor_data",100,&RobotController::ListenSensorCallback,this);      
@@ -49,7 +51,7 @@ public:
 
         // try to get its current location
         boost::shared_ptr<geometry_msgs::PoseWithCovarianceStamped const> sharedPtr =
-             ros::topic::waitForMessage<geometry_msgs::PoseWithCovarianceStamped>("amcl_pose",_nh);
+             ros::topic::waitForMessage<geometry_msgs::PoseWithCovarianceStamped>("/tb3_"+ to_string(_robotId) +"/amcl_pose",_nh);
         if(sharedPtr == NULL){
            ROS_DEBUG("Failed to get current position");
            return;
@@ -61,78 +63,79 @@ public:
         State = &RobotController::RequestTask;      
     }
 
-    void GoToSleep(){
-        ros::Time wake_up = _tp.header.stamp - ros::Duration(0.1);
-        ROS_INFO_STREAM(
-                        "\nTime: " <<Util::time_str(ros::Time::now()) <<
-                        "\nSleep until "<< Util::time_str(wake_up)
-        );
-        ros::Time::sleepUntil(wake_up - ros::Duration(0.1));                
-        ROS_INFO_STREAM("** Wake up. Time: " <<Util::time_str(ros::Time::now()));
-        
-        State = &RobotController::SendGoalToMoveBase;
-    }
-
 // called in a separate thread whenever a new goal is received
-void ExecuteCallback(const robot_navigation::GoToTargetGoalConstPtr &goal){
-    ROS_INFO_STREAM("Get a goal from pool\n"<<*goal);
-        _tp = goal->goal;
-        _targetId = goal->target_id;
-        _taskId = goal->task_id;
-        _taskType = goal->task_type;
+void ExecuteCallback(const robot_navigation::GoToTargetGoalConstPtr &task){
+    ROS_INFO_STREAM("Get a goal from pool\n"<<*task);
+        // _targetId = goal->target_id;
+        // _taskId = goal->task_id;
+        // _taskType = goal->task_type;
 
-        if(_tp.header.stamp < ros::Time::now()){
-            ROS_INFO_STREAM("Task is expired");
-            _gas.setAborted(_rs);
-            State = &RobotController::RequestCurrentPosition;
+        robot_navigation::GoToTargetResult rs;
+        rs.task_id = task->task_id;
+
+        // Wait until task time
+        ros::Time now = ros::Time::now();
+        if(_tp.header.stamp < now ){
+            ROS_INFO_STREAM("Task "<< task->task_id << " is expired");
+            _gas.setAborted(rs);
+            RequestCurrentPosition(); // Get a new task
             return;
-        // }
-        // else if (_tp.header.stamp > ros::Time::now()){
-        //     State = &RobotController::GoToSleep;  // main thread go to sleep
-        }else{
-             State = &RobotController::SendGoalToMoveBase; // main thread send goal
-            _movCv.wait(_movLock); // Wait until robot arrive goal
-            if(_rs.isCompleted){
-                _rs.task_id = _taskId;
-                _gas.setSucceeded(_rs);
-            }else{
-                ROS_INFO_STREAM("Failed to go to target");
-                _gas.setAborted(_rs);
-            }
-            ROS_INFO_STREAM("report task result "<<_rs);       
-            State = &RobotController::RequestTask;
+        }else if (_tp.header.stamp > now - ros::Duration(1)) {
+            GoToSleep(now - ros::Duration(1));  // both thread go to sleep
         }
         
+        // Start task
+        if (task->task_type == "Charging" ){
+            StartChargingTask(task->goal);
+        }else if (task->task_type == "GatherEnviromentInfo" ){
+            StartGatherInviromentTask(task->goal);
+        }else if (task->task_type == "ExecuteTask" ){
+            StartExecuteTask(task->goal);
+        }else{
+            ROS_INFO_STREAM("Unknown task");
+            _gas.setAborted(rs);
+        }
+
+        // wait for task complete
+        _movCv.wait(_movLock); 
+        
+        // Set task succeeded
+        _gas.setSucceeded(rs);   
+        ROS_INFO_STREAM("report task result "<<rs);       
+        RequestCurrentPosition(); // Get a new task
     }
 
     // request a task from centralized pool
     void RequestTask(){
         robot_navigation::GetATask srv;
         srv.request.batteryLevel=  _battery;
-        srv.request.lastTaskId = (int8_t)_taskId;
         srv.request.pose = _cp.pose;
         if(!_tc.call(srv)){
             ROS_INFO_STREAM("Failed to send request");
             State = &RobotController::RequestTask;
         }else{
+            
             ROS_INFO_STREAM("receive response: has task? "<<srv.response.hasTask?"Yes":"No");
         }
         ros::spinOnce(); // wait for goal client 
     }
 
-
-    void SendGoalToMoveBase(){
-        ROS_INFO_STREAM("Send goal to move base");
-        move_base_msgs::MoveBaseGoal goal;
-        goal.target_pose = _tp;
-        _mbc.sendGoal(goal,
-                boost::bind(&RobotController::MoveBaseCompleteCallback,this, _1, _2),
-                actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction>::SimpleActiveCallback(),
-                boost::bind(&RobotController::MoveBasePositionFeedback,this, _1)
-        ); 
-
-         State = &RobotController::StateMoving;
+    void GoToSleep(ros::Time wake_up){
+        ROS_INFO_STREAM("\nTime: " <<Util::time_str(ros::Time::now()) << "\nSleep until "<< Util::time_str(wake_up) );
+        ros::Time::sleepUntil(wake_up);
+        ROS_INFO_STREAM("** Wake up. Time: " <<Util::time_str(ros::Time::now()));  
     }
+
+    // void SendGoalToMoveBase(){
+    //     ROS_INFO_STREAM(" Send goal to move base");
+    //     move_base_msgs::MoveBaseGoal goal;
+    //     goal.target_pose = _tp;
+    //     _mbc.sendGoal(goal,
+    //             boost::bind(&RobotController::MoveBaseCompleteCallback,this, _1, _2),
+    //             actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction>::SimpleActiveCallback(),
+    //             boost::bind(&RobotController::MoveBasePositionFeedback,this, _1)
+    //     ); 
+    // }
 
     void StateMoving(){
         // ROS_INFO("Task running");
@@ -149,29 +152,73 @@ void ExecuteCallback(const robot_navigation::GoToTargetGoalConstPtr &goal){
             // ROS_INFO_STREAM("angle "<<angle << "distance" << distance << "battery_level"<<_battery);
      }
      
-    void MoveBaseCompleteCallback(const actionlib::SimpleClientGoalState& state,
-           const move_base_msgs::MoveBaseResult::ConstPtr& result ){
-            ROS_INFO_STREAM("Move complete. State "<<state.toString());
-            if(state == actionlib::SimpleClientGoalState::SUCCEEDED){
-                State = &RobotController::ProcessTask;
-            }else{
-                _rs.isCompleted = false;
-                _movCv.notify_all();
-            }
+    // void MoveBaseCompleteCallback(const actionlib::SimpleClientGoalState& state,
+    //        const move_base_msgs::MoveBaseResult::ConstPtr& result ){
+    //         ROS_INFO_STREAM("Move complete. State "<<state.toString());
+    //         if(state == actionlib::SimpleClientGoalState::SUCCEEDED){
+    //             State = &RobotController::ProcessTask;
+    //         }else{
+    //             _rs.isCompleted = false;
+    //             _movCv.notify_all();
+    //         }
+    // }
+
+    void StartChargingTask(geometry_msgs::PoseStamped cs){
+        ROS_INFO_STREAM(" Start charging task");
+        move_base_msgs::MoveBaseGoal goal;
+        goal.target_pose = cs;
+        _mbc.sendGoal(goal,
+                boost::bind(&RobotController::WhenChargingTaskComplete,this, _1, _2),
+                actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction>::SimpleActiveCallback(),
+                boost::bind(&RobotController::MoveBasePositionFeedback,this, _1)
+        ); 
     }
 
-    void ProcessTask(){
-        if(_taskType == "Charging"){
-            ROS_INFO_STREAM("charging 5s....");
+    void WhenChargingTaskComplete(const actionlib::SimpleClientGoalState& state,
+           const move_base_msgs::MoveBaseResult::ConstPtr& result ){
+             ROS_INFO_STREAM("charging 5s....");
             ros::Duration(5).sleep(); // charging for 5sec
             _battery = 100;
-        }else if(_taskType == "ExecuteTask"){
-           ROS_INFO_STREAM("doing task 3s....");
-            ros::Duration(3).sleep(); // charging for 5sec
-        }
-        _rs.isCompleted = true;
-        _movCv.notify_all();
+            _movCv.notify_all();
     }
+ 
+    void StartGatherInviromentTask(geometry_msgs::PoseStamped door){
+        ROS_INFO_STREAM(" Start gather enviroment");
+        move_base_msgs::MoveBaseGoal goal;
+        goal.target_pose = door;
+        _mbc.sendGoal(goal,
+                boost::bind(&RobotController::WhenGatherInviromentTaskComplete,this, _1, _2),
+                actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction>::SimpleActiveCallback(),
+                boost::bind(&RobotController::MoveBasePositionFeedback,this, _1)
+        ); 
+    }
+    
+    void WhenGatherInviromentTaskComplete(const actionlib::SimpleClientGoalState& state,
+           const move_base_msgs::MoveBaseResult::ConstPtr& result ){
+        
+    }
+
+    void StartExecuteTask(geometry_msgs::PoseStamped point){
+
+    }
+
+    void WhenExecuteTaskComplete(const actionlib::SimpleClientGoalState& state,
+           const move_base_msgs::MoveBaseResult::ConstPtr& result ){
+
+    }
+
+    // void ProcessTask(){
+    //     if(_taskType == "Charging"){
+    //         ROS_INFO_STREAM("charging 5s....");
+    //         ros::Duration(5).sleep(); // charging for 5sec
+    //         _battery = 100;
+    //     }else if(_taskType == "ExecuteTask"){
+    //        ROS_INFO_STREAM("doing task 3s....");
+    //         ros::Duration(3).sleep(); // charging for 5sec
+    //     }
+    //     _rs.isCompleted = true;
+    //     _movCv.notify_all();
+    // }
 
     void ListenSensorCallback(const robot_navigation::sensor_data::ConstPtr& message){
 
@@ -208,14 +255,14 @@ private:
     actionlib::SimpleActionServer<robot_navigation::GoToTargetAction> _gas;
     
     robot_navigation::GoToTargetFeedback _fb;
-    robot_navigation::GoToTargetResult _rs;
+    
 
     geometry_msgs::PoseStamped _cp;
     geometry_msgs::PoseStamped _tp;
     
-    int _taskId;
-    int _targetId;
-    string _taskType; 
+    // int _taskId;
+    // int _targetId;
+    // string _taskType; 
 
     int _robotId;
     double _battery;
@@ -227,17 +274,12 @@ private:
 
 int main(int argc, char **argv){
 	ROS_INFO("Main function start");
-        ros::init(argc,argv,"move_base_simple"); // Initializes Node Name
+        ros::init(argc,argv,"robot_controller"); // Initializes Node Name
         
     ROS_INFO("RobotController run");
         RobotController* rc = new RobotController();
 
-        while(ros::ok()){
-            ros::spinOnce();
-            (rc->*(rc->State))();
-            // loop.sleep();
-            ros::Duration(3).sleep();
-        }   
+    ros::spin(); 
 
         return 0;
 }

@@ -46,7 +46,7 @@ public:
         ROS_INFO_STREAM("Current office time: "<<Util::time_str(ros::Time::now()));
         // _ts = _nh.advertiseService("make_task",&CentralizedPool::process_robot_request,this);
         _ts = _nh.advertiseService("GetATask",&CentralizedPool::WhenRobotRequestTask,this);
-        _pc = _nh.serviceClient<nav_msgs::GetPlan>("move_base/NavfnROS/make_plan"); 
+        _pc = _nh.serviceClient<nav_msgs::GetPlan>("/tb3_0/move_base/NavfnROS/make_plan"); 
         _sqlMtx.lock();
         _sc.TruncateTable("tasks");     
         _sqlMtx.unlock();
