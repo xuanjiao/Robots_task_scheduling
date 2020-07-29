@@ -121,22 +121,22 @@ void ExecuteCallback(const robot_navigation::GoToTargetGoalConstPtr &task){
 
         // Wait until task time
         ros::Time now = ros::Time::now();
-        if(task->goal.header.stamp < now ){
+        if(task->goals[0].header.stamp < now ){
             ROS_INFO_STREAM("Task "<< task->task_id << " is expired");
             _gas.setAborted(rs);
             RequestTask(); // Get a new task
             return;
-        }else if (task->goal.header.stamp > now - ros::Duration(1)) {
+        }else if (task->goals[0].header.stamp > now - ros::Duration(1)) {
             GoToSleep(now - ros::Duration(1));  // both thread go to sleep
         }
         
         // Start task
         if (task->task_type == "Charging" ){
-            StartChargingTask(task->goal);
+            StartChargingTask(task->goals[0]);
         }else if (task->task_type == "GatherEnviromentInfo" ){
-            StartGatherInviromentTask(task->goal);
+            StartGatherInviromentTask(task->goals[0]);
         }else if (task->task_type == "ExecuteTask" ){
-            StartExecuteTask(task->goal);
+            StartExecuteTask(task->goals[0]);
         }else{
             ROS_INFO_STREAM("Unknown task");
             _gas.setAborted(rs);

@@ -1,5 +1,5 @@
 #goal definition
-geometry_msgs/PoseStamped goal
+geometry_msgs/PoseStamped[] goals
 int8 target_id 
 string task_type
 int8 task_id

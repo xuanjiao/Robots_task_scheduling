@@ -230,7 +230,7 @@ public:
     // Send robot new task 
     void SendRobotActionGoal(Task &bt){
         robot_navigation::GoToTargetGoal g;
-        g.goal = bt.goal;
+        g.goals.push_back(bt.goal);
         g.target_id = bt.target_id;
         g.task_type = bt.task_type;
         g.task_id = bt.task_id;
