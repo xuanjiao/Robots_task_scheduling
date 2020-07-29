@@ -32,13 +32,12 @@ TEST_F(SqlTest,QueryRunableTask){
     auto v = sql_client.QueryRunableGatherEnviromentInfoTasks();
     ASSERT_GT(v.size(),0);
     ASSERT_LT(v.back().goal.header.stamp,ros::Time::now());
-    auto v2 = sql_client.QueryRunableExecuteTasksBeforeDateTime(ros::Time::now());
+    auto v2 = sql_client.QueryRunableExecuteTasks();
     ASSERT_GT(v2.size(),0);
 }
 
 
 TEST_F(SqlTest,UpdateExpiredTask){
-    sql_client.UpdateExpiredTask(ros::Time::now());
 }
 
 
@@ -98,7 +97,7 @@ int main(int argc, char** argv){
     std::thread t([]{while(ros::ok()) ros::spin();});
 
     // ::testing::GTEST_FLAG(filter) = "SqlTest.insert_task";
-     ::testing::GTEST_FLAG(filter) = "SqlTest.UpdateExpiredTask";
+    //  ::testing::GTEST_FLAG(filter) = "SqlTest.UpdateExpiredTask";
 
     auto res = RUN_ALL_TESTS();
     

@@ -53,23 +53,6 @@ public:
         _sqlMtx.unlock();
     }
 
-    void CreateASampleExecuteTask(){
-        Task t;
-        t.task_type = "ExecuteTask";
-        t.priority = 4;
-        t.goal.pose.position.x = -1.43263357857;
-        t.goal.pose.position.y = -3.65467268359;
-        t.goal.pose.orientation.z = 0.42598373778;
-        t.goal.pose.orientation.w = 0.904730819165;
-        t.goal.header.stamp = ros::Time::now()+ros::Duration(20);
-        t.goal.header.frame_id = "map";
-        _sqlMtx.lock();
-        t.target_id = _sc.InsertATargetAssignId(t.goal);
-        _sc.InsertATaskAssignId(t);       
-        _sqlMtx.unlock();
-    }
-
-
     // call back when receive robot request for task //
     bool WhenRobotRequestTask(robot_navigation::GetATask::Request &req, 
         robot_navigation::GetATask::Response &res){  
@@ -161,8 +144,7 @@ public:
         _sc.PrintTable("tasks"); 
         std::vector<Task> v;
 
-    
-        v = _sc.QueryRunableExecuteTasksBeforeDateTime(cur_time + ros::Duration(CHECK_DB_PERIOD));  // find if there are execute task    
+        v = _sc.QueryRunableExecuteTasks();  // find if there are execute task    
         ROS_INFO_STREAM("found "<<v.size()<<" execute tasks");
         if(v.size() == 0){
             while((v = _sc.QueryRunableGatherEnviromentInfoTasks()).size() == 0){  // if no execute task, create some gather enviroment info task

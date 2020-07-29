@@ -116,14 +116,13 @@ class SQLClient{
     
         // get task info to calculate cost
     vector<Task>
-    QueryRunableExecuteTasksBeforeDateTime(ros::Time limit){
+    QueryRunableExecuteTasks(){
       sql::ResultSet* res;
       vector<Task> v;
       res = stmt->executeQuery(
        "SELECT tasks.priority, tasks.target_id, tasks.task_id, tasks.task_type, tasks.start_time, \
         tg.position_x, tg.position_y, tg.orientation_z, tg.orientation_w FROM targets tg \
         INNER JOIN tasks ON tasks.target_id = tg.target_id \
-        AND tasks.start_time < '" + Util::time_str(limit)+ "' \
         AND tasks.cur_status IN ('Created','ToReRun') \
         AND tasks.task_type = 'ExecuteTask'"
       );
