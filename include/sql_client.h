@@ -212,7 +212,9 @@ class SQLClient{
     int InsertATaskAssignId(Task& t){
         sql::ResultSet* res;        
         stmt->execute(
-          "INSERT  IGNORE INTO tasks(task_type, target_id, start_time) VALUES('"+ t.task_type +"','" + to_string(t.target_id) + "','" + Util::time_str(t.goal.header.stamp)+"')"
+          "INSERT INTO tasks(task_type, priority, target_id, start_time) VALUES('"
+          + t.task_type +"','" + to_string(t.priority) +"','" + to_string(t.target_id) + "','" + Util::time_str(t.goal.header.stamp)+"')"
+         
           );
         res = stmt->executeQuery("SELECT last_insert_id() as id");
         res->next();
@@ -225,9 +227,9 @@ class SQLClient{
         sql::ResultSet* res;        
         int target_id = -1;
         stmt->execute(
-          "INSERT IGNORE INTO targets(target_type, position_x, position_y, orientation_z, orientation_w) \
+          "INSERT INTO targets(target_type, position_x, position_y, orientation_z, orientation_w) \
             VALUES('Point'," + to_string(target.pose.position.x) + "," + to_string(target.pose.position.y) + "," + to_string(target.pose.orientation.z) +","+to_string(target.pose.orientation.w)
-            +")"
+          +") ON DUPLICATE KEY UPDATE target_type = target_type AND last_insert_id(target_id)"
         );
 
         res = stmt->executeQuery("SELECT last_insert_id() as target_id");

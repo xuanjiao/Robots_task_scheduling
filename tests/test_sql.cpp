@@ -28,6 +28,29 @@ TEST_F(SqlTest,example){
 //     sql_client.InsertMultipleGatherInfoTasks(5,ros::Time::now(),ros::Duration(300));
 // }
 
+TEST_F(SqlTest,InsertATargetAssignId){
+    geometry_msgs::PoseStamped goal;
+    int id = sql_client.InsertATargetAssignId(goal);
+    ASSERT_GT(id,0);
+}
+
+TEST_F(SqlTest,InsertATaskAssignId){
+           
+    Task t;
+    t.task_type = "ExecuteTask";
+    t.priority = 4;
+    t.goal.pose.position.x = 4.38077210276;
+    t.goal.pose.position.y =  9.34650744461;
+    t.goal.pose.orientation.z = 0.721488227349;
+    t.goal.pose.orientation.w = 0.692426702112;
+    t.goal.header.stamp = ros::Time::now()+ros::Duration(20);
+    t.goal.header.frame_id = "map";
+    t.target_id = sql_client.InsertATargetAssignId(t.goal);
+    int taskId = sql_client.InsertATaskAssignId(t);  
+    ASSERT_GT(t.target_id,0);
+    ASSERT_GT( taskId,0);
+}
+
 TEST_F(SqlTest,QueryRunableTask){
     auto v = sql_client.QueryRunableGatherEnviromentInfoTasks();
     ASSERT_GT(v.size(),0);
@@ -46,12 +69,6 @@ TEST_F(SqlTest,QueryAvailableChargingStations){
     ASSERT_EQ(v.size(),3);
 }
 
-
-// TEST_F(SqlTest,InsertATargetAssignId){
-//     geometry_msgs::PoseStamped goal;
-//     int id = sql_client.InsertATargetAssignId(goal);
-//     ASSERT_GT(id,0);
-// }
 
 
 TEST_F(SqlTest,UpdateReturnedTask){
