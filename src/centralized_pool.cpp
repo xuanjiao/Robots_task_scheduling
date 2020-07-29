@@ -38,8 +38,6 @@ public:
         _gac("GoToTargetAction",true) //  spins up a thread to service this action's subscriptions. 
     {
         init();
-        // create_gather_info_tasks(10);
-        CreateASampleExecuteTask();
     }
 
     void init(){
