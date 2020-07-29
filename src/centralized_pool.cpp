@@ -14,6 +14,7 @@
 #include <queue>
 
 #define CHECK_DB_PERIOD 60
+#define COST_LIMIT 1000
 
 typedef actionlib::SimpleActionClient<robot_navigation::GoToTargetAction> GoToTargetActionClient;                                                                                                                                                                                  ;
 typedef struct cost_st{                                                                                                         
@@ -74,7 +75,7 @@ public:
         robot_navigation::GetATask::Response &res){  
         ROS_INFO_STREAM("Receive request from robot\n"<<req);
         
-        if(req.lastTaskId==0 ||  req.batteryLevel < 20){ // charging
+        if(req.batteryLevel < 20){ // charging
             ResponceChargingTask(req,res);
         }else{
             ResponceTaskWithLowestCost(req,res);
@@ -103,7 +104,7 @@ public:
            const robot_navigation::GoToTargetResult::ConstPtr &result){
         ROS_INFO_STREAM("State "<<state.toString()<<" result = "<<*result);
          _sqlMtx.lock();
-         if(result->isCompleted){  
+         if(state == actionlib::SimpleClientGoalState::SUCCEEDED){  
              _sc.UpdateTaskStatus(result->task_id,"RanToCompletion");// Mark task as RanToCompletion
              ROS_INFO("Mark task %d as completed",result->task_id);
         }else{
@@ -121,8 +122,9 @@ public:
         ros::Time now = ros::Time::now();
         if(map.size()==0){
             ROS_INFO_STREAM("All charging station are busy");
+            res.hasTask = false;
         }
-        
+        res.hasTask = true;
         std::pair<int,double> best; // best charging station (id,distance) 
         best.second = 1000;  
             for(auto i : map){
@@ -233,8 +235,14 @@ public:
                 return a.cost >b.cost;
         });
 
-        for(auto j:v){
-            ROS_INFO_STREAM(j.task_id<<" "<<j.cost);
+        for(vector<Task>::iterator it = v.begin(); it != v.end(); it++){
+            ROS_INFO_STREAM("Task with cost < "<<to_string(COST_LIMIT));
+            if(it->cost > COST_LIMIT){
+               ROS_INFO_STREAM(it->task_id<<" "<<it->cost<<" (cost > " << to_string(COST_LIMIT) << " delete)");
+               v.erase(it);
+            }else{
+                ROS_INFO_STREAM(it->task_id<<" "<<it->cost);
+            }
         }
         return v.back();
     }
