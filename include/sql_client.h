@@ -223,20 +223,37 @@ class SQLClient{
         return t.task_id;
     }
 
-    int InsertATargetAssignId(geometry_msgs::PoseStamped target){
+    int InsertATargetAssignId(geometry_msgs::PoseStamped target, string targetType){
         sql::ResultSet* res;        
-        int target_id = -1;
-        stmt->execute(
-          "INSERT INTO targets(target_type, position_x, position_y, orientation_z, orientation_w) \
-            VALUES('Point'," + to_string(target.pose.position.x) + "," + to_string(target.pose.position.y) + "," + to_string(target.pose.orientation.z) +","+to_string(target.pose.orientation.w)
-          +") ON DUPLICATE KEY UPDATE target_type = target_type AND last_insert_id(target_id)"
-        );
-
-        res = stmt->executeQuery("SELECT last_insert_id() as target_id");
-        res->next();
-        target_id = res->getInt("target_id");
-
-        return target_id;
+        string x = to_string(target.pose.position.x);
+        string y = to_string(target.pose.position.y);
+        string z = to_string(target.pose.orientation.z);
+        string w = to_string(target.pose.orientation.w);
+        
+        ROS_INFO_STREAM("Check target exist ");
+          res = stmt->executeQuery(
+            "SELECT * FROM targets WHERE position_x = " + x + " AND position_y =" + y
+          );
+          if(res->rowsCount() == 0){
+              ROS_INFO_STREAM("Adding new target (" << x << "," <<y << ")");
+              stmt->execute(
+                "INSERT INTO targets(target_type, position_x, position_y, orientation_z, orientation_w) \
+                  VALUES('"+ targetType + "'," + x + "," + y + "," + z +","+ w +")" 
+              );
+              res = stmt->executeQuery("SELECT last_insert_id() as target_id");
+              res->next();
+              if(res->rowsCount() == 0){
+                ROS_INFO_STREAM("Failed to insert target");
+                return 0;
+              }else{
+                return res->getInt("target_id");
+              }
+          }else{
+            ROS_INFO_STREAM("This target is already in targets table");
+            res->next();
+            return res->getInt("target_id");
+          }
+        
     }
 
     // Create charging task

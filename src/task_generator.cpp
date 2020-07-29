@@ -16,9 +16,9 @@ int main(int argc, char** argv){
     t.goal.pose.orientation.w = 0.692426702112;
     t.goal.header.stamp = ros::Time::now()+ros::Duration(20);
     t.goal.header.frame_id = "map";
-    t.target_id = sc.InsertATargetAssignId(t.goal);
+    t.target_id = sc.InsertATargetAssignId(t.goal,"Point");
     int taskId = sc.InsertATaskAssignId(t);  
     
     ROS_INFO_STREAM("Created a task. \n"<<t.goal<<" target id = "<<t.target_id<< " task id ="<<taskId);
-
+    ros::spin();
 }
