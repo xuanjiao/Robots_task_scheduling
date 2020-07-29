@@ -8,7 +8,7 @@
 
 class SqlTest :public ::testing::Test {
     public:
-        SqlTest(): sql_client("root","pi"){
+        SqlTest(): sql_client("root","nes"){
 
         }
         ~SqlTest(){}
@@ -24,9 +24,9 @@ TEST_F(SqlTest,example){
 //     ASSERT_EQ(ros::Time::now().sec,Util::str_ros_time(Util::time_str(ros::Time::now())).sec);
 // }
 
-TEST_F(SqlTest,insert_task){
-    sql_client.InsertMultipleGatherInfoTasks(5,ros::Time::now(),ros::Duration(300));
-}
+// TEST_F(SqlTest,insert_task){
+//     sql_client.InsertMultipleGatherInfoTasks(5,ros::Time::now(),ros::Duration(300));
+// }
 
 TEST_F(SqlTest,QueryRunableTask){
     auto v = sql_client.QueryRunableGatherEnviromentInfoTasks();
@@ -48,11 +48,11 @@ TEST_F(SqlTest,QueryAvailableChargingStations){
 }
 
 
-TEST_F(SqlTest,InsertATargetAssignId){
-    geometry_msgs::PoseStamped goal;
-    int id = sql_client.InsertATargetAssignId(goal);
-    ASSERT_GT(id,0);
-}
+// TEST_F(SqlTest,InsertATargetAssignId){
+//     geometry_msgs::PoseStamped goal;
+//     int id = sql_client.InsertATargetAssignId(goal);
+//     ASSERT_GT(id,0);
+// }
 
 
 TEST_F(SqlTest,UpdateReturnedTask){
@@ -98,7 +98,7 @@ int main(int argc, char** argv){
     std::thread t([]{while(ros::ok()) ros::spin();});
 
     // ::testing::GTEST_FLAG(filter) = "SqlTest.insert_task";
-     ::testing::GTEST_FLAG(filter) = "SqlTest.QueryRunableTask";
+     ::testing::GTEST_FLAG(filter) = "SqlTest.UpdateExpiredTask";
 
     auto res = RUN_ALL_TESTS();
     

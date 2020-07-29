@@ -171,9 +171,9 @@ add_dependencies(centralized_pool ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_E
 target_link_libraries(centralized_pool mysqlcppconn ${catkin_LIBRARIES})
 
 
-add_executable(TaskGenerator src/TaskGenerator.cpp)
-add_dependencies(TaskGenerator ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(TaskGenerator mysqlcppconn ${catkin_LIBRARIES})
+add_executable(task_generator src/task_generator.cpp)
+add_dependencies(task_generator ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(task_generator mysqlcppconn ${catkin_LIBRARIES})
 
 
 ## Rename C++ execu(table without prefix
