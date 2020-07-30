@@ -34,17 +34,25 @@ class CentralizedPool{
 
 public:
  CentralizedPool():
-        _sc("centralized_pool","pass"),
-        _gac("GoToTargetAction",true) //  spins up a thread to service this action's subscriptions. 
+        _sc("centralized_pool","pass")
+        // _gac("/tb3_0/GoToTargetAction",true) //  spins up a thread to service this action's subscriptions. 
     {
+        _cv.push_back(new GoToTargetActionClient("/tb3_0/GoToTargetAction",true));
+        _cv.push_back(new GoToTargetActionClient("/tb3_1/GoToTargetAction",true));
+
         init();
+    }
+    ~CentralizedPool(){
+        for(int i = 0 ; i< _cv.size(); i++){
+            delete _cv[i];
+        }
     }
 
     void init(){
 	    ros::Duration(1).sleep();
         ROS_INFO_STREAM("Current office time: "<<Util::time_str(ros::Time::now()));
         // _ts = _nh.advertiseService("make_task",&CentralizedPool::process_robot_request,this);
-        _ts = _nh.advertiseService("GetATask",&CentralizedPool::WhenRobotRequestTask,this);
+        _ts = _nh.advertiseService("/GetATask",&CentralizedPool::WhenRobotRequestTask,this);
         _pc = _nh.serviceClient<nav_msgs::GetPlan>("/tb3_0/move_base/NavfnROS/make_plan"); 
         _sqlMtx.lock();
         _sc.TruncateTable("tasks");     
@@ -156,6 +164,7 @@ public:
         ROS_INFO_STREAM("Best task id = "<<bt.taskId<<" ,cost = "<< fixed << setprecision(3) << setw(6)<< bt.cost);
         res.hasTask = true;
         _sc.UpdateTaskStatus(bt.taskId,"WaitingToRun");
+        bt.robotId = req.robotId;
         SendRobotActionGoal(bt); 
         _sqlMtx.unlock();
     }
@@ -235,8 +244,8 @@ public:
         g.targetId= bt.targetId;
         g.taskType = bt.taskType;
         g.taskId = bt.taskId;
-        
-        _gac.sendGoal(g,
+        g.robotId = bt.robotId;
+        _cv[bt.robotId]->sendGoal(g,
                 boost::bind(&CentralizedPool::WhenRobotFinishGoal,this,_1,_2),
                 actionlib::SimpleActionClient<robot_navigation::GoToTargetAction>::SimpleActiveCallback(),
                 // boost::bind(&CentralizedPool::WhenActionActive,this),
@@ -248,7 +257,8 @@ public:
 private:
     ros::ServiceServer _ts;
     ros::ServiceClient _pc;
-    GoToTargetActionClient _gac;
+    // GoToTargetActionClient _gac;
+    std::vector<GoToTargetActionClient*> _cv;
     SQLClient _sc;
     boost::mutex _sqlMtx;
     ros::NodeHandle _nh;

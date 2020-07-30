@@ -24,10 +24,10 @@ class RobotController{
 public:
     RobotController(int robotId):
     _robotId(robotId),
-    _mbc("/tb3_" + std::to_string(robotId) + "/move_base", true),
-    _gas(_nh,"GoToTargetAction",boost::bind(&RobotController::ExecuteCallback,this,_1),false),
+    _battery(100),
     _movLock(_mtx),
-    _battery(100)
+    _mbc("move_base", true),
+    _gas(_nh,"GoToTargetAction",boost::bind(&RobotController::ExecuteCallback,this,_1),false)
     {
         Init();
         RequestTask();
@@ -36,11 +36,15 @@ public:
     void Init(){
 
         ROS_INFO_STREAM("Robot "<<_robotId << " start initializing..");
-        _ss = _nh.subscribe<robot_navigation::sensor_data>("sensor_data",100,&RobotController::ListenSensorCallback,this);      
-        _tc = _nh.serviceClient<robot_navigation::GetATask>("GetATask");
-       
+        _ss = _nh.subscribe<robot_navigation::sensor_data>("/sensor_data",100,&RobotController::ListenSensorCallback,this);      
+        _tc = _nh.serviceClient<robot_navigation::GetATask>("/GetATask");
+
         while(!_mbc.waitForServer(ros::Duration(5.0))){
             ROS_INFO("Waiting for the move_base action server to come up");
+        }
+        
+        while(!_tc.waitForExistence(ros::Duration(5.0))){
+            ROS_INFO("Waiting for the /GetATask service to come up");
         }
 
         _gas.start();  // start receive goal from server
@@ -237,8 +241,13 @@ public:
      }
              
 private:
-    
-    // Note handle
+    int _robotId;
+    double _battery;
+
+    boost::mutex _mtx;
+    boost::condition_variable _movCv;
+    boost::unique_lock<boost::mutex> _movLock;
+
     ros::NodeHandle _nh;
     
     // Publisher
@@ -262,22 +271,23 @@ private:
     // int _targetId;
     // string _taskType; 
 
-    int _robotId;
-    double _battery;
-
-    boost::mutex _mtx;
-    boost::condition_variable _movCv;
-    boost::unique_lock<boost::mutex> _movLock;
 };
 
 int main(int argc, char **argv){
 	ROS_INFO("Main function start");
-        ros::init(argc,argv,"robot_controller"); // Initializes Node Name
-        
-    ROS_INFO("RobotController run");
-    RobotController rc(0);
-
+    ros::init(argc,argv,"robot_controller"); // Initializes Node Name
+    if(argc != 2){
+        ROS_INFO("Total %d arguments. Require 1 arg: robot id ",argc);
+        return 1;
+    }
+    int robotId = atoi(argv[1]);
+    if(robotId < 0 || robotId > 5){
+        ROS_INFO("Robot id should in[0,5]");
+        return 1;
+    }
+    ROS_INFO("Robot Controller %d run",robotId);
+    RobotController rc(robotId);
     ros::spin(); 
 
-        return 0;
+    return 0;
 }
