@@ -198,10 +198,9 @@ class SQLClient{
         doors.push_back(res->getInt("target_id")); // find available door id
       }
       for(int i = 0; i < num; i++){
-        priority = rand()%4  + 1;     // 1-5
         id = doors[rand()%doors.size()];  
         stmt->execute(
-            "INSERT INTO tasks(task_type, start_time, target_id, priority) VALUES('GatherEnviromentInfo','" + Util::time_str(start + interval *i) + "','" + to_string(id) + "'," + to_string(priority) +")"
+            "INSERT INTO tasks(task_type, start_time, target_id, priority) VALUES('GatherEnviromentInfo','" + Util::time_str(start + interval *i) + "','" + to_string(id) + "'," + to_string(1) +")"
         );
         cnt += stmt->getUpdateCount();
       }

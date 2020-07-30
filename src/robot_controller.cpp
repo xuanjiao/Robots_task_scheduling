@@ -136,18 +136,6 @@ public:
         RequestTask(); // Get a new task
     }
 
-     
-    // void MoveBaseCompleteCallback(const actionlib::SimpleClientGoalState& state,
-    //        const move_base_msgs::MoveBaseResult::ConstPtr& result ){
-    //         ROS_INFO_STREAM("Move complete. State "<<state.toString());
-    //         if(state == actionlib::SimpleClientGoalState::SUCCEEDED){
-    //             State = &RobotController::ProcessTask;
-    //         }else{
-    //             _rs.isCompleted = false;
-    //             _movCv.notify_all();
-    //         }
-    // }
-
     void StartChargingTask(geometry_msgs::PoseStamped cs){
         ROS_INFO_STREAM(" Start charging task");
         move_base_msgs::MoveBaseGoal goal;
@@ -200,19 +188,6 @@ public:
         ROS_INFO_STREAM("Execute task finished");
         _movCv.notify_all();
     }
-
-    // void ProcessTask(){
-    //     if(_taskType == "Charging"){
-    //         ROS_INFO_STREAM("charging 5s....");
-    //         ros::Duration(5).sleep(); // charging for 5sec
-    //         _battery = 100;
-    //     }else if(_taskType == "ExecuteTask"){
-    //        ROS_INFO_STREAM("doing task 3s....");
-    //         ros::Duration(3).sleep(); // charging for 5sec
-    //     }
-    //     _rs.isCompleted = true;
-    //     _movCv.notify_all();
-    // }
 
     void ListenSensorCallback(const robot_navigation::sensor_data::ConstPtr& message){
 

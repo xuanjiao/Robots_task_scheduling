@@ -39,7 +39,7 @@ public:
     {
         _cv.push_back(new GoToTargetActionClient("/tb3_0/GoToTargetAction",true));
         _cv.push_back(new GoToTargetActionClient("/tb3_1/GoToTargetAction",true));
-
+        _cv.push_back(new GoToTargetActionClient("/tb3_2/GoToTargetAction",true));
         init();
     }
     ~CentralizedPool(){
@@ -155,7 +155,7 @@ public:
         ROS_INFO_STREAM("found "<<v.size()<<" execute tasks");
         if(v.size() == 0){
             while((v = _sc.QueryRunableGatherEnviromentInfoTasks()).size() == 0){  // if no execute task, create some gather enviroment info task
-                int num = _sc.InsertMultipleGatherInfoTasks(5,cur_time + ros::Duration(20),ros::Duration(50));
+                int num = _sc.InsertMultipleGatherInfoTasks(10,cur_time + ros::Duration(20),ros::Duration(50));
                 ROS_INFO("Create %d tasks",num);
             }
             ROS_INFO_STREAM("found "<<v.size()<<"gather enviroment info tasks");

@@ -3,7 +3,7 @@ drop procedure if exists createRawData;
 
 delimiter $$
 create procedure createRawData(
-    in id char,
+    in id int,
 	in start_date_time datetime,
     in period time,
     in cnt_total int
@@ -12,7 +12,6 @@ create procedure createRawData(
 begin    	
 	declare cnt int default 0;
     declare cur_time datetime;
-    declare door boolean;
     set cur_time = start_date_time;
 	while cnt < cnt_total do
           insert into door_status
@@ -20,8 +19,8 @@ begin
             id,
             if(rand()< open_pos,1,0), 
             cur_time -- create door status according to possibility table
-                from open_possibilities
-		    where TIME(cur_time) between start_time and end_time and id = door_id and dayofweek(cur_time) = day_of_week;
+                from open_possibilities o
+		    where TIME(cur_time) between o.start_time and o.end_time and id = o.door_id and dayofweek(cur_time) = o.day_of_week;
 			 -- call process_measurement_result(id,cur_time);
           set cur_time = addtime(cur_time,period);
           set cnt = cnt + 1;
@@ -29,11 +28,12 @@ begin
 
     end $$
 delimiter ;
-
--- -- create raw data with datetime and door status, 
--- call createRawData('a','2020-06-01 0:00:00','00:10:00',200);
--- call createRawData('b','2020-06-01 0:00:00','00:10:00',200);
--- call createRawData('c','2020-06-01 0:00:00','00:10:00',200);
--- call createRawData('d','2020-06-01 0:00:00','00:10:00',200);
-
--- select * from door_status_list;
+-- 
+-- -- -- create raw data with datetime and door status, 
+-- call createRawData(1,'2020-06-01 0:00:00','00:10:00',200);
+-- -- call createRawData('b','2020-06-01 0:00:00','00:10:00',200);
+-- -- call createRawData('c','2020-06-01 0:00:00','00:10:00',200);
+-- -- call createRawData('d','2020-06-01 0:00:00','00:10:00',200);
+-- 
+-- select * from door_status;
+-- truncate door_status;
