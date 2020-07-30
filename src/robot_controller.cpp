@@ -35,7 +35,7 @@ public:
 
     void Init(){
 
-        ROS_INFO_STREAM("Subscribe to Inviroment Info and Centralized pool");
+        ROS_INFO_STREAM("Robot "<<_robotId << " start initializing..");
         _ss = _nh.subscribe<robot_navigation::sensor_data>("sensor_data",100,&RobotController::ListenSensorCallback,this);      
         _tc = _nh.serviceClient<robot_navigation::GetATask>("GetATask");
        
@@ -43,9 +43,8 @@ public:
             ROS_INFO("Waiting for the move_base action server to come up");
         }
 
-       ROS_INFO_STREAM("Start receive task");
         _gas.start();  // start receive goal from server
-        
+        ROS_INFO_STREAM("Robot "<<_robotId << " finish initializing");
     }
 
     void RequestTask(){
@@ -54,13 +53,13 @@ public:
         
         ROS_INFO_STREAM("Get current position...");
         while(ros::ok()){
-                    // try to get its current location
+            // try to get its current location
             sharedPtr =  ros::topic::waitForMessage<geometry_msgs::PoseWithCovarianceStamped>("/tb3_"+ to_string(_robotId) +"/amcl_pose",_nh);
             if(sharedPtr == NULL){
                 ROS_INFO_STREAM("Failed to get current position");
             }else{
                 _cp.pose = sharedPtr->pose.pose;
-                ROS_INFO_STREAM("Robot get current position "<<Util::pose_str(_cp.pose)); 
+                ROS_INFO_STREAM("Robot "<< _robotId <<" "<<Util::pose_str(_cp.pose)); 
                 break;
             }
             ros::Duration(5).sleep();
@@ -70,7 +69,8 @@ public:
         robot_navigation::GetATask srv;
         srv.request.batteryLevel=  _battery;
         srv.request.pose = sharedPtr->pose.pose;
-
+        srv.request.robotId = _robotId;
+        
         while(ros::ok()){
             if(!_tc.call(srv)){
                 ROS_INFO_STREAM("Failed to send request");
@@ -93,36 +93,16 @@ public:
         ROS_INFO_STREAM("** Wake up. Time: " <<Util::time_str(ros::Time::now()));  
     }
 
-    // void SendGoalToMoveBase(){
-    //     ROS_INFO_STREAM(" Send goal to move base");
-    //     move_base_msgs::MoveBaseGoal goal;
-    //     goal.target_pose = _tp;
-    //     _mbc.sendGoal(goal,
-    //             boost::bind(&RobotController::MoveBaseCompleteCallback,this, _1, _2),
-    //             actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction>::SimpleActiveCallback(),
-    //             boost::bind(&RobotController::MoveBasePositionFeedback,this, _1)
-    //     ); 
-    // }
-
-    // void StateMoving(){
-    //     // ROS_INFO("Task running");
-         
-    // }
-
-// called in a separate thread whenever a new goal is received
-void ExecuteCallback(const robot_navigation::GoToTargetGoalConstPtr &task){
-    ROS_INFO_STREAM("Get a goal from pool\n"<<*task);
-        // _targetId = goal->target_id;
-        // _taskId = goal->task_id;
-        // _taskType = goal->task_type;
-
+    // called in a separate thread whenever a new goal is received
+    void ExecuteCallback(const robot_navigation::GoToTargetGoalConstPtr &task){
+        ROS_INFO_STREAM("Get a task from pool\n"<<*task);
         robot_navigation::GoToTargetResult rs;
-        rs.task_id = task->task_id;
+        rs.taskId = task->taskId;
 
         // Wait until task time
         ros::Time now = ros::Time::now();
         if(task->goals[0].header.stamp < now ){
-            ROS_INFO_STREAM("Task "<< task->task_id << " is expired");
+            ROS_INFO_STREAM("Task "<< task->taskId << " is expired");
             _gas.setAborted(rs);
             RequestTask(); // Get a new task
             return;
@@ -131,11 +111,11 @@ void ExecuteCallback(const robot_navigation::GoToTargetGoalConstPtr &task){
         }
         
         // Start task
-        if (task->task_type == "Charging" ){
+        if (task->taskType == "Charging" ){
             StartChargingTask(task->goals[0]);
-        }else if (task->task_type == "GatherEnviromentInfo" ){
+        }else if (task->taskType == "GatherEnviromentInfo" ){
             StartGatherInviromentTask(task->goals[0]);
-        }else if (task->task_type == "ExecuteTask" ){
+        }else if (task->taskType == "ExecuteTask" ){
             StartExecuteTask(task->goals[0]);
         }else{
             ROS_INFO_STREAM("Unknown task");
@@ -235,12 +215,12 @@ void ExecuteCallback(const robot_navigation::GoToTargetGoalConstPtr &task){
         double distance = sqrt(pow(_cp.pose.position.x - message->pose.x,2) + pow(_cp.pose.position.y - message->pose.y,2));
 
         if(distance <= SENSOR_RANGE){
-            std::string status = message->door_status?"open":"closed";
+            std::string status = message->doorStatus?"open":"closed";
             ROS_INFO_STREAM( "Distance "<< distance<<" room " << message->id <<" door "<<status<<" position ("<<message->pose.x<<", "<<message->pose.y<<", "<<message->pose.z<<")");
-            _fb.door_id = message->id;
-            _fb.m_time = message->stamp;
-            _fb.door_status = message->door_status;
-            _fb.robot_id = _robotId;
+            _fb.doorId = message->id;
+            _fb.measureTime = message->stamp;
+            _fb.doorStatus = message->doorStatus;
+            _fb.robotId = _robotId;
             _gas.publishFeedback(_fb);
         }
     }

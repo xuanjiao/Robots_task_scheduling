@@ -3,9 +3,9 @@
 #include <geometry_msgs/PoseStamped.h>
 
 typedef struct {
-    int task_id;
+    int taskId;
     int priority;
-    std::string task_type;
-    int target_id;
+    std::string taskType;
+    int targetId;
     geometry_msgs::PoseStamped goal; // distination and timestamp
 }Task;

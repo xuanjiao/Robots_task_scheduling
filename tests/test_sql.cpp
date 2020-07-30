@@ -24,9 +24,10 @@ TEST_F(SqlTest,example){
 //     ASSERT_EQ(ros::Time::now().sec,Util::str_ros_time(Util::time_str(ros::Time::now())).sec);
 // }
 
-// TEST_F(SqlTest,insert_task){
-//     sql_client.InsertMultipleGatherInfoTasks(5,ros::Time::now(),ros::Duration(300));
-// }
+TEST_F(SqlTest,insert_task){
+    int num = sql_client.InsertMultipleGatherInfoTasks(5,ros::Time::now(),ros::Duration(300));
+    ASSERT_EQ(num,5);
+}
 
 // TEST_F(SqlTest,InsertATargetAssignId){
 //     geometry_msgs::PoseStamped goal;
@@ -37,7 +38,7 @@ TEST_F(SqlTest,example){
 TEST_F(SqlTest,InsertATaskAssignId){
            
     Task t;
-    t.task_type = "ExecuteTask";
+    t.taskType = "ExecuteTask";
     t.priority = 4;
     t.goal.pose.position.x = 4.38077210276;
     t.goal.pose.position.y =  9.34650744461;
@@ -45,9 +46,9 @@ TEST_F(SqlTest,InsertATaskAssignId){
     t.goal.pose.orientation.w = 0.692426702112;
     t.goal.header.stamp = ros::Time::now()+ros::Duration(20);
     t.goal.header.frame_id = "map";
-    t.target_id = sql_client.InsertATargetAssignId(t.goal,"Point");
+    t.targetId = sql_client.InsertATargetAssignId(t.goal,"Point");
     int taskId = sql_client.InsertATaskAssignId(t);  
-    ASSERT_GT(t.target_id,0);
+    ASSERT_GT(t.targetId,0);
     ASSERT_GT( taskId,0);
 }
 
@@ -82,9 +83,9 @@ TEST_F(SqlTest,UpdateReturnedTask){
 //     ASSERT_GT(map.size(),0);
 // }
 
-// TEST_F(SqlTest,update_pos_table){   
+// TEST_F(SqlTest,insertRecord){   
 //     ros::Time now = ros::Time::now();
-//     auto p = sql_client.query_target_id_type_from_task(2);
+//     auto p = sql_client.query_targetId_type_from_task(2);
 //     ASSERT_EQ(p.first,'b');
 //     ASSERT_EQ(p.second,"EnterRoom");
 //     sql_client.InsertDoorStatusRecord(p.first,now,0);
@@ -92,7 +93,7 @@ TEST_F(SqlTest,UpdateReturnedTask){
 //     // ASSERT_EQ(get<0>(t),"16:00:00");
 //     // ASSERT_EQ(get<1>(t),"23:59:59");
 //     ASSERT_EQ(get<2>(t),5);
-//     //sql_client.UpdateOpenPossibilities(target_id,now);
+//     //sql_client.UpdateOpenPossibilities(targetId,now);
 // }
 
 TEST_F(SqlTest,UpdateTaskStatus){

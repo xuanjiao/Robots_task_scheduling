@@ -54,8 +54,8 @@ public:
     // call back when receive robot request for task //
     bool WhenRobotRequestTask(robot_navigation::GetATask::Request &req, 
         robot_navigation::GetATask::Response &res){  
-        ROS_INFO_STREAM("Receive request from robot\n"<<req);
-        
+        ROS_INFO("Robot %d request a task",req.robotId);
+        ROS_INFO_STREAM(req);
         if(req.batteryLevel < 20){ // charging
             ResponceChargingTask(req,res);
         }else{
@@ -66,31 +66,34 @@ public:
 
      // call back when receive a door status from robot 
     void WhenReceiveInfoFromRobot(const robot_navigation::GoToTargetFeedbackConstPtr &feedback){
-        ROS_INFO_STREAM("Update door list and possibility table. [Time]:"<<
-            Util::time_str(feedback->m_time)<<" [Door] " << to_string(feedback->door_id) << 
-            " [status] "<<to_string(feedback->door_status));
+        // ROS_INFO_STREAM("Robot "<<feedback->robotId <<" Feedback: [Time]:"<<
+        //     Util::time_str(feedback->measureTime)<<" [Door] " << to_string(feedback->doorId) << 
+        //     " [status] "<<to_string(feedback->doorStatus));
+
+        ROS_INFO("Robot %d feedback: ",feedback->robotId);
+        ROS_INFO_STREAM(*feedback);
         _sqlMtx.lock();
-        _sc.InsertDoorStatusRecord(feedback->door_id,feedback->m_time,feedback->door_status); 
-        _sc.UpdateOpenPossibilities(feedback->door_id,feedback->m_time);
+        int r = _sc.InsertDoorStatusRecord(feedback->doorId,feedback->measureTime,feedback->doorStatus); 
+        int u = _sc.UpdateOpenPossibilities(feedback->doorId,feedback->measureTime);
+        ROS_INFO("Insert %d record, update %d rows in possibility table",r,u);
         _sqlMtx.unlock();
     }
 
-    // Call back when robot receive a goal                                                                                                       all when robot receive a goal
-    void WhenActionActive(){
-        ROS_INFO_STREAM("Goal arrived to robot");
-    }   
+    // // Call back when robot receive a goal                                                                                                       all when robot receive a goal
+    // void WhenActionActive(){
+    //     ROS_INFO_STREAM("Goal arrived to robot");
+    // }   
 
     // Call when receive a complet event from robot
     void WhenRobotFinishGoal(const actionlib::SimpleClientGoalState& state,
            const robot_navigation::GoToTargetResult::ConstPtr &result){
-        ROS_INFO_STREAM("State "<<state.toString()<<" result = "<<*result);
-         _sqlMtx.lock();
+        ROS_INFO("Robot %d result:",result->robotId);
+        ROS_INFO_STREAM(*result); 
          if(state == actionlib::SimpleClientGoalState::SUCCEEDED){  
-             _sc.UpdateTaskStatus(result->task_id,"RanToCompletion");// Mark task as RanToCompletion
-             ROS_INFO("Mark task %d as completed",result->task_id);
+             ROS_INFO("Task Succedd. Update %d task status",_sc.UpdateTaskStatus(result->taskId,"RanToCompletion"));
         }else{
             // change task status from Running to ToReRun, increase priority 3 and increase 200s start time 
-            _sc.UpdateReturnedTask(result->task_id,3,ros::Duration(200));
+             ROS_INFO("Task failed. Update %d returned task ",_sc.UpdateReturnedTask(result->taskId,3,ros::Duration(200)));
         }
         _sqlMtx.unlock();
     }
@@ -117,7 +120,7 @@ public:
         }
         
         Task bt;
-        bt.task_type = "Charging";
+        bt.taskType = "Charging";
         bt.priority = 5;
         bt.goal.header.stamp = now + ros::Duration(10); // create a charging task that start after 10s
         bt.goal.header.frame_id = "map";
@@ -135,10 +138,8 @@ public:
         ros::Time cur_time = ros::Time::now();
         ROS_INFO_STREAM("current time =  "<<cur_time);
         _sqlMtx.lock();
-         _sc.PrintTable("tasks");
-        ROS_INFO("Handle expired tasks...");
-        _sc.UpdateExpiredTask(cur_time+ ros::Duration(20));
-        ROS_INFO("Handle expired tasks finished");
+        _sc.PrintTable("tasks");      
+        ROS_INFO("Handled %d expired tasks",_sc.UpdateExpiredTask(cur_time+ ros::Duration(20)));
         _sc.PrintTable("tasks"); 
         std::vector<Task> v;
 
@@ -146,15 +147,15 @@ public:
         ROS_INFO_STREAM("found "<<v.size()<<" execute tasks");
         if(v.size() == 0){
             while((v = _sc.QueryRunableGatherEnviromentInfoTasks()).size() == 0){  // if no execute task, create some gather enviroment info task
-                _sc.InsertMultipleGatherInfoTasks(5,cur_time + ros::Duration(20),ros::Duration(50));
-                ROS_INFO_STREAM("Create 5 tasks");
+                int num = _sc.InsertMultipleGatherInfoTasks(5,cur_time + ros::Duration(20),ros::Duration(50));
+                ROS_INFO("Create %d tasks",num);
             }
             ROS_INFO_STREAM("found "<<v.size()<<"gather enviroment info tasks");
         }
         Task bt = GetBestTask(v,req.pose,cur_time,req.batteryLevel);
-        ROS_INFO_STREAM("Best task id = "<<bt.task_id<<" ,cost = "<< fixed << setprecision(3) << setw(6)<< bt.cost);
+        ROS_INFO_STREAM("Best task id = "<<bt.taskId<<" ,cost = "<< fixed << setprecision(3) << setw(6)<< bt.cost);
         res.hasTask = true;
-        _sc.UpdateTaskStatus(bt.task_id,"WaitingToRun");
+        _sc.UpdateTaskStatus(bt.taskId,"WaitingToRun");
         SendRobotActionGoal(bt); 
         _sqlMtx.unlock();
     }
@@ -198,14 +199,14 @@ public:
                    calculate_distance(i.goal.pose,robot_pose),
                    i.goal.header.stamp.sec - t.sec,
                    i.priority,
-                   i.open_pos,
+                   i.openPossibility,
                    battery
                 );
                 i.cost = cf._cost;
 
                 ROS_INFO_STREAM(
-                    setw(3) <<i.task_id <<" "<<setw(5)<<i.task_type <<setw(4) << i.target_id << setw(2) << i.priority << setprecision(3)<< setw(4) << 
-                    i.open_pos << " " << setprecision(3)<< setw(5) << cf._distance << " "<<fixed<<setprecision(3) << setw(10) <<cf._sec_diff<< " " <<fixed << setprecision(3) << setw(6) <<i.cost 
+                    setw(3) <<i.taskId <<" "<<setw(5)<<i.taskType <<setw(4) << i.targetId << setw(2) << i.priority << setprecision(3)<< setw(4) << 
+                    i.openPossibility << " " << setprecision(3)<< setw(5) << cf._distance << " "<<fixed<<setprecision(3) << setw(10) <<cf._sec_diff<< " " <<fixed << setprecision(3) << setw(6) <<i.cost 
                 );
         }
 
@@ -218,10 +219,10 @@ public:
         for(vector<Task>::iterator it = v.begin(); it != v.end(); it++){
             ROS_INFO_STREAM("Task with cost < "<<to_string(COST_LIMIT));
             if(it->cost > COST_LIMIT){
-               ROS_INFO_STREAM(it->task_id<<" "<<it->cost<<" (cost > " << to_string(COST_LIMIT) << " delete)");
+               ROS_INFO_STREAM(it->taskId<<" "<<it->cost<<" (cost > " << to_string(COST_LIMIT) << " delete)");
                v.erase(it);
             }else{
-                ROS_INFO_STREAM(it->task_id<<" "<<it->cost);
+                ROS_INFO_STREAM(it->taskId<<" "<<it->cost);
             }
         }
         return v.back();
@@ -231,13 +232,14 @@ public:
     void SendRobotActionGoal(Task &bt){
         robot_navigation::GoToTargetGoal g;
         g.goals.push_back(bt.goal);
-        g.target_id = bt.target_id;
-        g.task_type = bt.task_type;
-        g.task_id = bt.task_id;
+        g.targetId= bt.targetId;
+        g.taskType = bt.taskType;
+        g.taskId = bt.taskId;
         
         _gac.sendGoal(g,
                 boost::bind(&CentralizedPool::WhenRobotFinishGoal,this,_1,_2),
-                boost::bind(&CentralizedPool::WhenActionActive,this),
+                actionlib::SimpleActionClient<robot_navigation::GoToTargetAction>::SimpleActiveCallback(),
+                // boost::bind(&CentralizedPool::WhenActionActive,this),
                 boost::bind(&CentralizedPool::WhenReceiveInfoFromRobot,this,_1)
         );
         ROS_INFO_STREAM("Send a goal\n"<<g);

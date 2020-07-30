@@ -1,4 +1,4 @@
 geometry_msgs/Point pose
 time stamp
-uint8 door_status
+uint8 doorStatus
 int8 id 

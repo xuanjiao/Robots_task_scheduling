@@ -19,10 +19,10 @@
 using namespace std;
 
 typedef struct {
-    int task_id = 0;
-    string task_type = "";
-    int target_id = 0;
-    double open_pos = 0.0;
+    int taskId = 0;
+    string taskType = "";
+    int targetId = 0;
+    double openPossibility = 0.0;
     int priority = 0;
     geometry_msgs::PoseStamped goal; // distination and timestamp
     double cost = 0.0;
@@ -130,9 +130,9 @@ class SQLClient{
         while(res->next()){
           Task t;
           t.priority = res->getInt("priority");
-          t.target_id = res->getInt("target_id");
-          t.task_id = res->getInt("task_id");
-          t.task_type = res->getString("task_type");
+          t.targetId = res->getInt("target_id");
+          t.taskId = res->getInt("task_id");
+          t.taskType = res->getString("task_type");
 
           t.goal.header.frame_id = "map";
           t.goal.header.stamp = Util::str_ros_time(res->getString("start_time"));
@@ -167,10 +167,10 @@ class SQLClient{
         while(res->next()){
           Task t;
           t.priority = res->getInt("priority");
-          t.open_pos = res->getDouble("open_pos_st");
-          t.target_id = res->getInt("target_id");
-          t.task_id = res->getInt("task_id");
-          t.task_type = res->getString("task_type");
+          t.openPossibility = res->getDouble("open_pos_st");
+          t.targetId = res->getInt("target_id");
+          t.taskId = res->getInt("task_id");
+          t.taskType = res->getString("task_type");
 
           t.goal.header.frame_id = "map";
           t.goal.header.stamp = Util::str_ros_time(res->getString("start_time"));
@@ -188,11 +188,10 @@ class SQLClient{
 
 
     // Create new enter room tasks
-    bool InsertMultipleGatherInfoTasks(int num, ros::Time start, ros::Duration interval){
+    int InsertMultipleGatherInfoTasks(int num, ros::Time start, ros::Duration interval){
       sql::ResultSet* res;
-      bool ret;
       vector<int> doors;
-      int id,priority;
+      int id,priority,cnt = 0;
       res = stmt->executeQuery("SELECT target_id  FROM targets WHERE target_type = 'Door'");
       while(res->next()){
         doors.push_back(res->getInt("target_id")); // find available door id
@@ -200,12 +199,13 @@ class SQLClient{
       for(int i = 0; i < num; i++){
         priority = rand()%4  + 1;     // 1-5
         id = doors[rand()%doors.size()];  
-        ret = stmt->execute(
+        stmt->execute(
             "INSERT INTO tasks(task_type, start_time, target_id, priority) VALUES('GatherEnviromentInfo','" + Util::time_str(start + interval *i) + "','" + to_string(id) + "'," + to_string(priority) +")"
         );
+        cnt += stmt->getUpdateCount();
       }
       delete res;
-      return ret;
+      return cnt;
     }
     
     // Create new task and return its task id
@@ -213,14 +213,14 @@ class SQLClient{
         sql::ResultSet* res;        
         stmt->execute(
           "INSERT INTO tasks(task_type, priority, target_id, start_time) VALUES('"
-          + t.task_type +"','" + to_string(t.priority) +"','" + to_string(t.target_id) + "','" + Util::time_str(t.goal.header.stamp)+"')"
+          + t.taskType +"','" + to_string(t.priority) +"','" + to_string(t.targetId) + "','" + Util::time_str(t.goal.header.stamp)+"')"
          
           );
         res = stmt->executeQuery("SELECT last_insert_id() as id");
         res->next();
-        t.task_id = res->getInt("id");
+        t.taskId = res->getInt("id");
         delete res;
-        return t.task_id;
+        return t.taskId;
     }
 
     int InsertATargetAssignId(geometry_msgs::PoseStamped target, string targetType){
@@ -277,8 +277,8 @@ class SQLClient{
     } 
 
     // Change time and Priority of a returned task
-    void UpdateReturnedTask(int task_id, int priority_inc, ros::Duration time_inc){
-      stmt->executeUpdate("UPDATE tasks \
+    int UpdateReturnedTask(int task_id, int priority_inc, ros::Duration time_inc){
+      return stmt->executeUpdate("UPDATE tasks \
               SET priority = IF((priority + " + to_string(priority_inc) +  ")>5,5,priority + " + to_string(priority_inc) + 
         "), start_time = TIMESTAMPADD(SECOND," + to_string(time_inc.sec) + 
         ",start_time), cur_status = 'ToReRun' WHERE task_id = "+ to_string(task_id)
@@ -286,26 +286,19 @@ class SQLClient{
     }
 
     // Insert a record in door status list
-    bool InsertDoorStatusRecord(int door_id, ros::Time measure_time,bool door_status){
-      string mst = Util::time_str(measure_time);
-       bool result;
-      try{
-        // insert new record into door status table
-        ROS_INFO_STREAM(" insert "<<to_string(door_id)<<" "<<measure_time<<" "<<door_status);
-        result = stmt->execute("INSERT INTO door_status(door_id,door_status,date_time) VALUES('" + to_string(door_id) + "', " +to_string(door_status)+", '"+ mst+"')");
-        // PrintTable("door_status");
-      }catch(sql::SQLException e){
-        ROS_INFO_STREAM(e.what());
-      }
-      return result;
+    int InsertDoorStatusRecord(int door_id, ros::Time measure_time,bool door_status){
+        string mst = Util::time_str(measure_time);
+        // ROS_INFO_STREAM(" insert "<<to_string(door_id)<<" "<<measure_time<<" "<<door_status);
+        stmt->execute("INSERT INTO door_status(door_id,door_status,date_time) VALUES('" + to_string(door_id) + "', " +to_string(door_status)+", '"+ mst+"')");
+        return stmt->getUpdateCount();
     }
 
     // Find all records from this time and day of weeks, and calculate new open possibilities
-    void UpdateOpenPossibilities(int door_id, ros::Time measure_time){
+    int UpdateOpenPossibilities(int door_id, ros::Time measure_time){
       auto t = QueryStartTimeEndTimeDayFromOpenPossibilitiesTable(door_id,measure_time);
 
       // update open possibility table
-      stmt->executeUpdate(
+      return stmt->executeUpdate(
         "UPDATE open_possibilities o \
           SET  o.open_pos_st = (SELECT SUM(door_status) / COUNT(door_status)  FROM  door_status ds \
               WHERE ds.door_id = '" + to_string(door_id) + "' AND DAYOFWEEK(ds.date_time) = '" + to_string(get<2>(t)) + 
@@ -315,19 +308,17 @@ class SQLClient{
     }
 
     // Change task status in tasks table
-    void UpdateTaskStatus(int task_id,string status){
-      stmt->executeUpdate("UPDATE tasks set cur_status = '"+ status + "' WHERE task_id = " + to_string(task_id));
+    int UpdateTaskStatus(int task_id,string status){
+      return stmt->executeUpdate("UPDATE tasks set cur_status = '"+ status + "' WHERE task_id = " + to_string(task_id));
     }
 
     // Change expired "Created", "WaitingToRun" getEnviromentInfo task status to 'Canceled'
     // Change expired and uncompleted Execute Task status to a new time
-    void UpdateExpiredTask(ros::Time newTime){
-      try{
-        stmt->executeUpdate("UPDATE tasks set cur_status = 'Canceled' WHERE start_time < '" + Util::time_str(newTime)+"' AND task_type = 'GatherEnviromentInfo' AND cur_status IN ('Created','WaitingToRun','ToReRun')");
-        stmt->executeUpdate("UPDATE tasks set start_time = '"+Util::time_str(newTime)+"' WHERE start_time < '" + Util::time_str(newTime)+"' AND task_type = 'ExecuteTask' AND cur_status NOT IN ('RanToCompletion')");
-      }catch(sql::SQLException e){
-        ROS_INFO_STREAM(e.what());
-      }
+    int UpdateExpiredTask(ros::Time newTime){
+        int cnt = 0;
+        cnt += stmt->executeUpdate("UPDATE tasks set cur_status = 'Canceled' WHERE start_time < '" + Util::time_str(newTime)+"' AND task_type = 'GatherEnviromentInfo' AND cur_status IN ('Created','WaitingToRun','ToReRun')");
+        cnt += stmt->executeUpdate("UPDATE tasks set start_time = '"+Util::time_str(newTime)+"' WHERE start_time < '" + Util::time_str(newTime)+"' AND task_type = 'ExecuteTask' AND cur_status NOT IN ('RanToCompletion')");
+        return cnt;
     }
 
     tuple<string,string,int> QueryStartTimeEndTimeDayFromOpenPossibilitiesTable(int door_id, ros::Time measure_time){

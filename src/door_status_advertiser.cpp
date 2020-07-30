@@ -23,7 +23,7 @@ class Advertiser{
         pub = nh.advertise<robot_navigation::sensor_data>("sensor_data",100);
     }
 
-    void query_publush_door_status(){
+    void queryPublushDoorStatus(){
         ros::Time now = ros::Time::now();
         string time = Util::time_str(now);
         auto v = sql_client.QueryTargetPositionAndOpenPossibilities(time);
@@ -35,7 +35,7 @@ class Advertiser{
                 robot_navigation::sensor_data msg;
                 msg.id = get<0>(tl);
                 msg.pose = get<1>(tl).position;
-                msg.door_status = rand()%100 /(double)100< (get<2>(tl))?1:0;
+                msg.doorStatus = rand()%100 /(double)100< (get<2>(tl))?1:0;
                 msg.stamp  = now;
                 pub.publish(msg);
                 ROS_INFO_STREAM(time << "publish a message:\n " <<msg);
@@ -54,7 +54,7 @@ int main(int argc, char** argv){
     ros::init(argc,argv,"door_status_advertiser"); // Initializes Node Name
     Advertiser ad;   
     while(ros::ok()){
-        ad.query_publush_door_status();
+        ad.queryPublushDoorStatus();
         ros::spinOnce();
         ros::Duration(10).sleep();
     }   
