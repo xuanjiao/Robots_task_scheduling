@@ -17,7 +17,7 @@ CREATE TABLE open_possibilities (
     end_time TIME,
     open_pos DOUBLE(4 , 1 ),
     open_pos_st DOUBLE(4 , 1 ),
-    CONSTRAINT Door_Time PRIMARY KEY (day_of_week , start_time , end_time , door_id)
+    CONSTRAINT Door_Time UNIQUE (day_of_week , start_time , end_time , door_id)
 );
 
 drop table if exists door_status;
@@ -25,7 +25,7 @@ CREATE TABLE door_status (
     door_id INT,
     door_status BOOLEAN,
     date_time DATETIME,
-    CONSTRAINT Door_Date_Time PRIMARY KEY (date_time , door_id)
+    CONSTRAINT Door_Date_Time UNIQUE (date_time , door_id)
 );
 
 drop table if exists targets;
