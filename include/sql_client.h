@@ -20,6 +20,7 @@ using namespace std;
 
 typedef struct {
     int taskId = 0;
+    int robotId = 0;
     string taskType = "";
     int targetId = 0;
     double openPossibility = 0.0;
@@ -289,7 +290,7 @@ class SQLClient{
     int InsertDoorStatusRecord(int door_id, ros::Time measure_time,bool door_status){
         string mst = Util::time_str(measure_time);
         // ROS_INFO_STREAM(" insert "<<to_string(door_id)<<" "<<measure_time<<" "<<door_status);
-        stmt->execute("INSERT INTO door_status(door_id,door_status,date_time) VALUES('" + to_string(door_id) + "', " +to_string(door_status)+", '"+ mst+"')");
+        stmt->execute("REPLACE INTO door_status(door_id,door_status,date_time) VALUES('" + to_string(door_id) + "', " +to_string(door_status)+", '"+ mst+"')");
         return stmt->getUpdateCount();
     }
 
