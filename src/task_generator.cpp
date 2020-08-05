@@ -14,8 +14,15 @@ int main(int argc, char** argv){
     t.goal.pose.position.y =  9.34650744461;
     t.goal.pose.orientation.z = 0.721488227349;
     t.goal.pose.orientation.w = 0.692426702112;
+
+    // t.goal.pose.position.x = -19.4279;
+    // t.goal.pose.position.y =  9.00543;
+    // t.goal.pose.orientation.z = 0.673663;
+    // t.goal.pose.orientation.w = 0.739039;
+
     t.goal.header.stamp = ros::Time::now()+ros::Duration(20);
     t.goal.header.frame_id = "map";
+    
     t.targetId = sc.InsertATargetAssignId(t.goal,"Point");
     int taskId = sc.InsertATaskAssignId(t);  
     

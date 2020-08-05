@@ -1,7 +1,6 @@
 #pragma once
 
 #include <stdlib.h>
-#include <iostream>
 #include <ros/ros.h>
 #include <vector>
 #include <iostream>
@@ -10,25 +9,13 @@
 #include <cppconn/exception.h>
 #include <cppconn/resultset.h>
 #include <cppconn/statement.h>
-
+#include "general_task.h"
 #include "util.h"
 
 #define   DATABASE_NAME                                   "sensor_db"
 #define   URI                                             "tcp://127.0.0.1"
 
 using namespace std;
-
-typedef struct {
-    int taskId = 0;
-    int robotId = 0;
-    string taskType = "";
-    int targetId = 0;
-    double openPossibility = 0.0;
-    int priority = 0;
-    geometry_msgs::PoseStamped goal; // distination and timestamp
-    double cost = 0.0;
-}Task;
-
 
 class SQLClient{
   public:
@@ -191,14 +178,10 @@ class SQLClient{
     // Create new enter room tasks
     int InsertMultipleGatherInfoTasks(int num, ros::Time start, ros::Duration interval){
       sql::ResultSet* res;
-      vector<int> doors;
-      int id,priority,cnt = 0;
-      res = stmt->executeQuery("SELECT target_id  FROM targets WHERE target_type = 'Door'");
-      while(res->next()){
-        doors.push_back(res->getInt("target_id")); // find available door id
-      }
+      vector<int> doors  = QueryDoorId();
+      int id,cnt;
       for(int i = 0; i < num; i++){
-        id = doors[rand()%doors.size()];  
+        id = doors[rand()%doors.size() + 1];  
         stmt->execute(
             "INSERT INTO tasks(task_type, start_time, target_id, priority) VALUES('GatherEnviromentInfo','" + Util::time_str(start + interval *i) + "','" + to_string(id) + "'," + to_string(1) +")"
         );
@@ -207,6 +190,20 @@ class SQLClient{
       delete res;
       return cnt;
     }
+
+        // Create new enter room tasks
+    vector<int> QueryDoorId(){
+      sql::ResultSet* res;
+      vector<int> doors;
+      res = stmt->executeQuery("SELECT target_id  FROM targets WHERE target_type = 'Door'");
+      while(res->next()){
+        doors.push_back(res->getInt("target_id")); // find available door id
+      }
+      delete res;
+      return doors;
+    }
+
+
     
     // Create new task and return its task id
     int InsertATaskAssignId(Task& t){

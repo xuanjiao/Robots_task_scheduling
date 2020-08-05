@@ -161,14 +161,19 @@ public:
         goal.target_pose = door;
         _mbc.sendGoal(goal,
                 boost::bind(&RobotController::WhenGatherInviromentTaskComplete,this, _1, _2),
-                actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction>::SimpleActiveCallback(),
+                boost::bind(&RobotController::StartMoving,this),
                 boost::bind(&RobotController::MoveBasePositionFeedback,this, _1)
         ); 
+        ROS_INFO_STREAM("Send a goal \n"<<goal);
     }
     
     void WhenGatherInviromentTaskComplete(const actionlib::SimpleClientGoalState& state,
            const move_base_msgs::MoveBaseResult::ConstPtr& result ){
-        ROS_INFO_STREAM("Gather rnviroment finished");
+        if(state == actionlib::SimpleClientGoalState::SUCCEEDED ){
+            ROS_INFO_STREAM("GatherInviromentTask succeeded");
+        }else {
+            ROS_INFO_STREAM("GatherInviromentTask failed");
+        }
         _movCv.notify_all();
     }
 
@@ -178,14 +183,23 @@ public:
         goal.target_pose = point;
         _mbc.sendGoal(goal,
                 boost::bind(&RobotController::WhenExecuteTaskComplete,this, _1, _2),
-                actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction>::SimpleActiveCallback(),
+                boost::bind(&RobotController::StartMoving,this),
                 boost::bind(&RobotController::MoveBasePositionFeedback,this, _1)
-        ); 
+        );
+        ROS_INFO_STREAM("Send a goal \n"<<goal); 
+    }
+
+    void StartMoving(){
+        ROS_INFO("Navigation stack get goal");
     }
 
     void WhenExecuteTaskComplete(const actionlib::SimpleClientGoalState& state,
            const move_base_msgs::MoveBaseResult::ConstPtr& result ){
-        ROS_INFO_STREAM("Execute task finished");
+        if(state == actionlib::SimpleClientGoalState::SUCCEEDED ){
+            ROS_INFO_STREAM("Execute task succeeded");
+        }else {
+            ROS_INFO_STREAM("Execute task failed");
+        }
         _movCv.notify_all();
     }
 
