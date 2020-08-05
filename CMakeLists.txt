@@ -132,6 +132,7 @@ catkin_package(
 ## Your package locations should be listed before other locations
 include_directories(
   include
+  tests
   ${catkin_INCLUDE_DIRS}
   ${MYSQL_INCLUDE_DIRS}
   ${MYSQLCPPCONN_INCLUDE_DIRS}
@@ -248,6 +249,6 @@ target_link_libraries(task_generator mysqlcppconn ${catkin_LIBRARIES})
 # catkin_add_nosetests(test)
 if(CATKIN_ENABLE_TESTING)
   find_package(rostest REQUIRED)
-  add_rostest_gtest(${PROJECT_NAME}-test launch/gtest.test tests/test_sql.cpp)
+  add_rostest_gtest(${PROJECT_NAME}-test launch/gtest.test tests/AllTest.cpp)
   target_link_libraries(${PROJECT_NAME}-test ${catkin_LIBRARIES} mysqlcppconn)
 endif()

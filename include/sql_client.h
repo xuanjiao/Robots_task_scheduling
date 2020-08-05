@@ -150,6 +150,7 @@ class SQLClient{
         AND TIME(tasks.start_time) BETWEEN o.start_time AND o.end_time \
         AND tasks.cur_status IN ('Created' ,'ToReRun') \
         AND tasks.task_type = 'GatherEnviromentInfo'"
+        
       );
       if(res->rowsCount()!=0){
         while(res->next()){
