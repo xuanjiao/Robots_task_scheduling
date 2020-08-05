@@ -29,20 +29,15 @@ public:
     TaskManager(SQLClient& sc,ros::NodeHandle& nh):_sc(sc),_nh(nh){
         index = 0;
         _pc = _nh.serviceClient<nav_msgs::GetPlan>("/tb3_0/move_base/NavfnROS/make_plan"); 
-        doors = _sc.QueryDoorId();
-        if(doors.size()==0){
-           ROS_INFO("No doors information");
-           return;
-        };
     }
 
     void CreateNewTasks(int num){
-        int taskId;
+        vector<int> doors = _sc.QueryDoorId();
         ROS_INFO_STREAM("Found " << doors.size() << " doors in database");
         if(doors.size()==0){
            ROS_INFO("No doors information");
            return;
-        };
+        }
         for(int i = 0; i < num ; i++){
             Task t;
             t.priority = 1;
@@ -50,8 +45,8 @@ public:
             t.goal.header.stamp = ros::Time::now() + ros::Duration(100*i);
             t.goal.header.frame_id = "map";
             t.targetId = doors[index];
-            taskId = _sc.InsertATaskAssignId(t);
-            ROS_INFO_STREAM("Created a task. \n"<<t.goal<<" target id = "<<t.targetId<< " task id ="<<taskId);
+            t.taskId = _sc.InsertATaskAssignId(t);
+            // ROS_INFO_STREAM("Created a task. \n target id = "<<t.targetId<< " task id ="<<t.taskId);
             index++;
             if(index>=doors.size()){
                 index = 0;
@@ -134,7 +129,7 @@ public:
     ros::ServiceClient _pc;
     SQLClient &_sc;
     ros::NodeHandle& _nh;
-    vector<int> doors;
-    int index;
+    // vector<int> doors;
+    uint8_t index;
    
 };

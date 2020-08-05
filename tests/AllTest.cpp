@@ -1,7 +1,7 @@
 #include <ros/ros.h>
 #include <gtest/gtest.h>
-// #include "SqlTest.h"
-#include "TaskManagerTest.h"
+#include "SqlTest.h"
+// #include "TaskManagerTest.h"
 #include <thread>
 
 int main(int argc, char** argv){

@@ -83,6 +83,7 @@ public:
     // Call when receive a complet event from robot
     void WhenRobotFinishGoal(const actionlib::SimpleClientGoalState& state,
            const robot_navigation::GoToTargetResult::ConstPtr &result){
+        _sqlMtx.lock();
         ROS_INFO("Robot %d result:",result->robotId);
         ROS_INFO_STREAM(*result); 
          if(state == actionlib::SimpleClientGoalState::SUCCEEDED){  
@@ -143,7 +144,8 @@ public:
         ROS_INFO_STREAM("found "<<v.size()<<" execute tasks");
         if(v.size() == 0){
             while((v = _sc.QueryRunableGatherEnviromentInfoTasks()).size() == 0){  // if no execute task, create some gather enviroment info task
-                _tm.CreateNewTasks(10);                
+                _tm.CreateNewTasks(10);    
+                ros::Duration(2).sleep();            
             }
             ROS_INFO_STREAM("found "<<v.size()<<"gather enviroment info tasks");
         }
@@ -165,6 +167,8 @@ public:
         g.taskType = bt.taskType;
         g.taskId = bt.taskId;
         g.robotId = bt.robotId;
+
+        _acMtx.lock();
         _cv[bt.robotId]->sendGoal(g,
                 boost::bind(&CentralizedPool::WhenRobotFinishGoal,this,_1,_2),
                 actionlib::SimpleActionClient<robot_navigation::GoToTargetAction>::SimpleActiveCallback(),
@@ -172,12 +176,14 @@ public:
                 boost::bind(&CentralizedPool::WhenReceiveInfoFromRobot,this,_1)
         );
         ROS_INFO_STREAM("Send a goal\n"<<g);
+        _acMtx.unlock();
     }
 
 private:
     ros::ServiceServer _ts;
     
     // GoToTargetActionClient _gac;
+    boost::mutex _acMtx;
     std::vector<GoToTargetActionClient*> _cv;
     SQLClient &_sc;
     boost::mutex _sqlMtx;
