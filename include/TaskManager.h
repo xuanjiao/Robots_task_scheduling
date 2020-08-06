@@ -106,7 +106,7 @@ public:
                 waitTime = it->goal.header.stamp.sec - now.sec;
                 openPossibility = it->openPossibility;
                 priority = it->priority;
-                it->cost =    1.0 * batteryConsumption + 0.2 * waitTime + (-100) * openPossibility + (-10) * priority; 
+                it->cost =   100 * batteryConsumption + 0.2 * waitTime + (-100) * openPossibility + (-10) * priority; 
                 tasksWithCost.push_back(*it);   
                 ROS_INFO("%d  %s %d   %d  %.2f  %.2f  %d  %.2f",it->taskId,it->taskType.c_str(),it->targetId,priority,openPossibility,batteryConsumption,waitTime,it->cost);
 
@@ -116,6 +116,7 @@ public:
             }
         }
 
+        ROS_INFO_STREAM("Basic task done");
        while(!tasks.empty()){
             for(vector<TaskInTable>::iterator it = tasks.begin(); it != tasks.end();){
                 const int d = it->dependency;
