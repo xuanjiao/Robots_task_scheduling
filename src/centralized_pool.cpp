@@ -109,7 +109,7 @@ public:
         std::pair<int,double> best; // best charging station (id,distance) 
         best.second = 1000;  
             for(auto i : map){
-            double dist = _tm.calculateBatteryConsumption(i.second,rp);
+            double dist = _tm.CalculateBatteryConsumption(i.second,rp);
             if(dist<best.second){
                 best.first = i.first;
                 best.second = dist;
@@ -141,7 +141,7 @@ public:
 
         TaskInTable bt = _tm.SelectBestTask(req.pose);
         // TaskInTable bt = _tm.GetBestTask(v,req.pose,cur_time,req.batteryLevel);
-        //  v = _tm.calculateCostofTasks(v,req.pose);
+        //  v = _tm.CalculateCostofTasks(v,req.pose);
         
         res.hasTask = true;
         _sc.UpdateTaskStatus(bt.taskId,"WaitingToRun");
