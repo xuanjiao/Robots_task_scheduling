@@ -7,7 +7,7 @@ int main(int argc, char** argv){
     SQLClient sc("task_generator","pass");
     ros::NodeHandle nh;
        
-    Task t;
+    TaskInTable t;
     t.taskType = "ExecuteTask";
     t.priority = 4;
     t.goal.pose.position.x = 4.38077210276;

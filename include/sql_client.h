@@ -103,10 +103,10 @@ class SQLClient{
     }
     
         // get task info to calculate cost
-    vector<Task>
+    vector<TaskInTable>
     QueryRunableExecuteTasks(){
       sql::ResultSet* res;
-      vector<Task> v;
+      vector<TaskInTable> v;
       res = stmt->executeQuery(
        "SELECT tasks.priority, tasks.target_id, tasks.task_id, tasks.task_type, tasks.start_time, \
         tg.position_x, tg.position_y, tg.orientation_z, tg.orientation_w FROM targets tg \
@@ -116,7 +116,7 @@ class SQLClient{
       );
       if(res->rowsCount()!=0){
         while(res->next()){
-          Task t;
+          TaskInTable t;
           t.priority = res->getInt("priority");
           t.targetId = res->getInt("target_id");
           t.taskId = res->getInt("task_id");
@@ -137,10 +137,10 @@ class SQLClient{
     }
 
     // get task info to calculate cost
-    vector<Task>
+    vector<TaskInTable>
     QueryRunableGatherEnviromentInfoTasks(){
       sql::ResultSet* res;
-      vector<Task> v;
+      vector<TaskInTable> v;
       res = stmt->executeQuery(
        "SELECT tasks.priority, o.open_pos_st, tasks.target_id, tasks.task_id, tasks.task_type, tasks.start_time, \
         tg.position_x, tg.position_y, tg.orientation_z, tg.orientation_w FROM targets tg \
@@ -154,7 +154,7 @@ class SQLClient{
       );
       if(res->rowsCount()!=0){
         while(res->next()){
-          Task t;
+          TaskInTable t;
           t.priority = res->getInt("priority");
           t.openPossibility = res->getDouble("open_pos_st");
           t.targetId = res->getInt("target_id");
@@ -207,7 +207,7 @@ class SQLClient{
 
     
     // Create new task and return its task id
-    int InsertATaskAssignId(Task& t){
+    int InsertATaskAssignId(TaskInTable& t){
         sql::ResultSet* res;        
         stmt->execute(
           "INSERT INTO tasks(task_type, priority, target_id, start_time) VALUES('"
@@ -311,7 +311,7 @@ class SQLClient{
     }
 
     // Change expired "Created", "WaitingToRun" getEnviromentInfo task status to 'Canceled'
-    // Change expired and uncompleted Execute Task status to a new time
+    // Change expired and uncompleted Execute TaskInTable status to a new time
     int UpdateExpiredTask(ros::Time newTime){
         int cnt = 0;
         cnt += stmt->executeUpdate("UPDATE tasks set cur_status = 'Canceled' WHERE start_time < '" + Util::time_str(newTime)+"' AND task_type = 'GatherEnviromentInfo' AND cur_status IN ('Created','WaitingToRun','ToReRun')");

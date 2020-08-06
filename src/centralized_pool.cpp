@@ -109,14 +109,14 @@ public:
         std::pair<int,double> best; // best charging station (id,distance) 
         best.second = 1000;  
             for(auto i : map){
-            double dist = _tm.calculate_distance(i.second,rp);
+            double dist = _tm.calculateBatteryConsumption(i.second,rp);
             if(dist<best.second){
                 best.first = i.first;
                 best.second = dist;
             }
         }
         
-        Task bt;
+        TaskInTable bt;
         bt.taskType = "Charging";
         bt.priority = 5;
         bt.goal.header.stamp = now + ros::Duration(10); // create a charging task that start after 10s
@@ -135,22 +135,14 @@ public:
         ros::Time cur_time = ros::Time::now();
         ROS_INFO_STREAM("current time =  "<<cur_time);
         _sqlMtx.lock();
-        _sc.PrintTable("tasks");      
-        ROS_INFO("Handled %d expired tasks",_sc.UpdateExpiredTask(cur_time+ ros::Duration(20)));
-        _sc.PrintTable("tasks"); 
-        std::vector<Task> v;
+        // _sc.PrintTable("tasks");      
+        // ROS_INFO("Handled %d expired tasks",_sc.UpdateExpiredTask(cur_time+ ros::Duration(20)));
+        // _sc.PrintTable("tasks"); 
 
-        v = _sc.QueryRunableExecuteTasks();  // find if there are execute task    
-        ROS_INFO_STREAM("found "<<v.size()<<" execute tasks");
-        if(v.size() == 0){
-            while((v = _sc.QueryRunableGatherEnviromentInfoTasks()).size() == 0){  // if no execute task, create some gather enviroment info task
-                _tm.CreateNewTasks(10);    
-                ros::Duration(2).sleep();            
-            }
-            ROS_INFO_STREAM("found "<<v.size()<<"gather enviroment info tasks");
-        }
-        Task bt = _tm.GetBestTask(v,req.pose,cur_time,req.batteryLevel);
-        ROS_INFO_STREAM("Best task id = "<<bt.taskId<<" ,cost = "<< fixed << setprecision(3) << setw(6)<< bt.cost);
+        TaskInTable bt = _tm.SelectBestTask(req.pose);
+        // TaskInTable bt = _tm.GetBestTask(v,req.pose,cur_time,req.batteryLevel);
+        //  v = _tm.calculateCostofTasks(v,req.pose);
+        
         res.hasTask = true;
         _sc.UpdateTaskStatus(bt.taskId,"WaitingToRun");
         bt.robotId = req.robotId;
@@ -160,7 +152,7 @@ public:
 
 
     // Send robot new task 
-    void SendRobotActionGoal(Task &bt){
+    void SendRobotActionGoal(TaskInTable &bt){
         robot_navigation::GoToTargetGoal g;
         g.goals.push_back(bt.goal);
         g.targetId= bt.targetId;

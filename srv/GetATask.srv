@@ -1,5 +1,5 @@
 geometry_msgs/Pose pose # current position
-int16 batteryLevel 
+float64 batteryLevel 
 int8 robotId   
 ---
 bool hasTask

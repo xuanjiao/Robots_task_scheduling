@@ -31,7 +31,7 @@ TEST_F(SqlTest,insert_task){
 
 TEST_F(SqlTest,InsertATaskAssignId){
            
-    Task t;
+    TaskInTable t;
     t.taskType = "ExecuteTask";
     t.priority = 4;
     t.goal.pose.position.x = 4.38077210276;
