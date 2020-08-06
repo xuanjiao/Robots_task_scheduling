@@ -97,7 +97,8 @@ public:
         vector<TaskInTable> tasksWithCost;
         double batteryConsumption = 0,openPossibility = 0;
         int priority = 0,waitTime = 0;
-       ROS_INFO_STREAM("id type     Target_id Priority Open_pos Battery WaitTime Cost");
+       
+        ROS_INFO_STREAM("id type     Target_id Priority Open_pos Battery WaitTime Cost");
         ROS_INFO("-----------------------------------------------------------------------------");
         for(vector<TaskInTable>::iterator it = tasks.begin(); it != tasks.end(); ){
             if(it->dependency==0){ // Find task with no dependency
@@ -130,7 +131,7 @@ public:
                     waitTime = it->goal.header.stamp.sec - now.sec;
                     openPossibility = it->openPossibility * dependencyTaskIt->openPossibility;
                     priority = it->priority;
-                    it->cost =    1.0 * batteryConsumption + 0.2 * waitTime + (-100) * openPossibility + (-10) * priority; 
+                    it->cost =  dependencyTaskIt->cost +  1.0 * batteryConsumption + 0.2 * waitTime + (-100) * openPossibility + (-10) * priority; 
                     tasksWithCost.push_back(*it);
 
                      ROS_INFO("%d  %s %d   %d  %.2f  %.2f  %d  %.2f",it->taskId,it->taskType.c_str(),it->targetId,priority,openPossibility,batteryConsumption,waitTime,it->cost);
@@ -186,16 +187,19 @@ public:
 
             v = _sc.QueryRunableExecuteTasks();  // find if there are execute task    
             ROS_INFO_STREAM("found "<<v.size()<<" execute tasks");
+            v = calculateCostofTasks(v,robotPose); // calculate cost and delect problem task
+            FilterTask(v);
 
-            if(v.size() == 0){
+            if(v.size() == 0){ // after filter, if there is no execute task, gather inviroment
                 while((v = _sc.QueryRunableGatherEnviromentInfoTasks()).size() == 0){  // if no execute task, create some gather enviroment info task
                     CreateNewTasks(10);    
                     ros::Duration(2).sleep();            
                 }
                 ROS_INFO_STREAM("found "<<v.size()<<"gather enviroment info tasks");
+                v = calculateCostofTasks(v,robotPose); // calculate cost
+                FilterTask(v);
             }
-            v = calculateCostofTasks(v,robotPose);
-            FilterTask(v);
+            
             SortTaskWithCost(v);
             TaskInTable bt = v.back();
             ROS_INFO_STREAM("Best task id = "<<bt.taskId<<" ,cost = "<< fixed << setprecision(3) << setw(6)<< bt.cost);

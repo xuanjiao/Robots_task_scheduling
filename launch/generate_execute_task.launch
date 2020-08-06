@@ -1,4 +1,5 @@
 <launch>
     <param name="/use_sim_time" value="true"/>
-    <node pkg = "robot_navigation" type ="TaskGenerator" name = "taask_negerator" output="screen" launch-prefix="xterm -e"/>
+    <!-- <node pkg = "robot_navigation" type ="TaskGenerator" name = "taask_negerator" output="screen" launch-prefix="xterm -e"/> -->
+    <node pkg = "robot_navigation" type ="task_generator" name = "taask_negerator" output="screen" />
 </launch>

@@ -56,8 +56,7 @@ CREATE TABLE tasks (
     robot_id INT DEFAULT 0,
     priority INT DEFAULT 0,
     cur_status ENUM('Created', 'WaitingToRun', 'Running', 'RanToCompletion', 'Canceled','Error','ToReRun') DEFAULT 'Created',
-    parent_task INT,
-    child_task INT,
+    dependency INT,
     result varchar(255),
     PRIMARY KEY (task_id)
 );

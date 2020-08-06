@@ -108,7 +108,7 @@ class SQLClient{
       sql::ResultSet* res;
       vector<TaskInTable> v;
       res = stmt->executeQuery(
-       "SELECT tasks.priority, tasks.target_id, tasks.task_id, tasks.task_type, tasks.start_time, \
+       "SELECT tasks.dependency, tasks.priority, tasks.target_id, tasks.task_id, tasks.task_type, tasks.start_time, \
         tg.position_x, tg.position_y, tg.orientation_z, tg.orientation_w FROM targets tg \
         INNER JOIN tasks ON tasks.target_id = tg.target_id \
         AND tasks.cur_status IN ('Created','ToReRun') \
@@ -121,6 +121,7 @@ class SQLClient{
           t.targetId = res->getInt("target_id");
           t.taskId = res->getInt("task_id");
           t.taskType = res->getString("task_type");
+          t.dependency = res->getInt("dependency");
 
           t.goal.header.frame_id = "map";
           t.goal.header.stamp = Util::str_ros_time(res->getString("start_time"));
@@ -142,7 +143,7 @@ class SQLClient{
       sql::ResultSet* res;
       vector<TaskInTable> v;
       res = stmt->executeQuery(
-       "SELECT tasks.priority, o.open_pos_st, tasks.target_id, tasks.task_id, tasks.task_type, tasks.start_time, \
+       "SELECT tasks.dependency, tasks.priority, o.open_pos_st, tasks.target_id, tasks.task_id, tasks.task_type, tasks.start_time, \
         tg.position_x, tg.position_y, tg.orientation_z, tg.orientation_w FROM targets tg \
         INNER JOIN tasks ON tasks.target_id = tg.target_id \
         INNER JOIN open_possibilities o WHERE tg.target_id = o.door_id \
@@ -160,6 +161,7 @@ class SQLClient{
           t.targetId = res->getInt("target_id");
           t.taskId = res->getInt("task_id");
           t.taskType = res->getString("task_type");
+          t.dependency = res->getInt("dependency");
 
           t.goal.header.frame_id = "map";
           t.goal.header.stamp = Util::str_ros_time(res->getString("start_time"));
@@ -210,8 +212,8 @@ class SQLClient{
     int InsertATaskAssignId(TaskInTable& t){
         sql::ResultSet* res;        
         stmt->execute(
-          "INSERT INTO tasks(task_type, priority, target_id, start_time) VALUES('"
-          + t.taskType +"','" + to_string(t.priority) +"','" + to_string(t.targetId) + "','" + Util::time_str(t.goal.header.stamp)+"')"
+          "INSERT INTO tasks(dependency,task_type, priority, target_id, start_time) VALUES('"
+          +to_string(t.dependency) +"','" + t.taskType +"','" + to_string(t.priority) +"','" + to_string(t.targetId) + "','" + Util::time_str(t.goal.header.stamp)+"')"
          
           );
         res = stmt->executeQuery("SELECT last_insert_id() as id");
@@ -306,8 +308,12 @@ class SQLClient{
     }
 
     // Change task status in tasks table
-    int UpdateTaskStatus(int task_id,string status){
-      return stmt->executeUpdate("UPDATE tasks set cur_status = '"+ status + "' WHERE task_id = " + to_string(task_id));
+    int UpdateTaskStatus(int taskId,string status){
+      return stmt->executeUpdate("UPDATE tasks set cur_status = '"+ status + "' WHERE task_id = " + to_string(taskId));
+    }
+
+    int UpdateTaskRobotId(int taskId, int robotId){
+      return stmt->executeUpdate("UPDATE tasks set robot_id = '"+to_string(robotId) + "' WHERE task_id = " + to_string(taskId));
     }
 
     // Change expired "Created", "WaitingToRun" getEnviromentInfo task status to 'Canceled'

@@ -145,6 +145,7 @@ public:
         
         res.hasTask = true;
         _sc.UpdateTaskStatus(bt.taskId,"WaitingToRun");
+        _sc.UpdateTaskRobotId(bt.taskId,bt.robotId);
         bt.robotId = req.robotId;
         SendRobotActionGoal(bt); 
         _sqlMtx.unlock();
