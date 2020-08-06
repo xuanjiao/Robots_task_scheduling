@@ -91,7 +91,6 @@ public:
         }
         return v.back();
     }
-
     
     vector<TaskInTable> calculateCostofTasks(vector<TaskInTable> &tasks, geometry_msgs::Pose robotPose){
         ros::Time now = ros::Time::now();
@@ -181,6 +180,7 @@ public:
             return batteryConsumption;   
     }
 
+
     TaskInTable SelectBestTask(geometry_msgs::Pose robotPose){
             std::vector<TaskInTable> v;
 
@@ -195,6 +195,7 @@ public:
                 ROS_INFO_STREAM("found "<<v.size()<<"gather enviroment info tasks");
             }
             v = calculateCostofTasks(v,robotPose);
+            FilterTask(v);
             SortTaskWithCost(v);
             TaskInTable bt = v.back();
             ROS_INFO_STREAM("Best task id = "<<bt.taskId<<" ,cost = "<< fixed << setprecision(3) << setw(6)<< bt.cost);
@@ -211,15 +212,14 @@ public:
     }
 
     void FilterTask(std::vector<TaskInTable>& v){
-
+        ros::Time now = ros::Time::now();
+        ROS_INFO_STREAM("Filter Task  not expired and cost < "<<to_string(COST_LIMIT));
         for(vector<TaskInTable>::iterator it = v.begin(); it != v.end(); ){
-            ROS_INFO_STREAM("Task with cost < "<<to_string(COST_LIMIT));
-            if(it->cost > COST_LIMIT){
-               ROS_INFO_STREAM(it->taskId<<" "<<it->cost<<" (cost > " << to_string(COST_LIMIT) << " delete)");
+            if(it->cost > COST_LIMIT || it ->goal.header.stamp < now ){
+               ROS_INFO_STREAM("Delete task "<<it->taskId);
                it = v.erase(it);
             }else{
                 it++;
-                ROS_INFO_STREAM(it->taskId<<" "<<it->cost);
             }
         }
     }
