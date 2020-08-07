@@ -13,7 +13,7 @@
 #include <string>
 #include <queue>
 
-#define CHECK_DB_PERIOD 60
+#define CHECK_DB_PERIOD 10
 
 
 typedef actionlib::SimpleActionClient<robot_navigation::GoToTargetAction> GoToTargetActionClient;                                                                                                                                                                                  ;

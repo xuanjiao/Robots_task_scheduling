@@ -17,6 +17,7 @@
 #include <boost/thread/condition_variable.hpp>
 
 #define SENSOR_RANGE 1
+#define MAX_TASK_DURATION 10
 using namespace std;
 
 class RobotController{
@@ -39,6 +40,16 @@ public:
         _ss = _nh.subscribe<robot_navigation::sensor_data>("/sensor_data",100,&RobotController::ListenSensorCallback,this);      
         _tc = _nh.serviceClient<robot_navigation::GetATask>("/GetATask");
 
+        // Start timer
+        ros::TimerOptions to(
+            ros::Duration(MAX_TASK_DURATION), // Period
+            boost::bind(&RobotController::CheckTaskStatus,this, _1), // Callback
+            // CheckTaskStatus,
+            NULL, //  global callback queue
+            true,  // One shot
+            false // Auto start
+        );
+        _timer = _nh.createTimer(to);
         while(!_mbc.waitForServer(ros::Duration(5.0))){
             ROS_INFO("Waiting for the move_base action server to come up");
         }
@@ -49,6 +60,17 @@ public:
 
         _gas.start();  // start receive goal from server
         ROS_INFO_STREAM("Robot "<<_robotId << " finish initializing");
+    }
+
+    void CheckTaskStatus(const ros::TimerEvent& event){
+        actionlib::SimpleClientGoalState state = _mbc.getState();
+        ROS_INFO_STREAM("Timeout. Check move base action status = "<<state.toString());
+        if( state != actionlib::SimpleClientGoalState::ACTIVE){
+          _rs.isCompleted = false;
+          _mbc.cancelGoal();
+          _movCv.notify_all();
+          ROS_INFO("Cancel goal");
+        }
     }
 
     void RequestTask(){
@@ -100,14 +122,14 @@ public:
     // called in a separate thread whenever a new goal is received
     void ExecuteCallback(const robot_navigation::GoToTargetGoalConstPtr &task){
         ROS_INFO_STREAM("Get a task from pool\n"<<*task);
-        robot_navigation::GoToTargetResult rs;
-        rs.taskId = task->taskId;
+        _rs.isCompleted = false;
+        _rs.taskId = task->taskId;
 
         // Wait until task time
         ros::Time now = ros::Time::now();
         if(task->goals[0].header.stamp < now ){
             ROS_INFO_STREAM("Task "<< task->taskId << " is expired");
-            _gas.setAborted(rs);
+            _gas.setAborted(_rs);
             RequestTask(); // Get a new task
             return;
         }else if (task->goals[0].header.stamp > now - ros::Duration(1)) {
@@ -123,16 +145,20 @@ public:
             StartExecuteTask(task->goals[0]);
         }else{
             ROS_INFO_STREAM("Unknown task");
-            _gas.setAborted(rs);
+            _gas.setAborted(_rs);
+            return;
         }
 
         // wait for task complete
         _movCv.wait(_movLock); 
         
         // Set task succeeded
-        rs.isCompleted = true;
-        _gas.setSucceeded(rs);   
-        ROS_INFO_STREAM("report task result "<<rs);       
+        if(_rs.isCompleted == true){
+            _gas.setSucceeded(_rs);   
+        }else{
+            _gas.setAborted(_rs);
+        }
+        ROS_INFO_STREAM("report task result "<<_rs);       
         RequestTask(); // Get a new task
     }
 
@@ -171,6 +197,7 @@ public:
            const move_base_msgs::MoveBaseResult::ConstPtr& result ){
         if(state == actionlib::SimpleClientGoalState::SUCCEEDED ){
             ROS_INFO_STREAM("GatherInviromentTask succeeded");
+            _rs.isCompleted = true;
         }else {
             ROS_INFO_STREAM("GatherInviromentTask failed");
         }
@@ -190,13 +217,17 @@ public:
     }
 
     void StartMoving(){
-        ROS_INFO("Navigation stack get goal");
+        ROS_INFO("Navigation stack get goal. MAX_TASK_DURATION = : %d",MAX_TASK_DURATION);
+        _timer.setPeriod(ros::Duration(MAX_TASK_DURATION));
+        _timer.start();
+        // _mbc.cancelGoalsAtAndBeforeTime(ros::Time::now() + ros::Duration(MAX_TASK_DURATION));
     }
 
     void WhenExecuteTaskComplete(const actionlib::SimpleClientGoalState& state,
            const move_base_msgs::MoveBaseResult::ConstPtr& result ){
         if(state == actionlib::SimpleClientGoalState::SUCCEEDED ){
             ROS_INFO_STREAM("Execute task succeeded");
+            _rs.isCompleted = true;
         }else {
             ROS_INFO_STREAM("Execute task failed");
         }
@@ -225,8 +256,15 @@ public:
             _cp = feedback->base_position;
 
             double angle = 2 * acos(feedback->base_position.pose.orientation.w);
-            _battery=  _battery - 0.01 * distance - 0.001 * angle;
+           
             // ROS_INFO_STREAM("angle "<<angle << "distance" << distance << "battery_level"<<_battery);
+            if(_battery == 0){
+                ROS_INFO_STREAM("Robot battery ran out. Stop");
+                _mbc.cancelGoal();
+                _movCv.notify_all();
+            }else{
+                _battery=  _battery - 0.01 * distance - 0.001 * angle;
+            }
      }
              
 private:
@@ -252,10 +290,12 @@ private:
     actionlib::SimpleActionServer<robot_navigation::GoToTargetAction> _gas;
     
     robot_navigation::GoToTargetFeedback _fb;
-    
+    robot_navigation::GoToTargetResult _rs;
 
     geometry_msgs::PoseStamped _cp;
     
+    ros::Timer _timer;
+
     // int _taskId;
     // int _targetId;
     // string _taskType; 

@@ -57,6 +57,7 @@ public:
     vector<TaskInTable> CalculateCostofTasks(vector<TaskInTable> &tasks, geometry_msgs::Pose robotPose){
         ros::Time now = ros::Time::now();
         vector<TaskInTable> tasksWithCost;
+        vector<TaskNode*> list; 
         double batteryConsumption = 0,openPossibility = 0;
         int priority = 0,waitTime = 0;
        

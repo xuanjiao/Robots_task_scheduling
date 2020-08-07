@@ -13,7 +13,16 @@ typedef struct {
     int priority = 0;
     geometry_msgs::PoseStamped goal; // distination and timestamp
     double cost = 0.0;
+
 }TaskInTable;
+
+typedef struct TaskNode{
+    int taskId = 0;
+    TaskNode* nextNode;
+    geometry_msgs::PoseStamped goal;
+    double openPossibility = 0.0;
+    double cost = 0.0;
+}TaskNode;
 
 
 
