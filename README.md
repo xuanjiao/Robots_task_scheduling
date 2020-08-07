@@ -76,21 +76,27 @@ use estimate position tool in rviz to estimate position
 
 ![robot_communication](./img/robot-communication.png)
 
-![request](./img/robot-CentralizedPoolTaskRequest.png)
+Centralized pool handle request task
+
+![request](./img/robot-centrolized_pool_task_select.png)
+
+Centralized pool handle feedback door status
 
 ![feed_back](./img/robot-CentralizedPoolActionFeedback.png)
 
+Centralized pool handle task result
+
 ![action_result](./img/robot-CentralizedPoolActionResult.png)
 
-![robot_database](./img/robot-database.png)
+Robot controller
 
-![robot_controller](./img/robot-robotController.png)
+![robot_controller](./img/robot-robot_controller.png)
 
+Robot controller callback
 
-cost_function.cost = 1.0 * distance + 0.2 * sec_diff + (-1.0) * statisic_open_possibility +(-10) * priority  +  (-1.0) * battery_level;
+![robot_controller_callback](./img/robot-robot_controller_callback.png)
 
 robot choose task with lowest cost
-
 
 ## Relative work
 
