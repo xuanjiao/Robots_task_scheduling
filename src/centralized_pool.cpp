@@ -8,7 +8,7 @@
 #include <vector>
 #include "util.h"
 #include "sql_client.h"
-#include "TaskManager.h"
+#include "task_manager.h"
 #include <tuple>
 #include <string>
 #include <queue>
@@ -39,20 +39,23 @@ public:
 	    ros::Duration(1).sleep();
         ROS_INFO_STREAM("Current office time: "<<Util::time_str(ros::Time::now()));
         _ts = _nh.advertiseService("/GetATask",&CentralizedPool::WhenRobotRequestTask,this);
-       
-        
-        _sc.TruncateTable("tasks");     
-        
+        // _sc.TruncateTable("tasks");     
     }
 
     // call back when receive robot request for task //
     bool WhenRobotRequestTask(robot_navigation::GetATask::Request &req, 
         robot_navigation::GetATask::Response &res){  
         ROS_INFO("Robot %d request a task",req.robotId);
+        
         ROS_INFO_STREAM(req);
+        ros::Time cur_time = ros::Time::now();
+        ROS_INFO_STREAM("current time =  "<<cur_time);   
         if(req.batteryLevel < 20){ // charging
-            ResponceChargingTask(req,res);
+            // ResponceChargingTask(req,res);
         }else{
+            vector<TaskInTable> siere = _tm.SelectBestTaskSiere(req.pose);
+            res.hasTask = true;
+            SendRobotMultipleTargetActionGoal(siere,req.robotId); 
             ResponceTaskWithLowestCost(req,res);
         }
         return true;
@@ -117,16 +120,7 @@ public:
     }
 
     void ResponceTaskWithLowestCost(robot_navigation::GetATask::Request &req,robot_navigation::GetATask::Response &res){
-        ros::Time cur_time = ros::Time::now();
-        ROS_INFO_STREAM("current time =  "<<cur_time);
-        
-        TaskInTable bt = _tm.SelectBestTask(req.pose);
-        res.hasTask = true;
-        _sc.UpdateTaskStatus(bt.taskId,"WaitingToRun");
-        _sc.UpdateTaskRobotId(bt.taskId,bt.robotId);
-        bt.robotId = req.robotId;
-        SendRobotActionGoal(bt); 
-        
+
     }
 
 
@@ -141,6 +135,32 @@ public:
 
         _acMtx.lock();
         _cv[bt.robotId]->sendGoal(g,
+                boost::bind(&CentralizedPool::WhenRobotFinishGoal,this,_1,_2),
+                actionlib::SimpleActionClient<robot_navigation::GoToTargetAction>::SimpleActiveCallback(),
+                // boost::bind(&CentralizedPool::WhenActionActive,this),
+                boost::bind(&CentralizedPool::WhenReceiveInfoFromRobot,this,_1)
+        );
+        ROS_INFO_STREAM("Send a goal\n"<<g);
+        _acMtx.unlock();
+    }
+
+    void SendRobotMultipleTargetActionGoal(vector<TaskInTable> &siere,int robotId){
+        robot_navigation::GoToTargetGoal g;
+        ROS_INFO("Send best siere to robot: ");
+        for(std::vector<TaskInTable>::iterator it = siere.begin();it != siere.end(); it++ ){
+            ROS_INFO("task %d ",it->taskId);
+            g.goals.push_back(it->goal);
+            _sc.UpdateTaskStatus(it->taskId,"Running");
+            _sc.UpdateTaskRobotId(it->taskId,robotId);
+        }
+        
+        g.targetId= siere.back().targetId;
+        g.taskType = siere.back().taskType;
+        g.taskId = siere.back().taskId;
+        g.robotId = robotId;
+
+        _acMtx.lock();
+        _cv[robotId]->sendGoal(g,
                 boost::bind(&CentralizedPool::WhenRobotFinishGoal,this,_1,_2),
                 actionlib::SimpleActionClient<robot_navigation::GoToTargetAction>::SimpleActiveCallback(),
                 // boost::bind(&CentralizedPool::WhenActionActive,this),

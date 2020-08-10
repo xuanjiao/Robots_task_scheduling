@@ -3,12 +3,22 @@
 // #include "SqlTest.h"
 #include "TaskManagerTest.h"
 #include <thread>
+class Example :public ::testing::Test{
+    public: 
+    Example(){
+
+    }
+};
+
+TEST_F(Example,example){
+    ASSERT_EQ(1,1);
+}
 
 int main(int argc, char** argv){
     testing::InitGoogleTest(&argc,argv);
     ros::init(argc,argv,"TestNode");
 
-    ros::NodeHandle nh;
+    // ros::NodeHandle nh;
 
     std::thread t([]{while(ros::ok()) ros::spin();});
 

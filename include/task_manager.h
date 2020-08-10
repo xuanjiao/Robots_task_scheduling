@@ -4,6 +4,7 @@
 #include <nav_msgs/GetPlan.h>
 #include "general_task.h"
 #include <vector>
+#include <queue>
 #include "sql_client.h"
 
 #define COST_LIMIT 1000
@@ -54,6 +55,85 @@ public:
 
     }
 
+    vector<vector<TaskInTable>> MakeTaskSerie(vector<TaskInTable> &tasks){
+        vector<vector<TaskInTable>> series;
+        for(vector<TaskInTable>::iterator it = tasks.begin(); it != tasks.end(); ){
+            if(it->dependency==0){ // Find task with no dependency
+                vector<TaskInTable> s;
+                s.push_back(*it);
+                series.push_back(s);
+                it = tasks.erase(it); // Erase it from task vector when finish calculating
+            }else{
+                it++;
+            }
+        }
+        ROS_INFO("Create %ld series finished. Distribute %ld tasks",series.size(),tasks.size());
+
+        while(!tasks.empty()){
+            for(vector<TaskInTable>::iterator it = tasks.begin(); it != tasks.end();){
+                const int d = it->dependency; // Find serie
+                vector<vector<TaskInTable>>::iterator serieIt = find_if(series.begin(),series.end(),
+                    [d](const vector<TaskInTable>& s) ->bool {return s.back().taskId == d;}
+                );
+                if(serieIt == series.end()){
+                    ROS_INFO("Task %d dependence on unknown task",it->taskId);
+                    _sc.UpdateTaskStatus(it->taskId,"Error"); // If a task is depend on unknown task, set it to error 
+                }else{ 
+                    serieIt->push_back(*it);
+                    ROS_INFO("Put task %d in serie %ld",it->taskId,serieIt - series.begin());
+                }
+                it = tasks.erase(it); // Erase it from task vector when finish calculating
+            }
+        }
+        return series;
+    }
+
+    void CalculateCostForSerie(vector<vector<TaskInTable>> &series,geometry_msgs::Pose robotPose){
+        double batteryConsumption = 0;
+        int waitTime = 0;
+        ros::Time now = ros::Time::now();
+        geometry_msgs::Pose start;
+
+        ROS_INFO_STREAM("serie id type     Target_id Priority Open_pos Battery WaitTime Cost");
+        ROS_INFO("-----------------------------------------------------------------------------");
+
+        for(vector<vector<TaskInTable>>::iterator it1 = series.begin(); it1 != series.end();it1++){
+            vector<TaskInTable>::iterator it2 = it1->begin();
+            batteryConsumption = CalculateBatteryConsumption(robotPose,it2->goal.pose);
+            waitTime = it2->goal.header.stamp.sec - now.sec;
+            it2->cost =   10 + 10 * batteryConsumption + 0.1 * waitTime + (-10) * it2->openPossibility + (-1) * it2->priority; 
+            start = it2->goal.pose;
+            ROS_INFO("[serie %ld]  %d  %s %d   %d  %.3f  %.3f  %d  %.3f",it1-series.begin(),it2->taskId,it2->taskType.c_str(),it2->targetId,it2->priority,it2->openPossibility,batteryConsumption,waitTime,it2->cost);
+            for(it2++; it2!=it1->end(); it2++){
+                batteryConsumption = CalculateBatteryConsumption(start,it2->goal.pose);
+                waitTime = it2->goal.header.stamp.sec - now.sec;
+                it2->cost =   10 + 10 * batteryConsumption + 0.1 * waitTime + (-10) * it2->openPossibility + (-1) * it2->priority; 
+                start = it2->goal.pose;
+                ROS_INFO("         %d  %s %d   %d  %.3f  %.3f  %d  %.3f",it2->taskId,it2->taskType.c_str(),it2->targetId,it2->priority,it2->openPossibility,batteryConsumption,waitTime,it2->cost);
+            }
+        }
+    }
+
+    
+    void FilterSerie(vector<vector<TaskInTable>>& series){
+        bool deleteSerie;
+        for(vector<vector<TaskInTable>>::iterator it1 = series.begin(); it1 != series.end();it1++){
+            for(vector<TaskInTable>::iterator it2 = it1->begin(); it2!=it1->end(); it2++){
+                if(it2->cost > COST_LIMIT){
+                    series.erase(it1); // TODO
+                }
+            }
+        }
+    }
+
+    void SortSerieWithCost(vector<vector<TaskInTable>>& series){
+        std::sort(series.begin(),series.end(),
+        [](const vector<TaskInTable>& s1, const vector<TaskInTable>& s2)->bool
+        {
+                return s1.back().cost > s2.back().cost; // compare last task in serie
+        });
+    }
+
     vector<TaskInTable> CalculateCostofTasks(vector<TaskInTable> &tasks, geometry_msgs::Pose robotPose){
         ros::Time now = ros::Time::now();
         vector<TaskInTable> tasksWithCost;
@@ -69,9 +149,9 @@ public:
                 waitTime = it->goal.header.stamp.sec - now.sec;
                 openPossibility = it->openPossibility;
                 priority = it->priority;
-                it->cost =   100 * batteryConsumption + 0.2 * waitTime + (-100) * openPossibility + (-10) * priority; 
+                it->cost =   10 + 10 * batteryConsumption + 0.1 * waitTime + (-10) * openPossibility + (-1) * priority; 
                 tasksWithCost.push_back(*it);   
-                ROS_INFO("%d  %s %d   %d  %.2f  %.2f  %d  %.2f",it->taskId,it->taskType.c_str(),it->targetId,priority,openPossibility,batteryConsumption,waitTime,it->cost);
+                ROS_INFO("%d  %s %d   %d  %.3f  %.3f  %d  %.3f",it->taskId,it->taskType.c_str(),it->targetId,priority,openPossibility,batteryConsumption,waitTime,it->cost);
 
                 it = tasks.erase(it); // Erase it from task vector when finish calculating            
             }else{
@@ -98,7 +178,7 @@ public:
                     it->cost =  dependencyTaskIt->cost +  1.0 * batteryConsumption + 0.2 * waitTime + (-100) * openPossibility + (-10) * priority; 
                     tasksWithCost.push_back(*it);
 
-                     ROS_INFO("%d  %s %d   %d  %.2f  %.2f  %d  %.2f",it->taskId,it->taskType.c_str(),it->targetId,priority,openPossibility,batteryConsumption,waitTime,it->cost);
+                     ROS_INFO("%d  %s %d   %d  %.3f  %.3f  %d  %.3f",it->taskId,it->taskType.c_str(),it->targetId,priority,openPossibility,batteryConsumption,waitTime,it->cost);
 
                 }
                     it = tasks.erase(it); // Erase it from task vector when finish calculating
@@ -139,35 +219,54 @@ public:
                                      
                 angle = 2 * acos(dists[i].pose.orientation.w);
                 batteryConsumption = batteryConsumption + 0.01 * distance + 0.001 * angle;
-                // ROS_INFO("From (%.2f,%.2f) to (%.2f,%) linear variation = %.2f, angle variation = %.2f, battery consum = %.2f",
+                // ROS_INFO("From (%.3f,%.3f) to (%.3f,%) linear variation = %.3f, angle variation = %.3f, battery consum = %.3f",
                         // dists[i-1].pose.position.x,dists[i-1].pose.position.y,dists[i].pose.position.x,dists[i].pose.position.y,distance,angle,batteryConsumption);
             }   
             return batteryConsumption;   
     }
 
 
-    TaskInTable SelectBestTask(geometry_msgs::Pose robotPose){
+    vector<TaskInTable> SelectBestTaskSiere(geometry_msgs::Pose robotPose){
             std::vector<TaskInTable> v;
-
+            std::vector<TaskInTable> siere;
+            // TaskInTable bt;
             v = _sc.QueryRunableExecuteTasks();  // find if there are execute task    
             ROS_INFO_STREAM("found "<<v.size()<<" execute tasks");
-            v = CalculateCostofTasks(v,robotPose); // calculate cost and delect problem task
-            FilterTask(v);
+            // v = CalculateCostofTasks(v,robotPose); // calculate cost and delect problem task
+            // FilterTask(v);
 
-            if(v.size() == 0){ // after filter, if there is no execute task, gather inviroment
+            auto series = MakeTaskSerie(v);
+            CalculateCostForSerie(series,robotPose);
+            // FilterSerie(series);
+            ROS_INFO_STREAM("Calculate cost finish");
+            SortSerieWithCost(series);
+            ROS_INFO_STREAM("Sort cost finish");
+            if(series.size() == 0){ // after filter, if there is no execute task, gather inviroment
                 while((v = _sc.QueryRunableGatherEnviromentInfoTasks()).size() == 0){  // if no execute task, create some gather enviroment info task
                     CreateNewTasks(10);    
                     ros::Duration(2).sleep();            
                 }
                 ROS_INFO_STREAM("found "<<v.size()<<"gather enviroment info tasks");
-                v = CalculateCostofTasks(v,robotPose); // calculate cost
-                FilterTask(v);
+               auto series = MakeTaskSerie(v);
+                CalculateCostForSerie(series,robotPose);
+                // FilterSerie(series);
+                ROS_INFO_STREAM("Calculate cost finish");
+                SortSerieWithCost(series);
+                ROS_INFO_STREAM("Sort cost finish");
+               
+                // v = CalculateCostofTasks(v,robotPose); // calculate cost
+                // FilterTask(v);
+                // SortTaskWithCost(v);
+                // bt = v.back();
+            }else{
+                
             }
             
-            SortTaskWithCost(v);
-            TaskInTable bt = v.back();
-            ROS_INFO_STREAM("Best task id = "<<bt.taskId<<" ,cost = "<< fixed << setprecision(3) << setw(6)<< bt.cost);
-            return bt;
+            // bt =  series.back().back();
+            // TaskInTable bt = v.back();
+            siere = series.back();
+            // ROS_INFO("Best task siere %ld",);
+            return siere;
         
     }
 
