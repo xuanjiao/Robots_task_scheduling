@@ -18,9 +18,11 @@ typedef struct {
 
 typedef struct LargeTask{
     int largeTaskId = 0;
+    std::string taskType = "";
     std::map<int,geometry_msgs::PoseStamped> tasks;
     double openPossibility = 0.0;
     double battery = 0.0;
+    ros::Duration waitingTime;
     int priority = 0;
     double cost = 0.0;
 }LargeTask;

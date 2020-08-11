@@ -123,12 +123,12 @@ public:
     void ExecuteCallback(const robot_navigation::GoToTargetGoalConstPtr &task){
         ROS_INFO_STREAM("Get a task from pool\n"<<*task);
         _rs.isCompleted = false;
-        _rs.taskId = task->taskId;
+        _rs.taskIds = task->taskIds;
 
         // Wait until task time
         ros::Time now = ros::Time::now();
         if(task->goals[0].header.stamp < now ){
-            ROS_INFO_STREAM("Task "<< task->taskId << " is expired");
+            ROS_INFO_STREAM("Task "<< task->taskIds[0] << " is expired");
             _gas.setAborted(_rs);
             RequestTask(); // Get a new task
             return;

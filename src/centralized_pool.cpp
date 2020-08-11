@@ -53,9 +53,9 @@ public:
         if(req.batteryLevel < 20){ // charging
             // ResponceChargingTask(req,res);
         }else{
-            vector<TaskInTable> siere = _tm.SelectBestTaskSiere(req.pose);
+            LargeTask lt = _tm.SelectLargetask(req.pose);
             res.hasTask = true;
-            SendRobotMultipleTargetActionGoal(siere,req.robotId); 
+            SendRobotMultipleTargetActionGoal(lt,req.robotId); 
             // ResponceTaskWithLowestCost(req,res);
         }
         return true;
@@ -78,46 +78,48 @@ public:
         
         ROS_INFO("Robot %d result:",result->robotId);
         ROS_INFO_STREAM(*result); 
-         if(state == actionlib::SimpleClientGoalState::SUCCEEDED){  
-             ROS_INFO("Task Succedd. Update %d task status",_sc.UpdateTaskStatus(result->taskId,"RanToCompletion"));
+         if(state == actionlib::SimpleClientGoalState::SUCCEEDED){
+             for(auto it = result->taskIds.begin(); it != result->taskIds.end(); it++)
+                ROS_INFO("Task Succedd. Update %d task status",_sc.UpdateTaskStatus(*it,"RanToCompletion"));
         }else{
             // change task status from Running to ToReRun, increase priority 3 and increase 200s start time 
-             ROS_INFO("Task failed. Update %d returned task ",_sc.UpdateReturnedTask(result->taskId,3,ros::Duration(200)));
+            for(auto it = result->taskIds.begin(); it != result->taskIds.end(); it++)
+                ROS_INFO("Task failed. Update %d returned task ",_sc.UpdateReturnedTask(*it,3,ros::Duration(200)));
         }
         
     }
 
     // Create Respon to robot
-    void ResponceChargingTask(robot_navigation::GetATask::Request &req,robot_navigation::GetATask::Response &res ){
+    // void ResponceChargingTask(robot_navigation::GetATask::Request &req,robot_navigation::GetATask::Response &res ){
         
-        std::map<int,geometry_msgs::Pose> map = _sc.QueryAvailableChargingStations();
-        geometry_msgs::Pose rp = req.pose;
-        ros::Time now = ros::Time::now();
-        if(map.size()==0){
-            ROS_INFO_STREAM("All charging station are busy");
-            res.hasTask = false;
-        }
-        res.hasTask = true;
-        std::pair<int,double> best; // best charging station (id,distance) 
-        best.second = 1000;  
-            for(auto i : map){
-            double dist = _tm.CalculatSmallTaskBatteryConsumption(rp,i.second);
-            if(dist<best.second){
-                best.first = i.first;
-                best.second = dist;
-            }
-        }    
-        TaskInTable bt;
-        bt.taskType = "Charging";
-        bt.priority = 5;
-        bt.goal.header.stamp = now + ros::Duration(10); // create a charging task that start after 10s
-        bt.goal.header.frame_id = "map";
-        bt.goal.pose = map[best.first];   
-        _sc.InsertATaskAssignId(bt); // insert task into database
-        SendRobotActionGoal(bt); // send goal to robot
+    //     std::map<int,geometry_msgs::Pose> map = _sc.QueryAvailableChargingStations();
+    //     geometry_msgs::Pose rp = req.pose;
+    //     ros::Time now = ros::Time::now();
+    //     if(map.size()==0){
+    //         ROS_INFO_STREAM("All charging station are busy");
+    //         res.hasTask = false;
+    //     }
+    //     res.hasTask = true;
+    //     std::pair<int,double> best; // best charging station (id,distance) 
+    //     best.second = 1000;  
+    //         for(auto i : map){
+    //         double dist = _tm.CalculatSmallTaskBatteryConsumption(rp,i.second);
+    //         if(dist<best.second){
+    //             best.first = i.first;
+    //             best.second = dist;
+    //         }
+    //     }    
+    //     TaskInTable bt;
+    //     bt.taskType = "Charging";
+    //     bt.priority = 5;
+    //     bt.goal.header.stamp = now + ros::Duration(10); // create a charging task that start after 10s
+    //     bt.goal.header.frame_id = "map";
+    //     bt.goal.pose = map[best.first];   
+    //     _sc.InsertATaskAssignId(bt); // insert task into database
+    //     SendRobotActionGoal(bt); // send goal to robot
         
-        ROS_INFO_STREAM("Send robot a charging task");
-    }
+    //     ROS_INFO_STREAM("Send robot a charging task");
+    // }
 
     void ResponceTaskWithLowestCost(robot_navigation::GetATask::Request &req,robot_navigation::GetATask::Response &res){
 
@@ -125,39 +127,39 @@ public:
 
 
     // Send robot new task 
-    void SendRobotActionGoal(TaskInTable &bt){
-        robot_navigation::GoToTargetGoal g;
-        g.goals.push_back(bt.goal);
-        g.targetId= bt.targetId;
-        g.taskType = bt.taskType;
-        g.taskId = bt.taskId;
-        g.robotId = bt.robotId;
+    // void SendRobotActionGoal(TaskInTable &bt){
+    //     robot_navigation::GoToTargetGoal g;
+    //     g.goals.push_back(bt.goal);
+    //     g.targetId= bt.targetId;
+    //     g.taskType = bt.taskType;
+    //     g.taskId = bt.taskId;
+    //     g.robotId = bt.robotId;
 
-        _acMtx.lock();
-        _cv[bt.robotId]->sendGoal(g,
-                boost::bind(&CentralizedPool::WhenRobotFinishGoal,this,_1,_2),
-                actionlib::SimpleActionClient<robot_navigation::GoToTargetAction>::SimpleActiveCallback(),
-                // boost::bind(&CentralizedPool::WhenActionActive,this),
-                boost::bind(&CentralizedPool::WhenReceiveInfoFromRobot,this,_1)
-        );
-        ROS_INFO_STREAM("Send a goal\n"<<g);
-        _acMtx.unlock();
-    }
+    //     _acMtx.lock();
+    //     _cv[bt.robotId]->sendGoal(g,
+    //             boost::bind(&CentralizedPool::WhenRobotFinishGoal,this,_1,_2),
+    //             actionlib::SimpleActionClient<robot_navigation::GoToTargetAction>::SimpleActiveCallback(),
+    //             // boost::bind(&CentralizedPool::WhenActionActive,this),
+    //             boost::bind(&CentralizedPool::WhenReceiveInfoFromRobot,this,_1)
+    //     );
+    //     ROS_INFO_STREAM("Send a goal\n"<<g);
+    //     _acMtx.unlock();
+    // }
 
-    void SendRobotMultipleTargetActionGoal(vector<TaskInTable> &siere,int robotId){
+    void SendRobotMultipleTargetActionGoal(LargeTask& lt,int robotId){
         robot_navigation::GoToTargetGoal g;
-        ROS_INFO("Send best siere to robot: ");
-        for(std::vector<TaskInTable>::iterator it = siere.begin();it != siere.end(); it++ ){
-            ROS_INFO("task %d ",it->taskId);
-            g.goals.push_back(it->goal);
-            _sc.UpdateTaskStatus(it->taskId,"Running");
-            _sc.UpdateTaskRobotId(it->taskId,robotId);
+        int taskId;
+        ROS_INFO("Send best large task to robot: ");
+        g.taskType = lt.taskType;
+
+        for(auto it = lt.tasks.begin();it !=  lt.tasks.end(); it++ ){
+            taskId = it->first;
+            g.goals.push_back(it->second);
+            g.taskIds.push_back(taskId);
+           
+            _sc.UpdateTaskStatus(taskId,"Running");
+            _sc.UpdateTaskRobotId(taskId,robotId);
         }
-        
-        g.targetId= siere.back().targetId;
-        g.taskType = siere.back().taskType;
-        g.taskId = siere.back().taskId;
-        g.robotId = robotId;
 
         _acMtx.lock();
         _cv[robotId]->sendGoal(g,
