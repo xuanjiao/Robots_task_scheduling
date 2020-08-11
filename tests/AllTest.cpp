@@ -1,7 +1,7 @@
 #include <ros/ros.h>
 #include <gtest/gtest.h>
-// #include "SqlTest.h"
-#include "TaskManagerTest.h"
+#include "SqlTest.h"
+// #include "TaskManagerTest.h"
 #include <thread>
 class Example :public ::testing::Test{
     public: 

@@ -36,8 +36,6 @@ TEST_F(SqlTest,InsertATaskAssignId){
     t.priority = 4;
     t.goal.pose.position.x = 4.38077210276;
     t.goal.pose.position.y =  9.34650744461;
-    t.goal.pose.orientation.z = 0.721488227349;
-    t.goal.pose.orientation.w = 0.692426702112;
     t.goal.header.stamp = ros::Time::now()+ros::Duration(20);
     t.goal.header.frame_id = "map";
     t.targetId = sql_client.InsertATargetAssignId(t.goal,"Point");

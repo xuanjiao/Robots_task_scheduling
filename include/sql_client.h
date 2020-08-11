@@ -83,7 +83,7 @@ class SQLClient{
       sql::ResultSet* res;
       vector<tuple<int,geometry_msgs::Pose,long double>> v;
       try{
-        res = stmt->executeQuery("select t.target_id,t.position_x, t.position_y, t.orientation_w, t.orientation_z, o.open_pos \
+        res = stmt->executeQuery("select t.target_id,t.position_x, t.position_y, o.open_pos \
                                       from targets t \
                                       inner join open_possibilities o \
                     where t.target_id = o.door_id  and o.day_of_week = dayofweek('" + time +  "') and time('" + time +  "') between o.start_time and o.end_time; ");
@@ -95,8 +95,7 @@ class SQLClient{
           geometry_msgs::Pose pose;
           pose.position.x = res->getDouble("position_x");
           pose.position.y = res->getDouble("position_y");
-          pose.orientation.z = res->getDouble("orientation_z");
-          pose.orientation.w = res->getDouble("orientation_w");
+          pose.orientation.w = 1.0;
           v.push_back(
             tuple<int,geometry_msgs::Pose,long double>(
               res->getInt("target_id"), pose, res->getDouble("open_pos")
@@ -118,7 +117,7 @@ class SQLClient{
       vector<TaskInTable> v;
       res = stmt->executeQuery(
        "SELECT tasks.dependency, tasks.priority, tasks.target_id, tasks.task_id, tasks.task_type, tasks.start_time, \
-        tg.position_x, tg.position_y, tg.orientation_z, tg.orientation_w FROM targets tg \
+        tg.position_x, tg.position_y FROM targets tg \
         INNER JOIN tasks ON tasks.target_id = tg.target_id \
         AND tasks.cur_status IN ('Created','ToReRun') \
         AND tasks.task_type = 'ExecuteTask'"
@@ -136,8 +135,7 @@ class SQLClient{
           t.goal.header.stamp = Util::str_ros_time(res->getString("start_time"));
           t.goal.pose.position.x = res->getDouble("position_x");
           t.goal.pose.position.y = res->getDouble("position_y");
-          t.goal.pose.orientation.z = res->getDouble("orientation_z");
-          t.goal.pose.orientation.w = res->getDouble("orientation_w");
+          t.goal.pose.orientation.w = 1.0;
           v.push_back(t);
         } 
       }
@@ -155,7 +153,7 @@ class SQLClient{
       vector<TaskInTable> v;
       res = stmt->executeQuery(
        "SELECT tasks.dependency, tasks.priority, o.open_pos_st, tasks.target_id, tasks.task_id, tasks.task_type, tasks.start_time, \
-        tg.position_x, tg.position_y, tg.orientation_z, tg.orientation_w FROM targets tg \
+        tg.position_x, tg.position_y FROM targets tg \
         INNER JOIN tasks ON tasks.target_id = tg.target_id \
         INNER JOIN open_possibilities o WHERE tg.target_id = o.door_id \
         AND DAYOFWEEK(tasks.start_time) = o.day_of_week \
@@ -178,8 +176,7 @@ class SQLClient{
           t.goal.header.stamp = Util::str_ros_time(res->getString("start_time"));
           t.goal.pose.position.x = res->getDouble("position_x");
           t.goal.pose.position.y = res->getDouble("position_y");
-          t.goal.pose.orientation.z = res->getDouble("orientation_z");
-          t.goal.pose.orientation.w = res->getDouble("orientation_w");
+          t.goal.pose.orientation.w = 1.0;
           v.push_back(t);
         } 
       }
@@ -247,8 +244,6 @@ class SQLClient{
       sql::ResultSet* res;        
       string x = to_string(target.pose.position.x);
       string y = to_string(target.pose.position.y);
-      string z = to_string(target.pose.orientation.z);
-      string w = to_string(target.pose.orientation.w);
       
       ROS_INFO_STREAM("Check target exist ");
       res = stmt->executeQuery(
@@ -257,8 +252,8 @@ class SQLClient{
       if(res->rowsCount() == 0){
           ROS_INFO_STREAM("Adding new target (" << x << "," <<y << ")");
           stmt->execute(
-            "INSERT INTO targets(target_type, position_x, position_y, orientation_z, orientation_w) \
-              VALUES('"+ targetType + "'," + x + "," + y + "," + z +","+ w +")" 
+            "INSERT INTO targets(target_type, position_x, position_y) \
+              VALUES('"+ targetType + "'," + x + "," + y + ")" 
           );
           res = stmt->executeQuery("SELECT last_insert_id() as target_id");
           res->next();
@@ -290,8 +285,7 @@ class SQLClient{
         geometry_msgs::Pose pose;
         pose.position.x = res->getDouble("position_x");
         pose.position.y = res->getDouble("position_y");
-        pose.orientation.z = res->getDouble("orientation_z");
-        pose.orientation.w = res->getDouble("orientation_w");
+        pose.orientation.w = 1.0;
         map.insert(make_pair(res->getInt("target_id"),pose));
       }
       delete res;

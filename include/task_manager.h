@@ -124,13 +124,7 @@ public:
             lit->battery = CalculateLargeTaskBatteryConsumption(robotPose,lit->tasks);
             lit->waitingTime = lit->tasks.begin()->second.header.stamp - now;
             lit->cost = A + B *lit->battery + C * lit->waitingTime.toSec() + D * lit->openPossibility + E * lit->priority;
-            // ROS_INFO("%d        %.3f   %.3f   %.3f  %d  %3f",
-            //             lit->largeTaskId,
-            //             lit->battery,
-            //             lit->waitingTime.toSec(),
-            //             lit->openPossibility,
-            //             lit->priority,
-            //             lit->cost);
+            ROS_INFO("%d        %.3f   %.3f   %.3f  %d  %3f",lit->largeTaskId,lit->battery,lit->waitingTime.toSec(), lit->openPossibility,lit->priority,lit->cost);
         }
     }
 
