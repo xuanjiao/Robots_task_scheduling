@@ -56,7 +56,7 @@ public:
             vector<TaskInTable> siere = _tm.SelectBestTaskSiere(req.pose);
             res.hasTask = true;
             SendRobotMultipleTargetActionGoal(siere,req.robotId); 
-            ResponceTaskWithLowestCost(req,res);
+            // ResponceTaskWithLowestCost(req,res);
         }
         return true;
     }
@@ -101,7 +101,7 @@ public:
         std::pair<int,double> best; // best charging station (id,distance) 
         best.second = 1000;  
             for(auto i : map){
-            double dist = _tm.CalculateBatteryConsumption(i.second,rp);
+            double dist = _tm.CalculatSmallTaskBatteryConsumption(rp,i.second);
             if(dist<best.second){
                 best.first = i.first;
                 best.second = dist;

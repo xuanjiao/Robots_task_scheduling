@@ -16,13 +16,14 @@ typedef struct {
 
 }TaskInTable;
 
-typedef struct TaskNode{
-    int taskId = 0;
-    TaskNode* nextNode;
-    geometry_msgs::PoseStamped goal;
+typedef struct LargeTask{
+    int largeTaskId = 0;
+    std::map<int,geometry_msgs::PoseStamped> tasks;
     double openPossibility = 0.0;
+    double battery = 0.0;
+    int priority = 0;
     double cost = 0.0;
-}TaskNode;
+}LargeTask;
 
 
 
