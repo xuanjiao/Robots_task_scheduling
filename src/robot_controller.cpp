@@ -124,7 +124,10 @@ public:
         ROS_INFO_STREAM("Get a task from pool\n"<<*task);
         _rs.isCompleted = false;
         _rs.taskIds = task->taskIds;
-
+        
+        for(size_t i = 0; i < task->taskIds.size(); i++){
+            _tasks.push_back(make_pair(task->taskIds[i],task->goals[i]));
+        }
         // Wait until task time
         ros::Time now = ros::Time::now();
         if(task->goals[0].header.stamp < now ){
@@ -133,7 +136,7 @@ public:
             RequestTask(); // Get a new task
             return;
         }else if (task->goals[0].header.stamp > now - ros::Duration(1)) {
-            GoToSleep(now - ros::Duration(1));  // both thread go to sleep
+            GoToSleep(task->goals[0].header.stamp - ros::Duration(1));  // both thread go to sleep
         }
         
         // Start task
@@ -142,7 +145,7 @@ public:
         }else if (task->taskType == "GatherEnviromentInfo" ){
             StartGatherInviromentTask(task->goals[0]);
         }else if (task->taskType == "ExecuteTask" ){
-            StartExecuteTask(task->goals[0]);
+            StartSmallExecuteTask();
         }else{
             ROS_INFO_STREAM("Unknown task");
             _gas.setAborted(_rs);
@@ -204,12 +207,12 @@ public:
         _movCv.notify_all();
     }
 
-    void StartExecuteTask(geometry_msgs::PoseStamped point){
-        ROS_INFO_STREAM(" Start execute task");
+    void StartSmallExecuteTask(){
+        ROS_INFO(" Start execute task %d",_tasks.front().first);
         move_base_msgs::MoveBaseGoal goal;
-        goal.target_pose = point;
+        goal.target_pose = _tasks.front().second; // get first task in queue
         _mbc.sendGoal(goal,
-                boost::bind(&RobotController::WhenExecuteTaskComplete,this, _1, _2),
+                boost::bind(&RobotController::WhenSmallExecuteTaskCompleted,this, _1, _2),
                 boost::bind(&RobotController::StartMoving,this),
                 boost::bind(&RobotController::MoveBasePositionFeedback,this, _1)
         );
@@ -223,16 +226,25 @@ public:
         // _mbc.cancelGoalsAtAndBeforeTime(ros::Time::now() + ros::Duration(MAX_TASK_DURATION));
     }
 
-    void WhenExecuteTaskComplete(const actionlib::SimpleClientGoalState& state,
+    void WhenSmallExecuteTaskCompleted(const actionlib::SimpleClientGoalState& state,
            const move_base_msgs::MoveBaseResult::ConstPtr& result ){
-        if(state == actionlib::SimpleClientGoalState::SUCCEEDED ){
-            ROS_INFO_STREAM("Execute task succeeded");
-            _rs.isCompleted = true;
+          
+        if(state == actionlib::SimpleClientGoalState::SUCCEEDED ){ // If a small task succedd, delete it
+            ROS_INFO("Execute task %d succeeded",_tasks.front().first);
+            _tasks.pop_front();
+            if(_tasks.empty()){  // If there are no small task remain, large task succedd.
+                _rs.isCompleted = true;
+                _movCv.notify_all();
+            }else{ // start next small task
+                GoToSleep(_tasks.front().second.header.stamp - ros::Duration(1));
+                StartSmallExecuteTask();
+            }
         }else {
-            ROS_INFO_STREAM("Execute task failed");
+            ROS_INFO("Execute task %d failed",_tasks.front().first);
+            _movCv.notify_all();
         }
-        _movCv.notify_all();
     }
+
 
     void ListenSensorCallback(const robot_navigation::sensor_data::ConstPtr& message){
 
@@ -294,6 +306,7 @@ private:
 
     geometry_msgs::PoseStamped _cp;
     
+    std::deque<std::pair<int,geometry_msgs::PoseStamped>> _tasks;
     ros::Timer _timer;
 
     // int _taskId;
