@@ -2,6 +2,7 @@
 #include "ros/ros.h"
 #include <geometry_msgs/PoseStamped.h>
 #include <nav_msgs/GetPlan.h>
+#include <algorithm>
 #include "general_task.h"
 #include "cost_function.h"
 #include <vector>
@@ -15,26 +16,39 @@ using namespace std;
 class TaskManager{
 public:
     TaskManager(SQLClient& sc,ros::NodeHandle& nh):_sc(sc),_nh(nh){
-        index = 0;
         _pc = _nh.serviceClient<nav_msgs::GetPlan>("/tb3_0/move_base/NavfnROS/make_plan"); 
+        index = 0;
+        LoadMapInfo();
     }
 
-    void CreateNewTasks(int num){
-        vector<int> doors = _sc.QueryDoorId();
-        ROS_INFO_STREAM("Found " << doors.size() << " doors in database");
+    void LoadMapInfo(){
+        ROS_INFO("Loading door and charging station...");       
+        auto v = _sc.QueryDoorId();
+        doors.swap(v);
         if(doors.size()==0){
            ROS_INFO("No doors information");
            return;
+        }else{
+            ROS_INFO_STREAM("Found " << doors.size() << " doors in database");
+            random_shuffle(doors.begin(),doors.end());
+             for(size_t i = 0; i< doors.size(); i++){
+                ROS_INFO("Door %d ",doors[i]);
+            }
+        }
+    }
+
+    void CreateNewTasks(int num){
+        for(size_t i = 0; i< doors.size(); i++){
+            ROS_INFO("Door %d ",doors[i]);
         }
         for(int i = 0; i < num ; i++){
             TaskInTable t;
             t.priority = 1;
             t.taskType = "GatherEnviromentInfo";
-            t.goal.header.stamp = ros::Time::now() + ros::Duration(100*i);
+            t.goal.header.stamp = ros::Time::now() + ros::Duration(10*i);
             t.goal.header.frame_id = "map";
             t.targetId = doors[index];
             t.taskId = _sc.InsertATaskAssignId(t);
-            // ROS_INFO_STREAM("Created a task. \n target id = "<<t.targetId<< " task id ="<<t.taskId);
             index++;
             if(index>=doors.size()){
                 index = 0;
@@ -123,7 +137,7 @@ public:
         for( auto lit = lts.begin(); lit != lts.end(); lit++){
             lit->battery = CalculateLargeTaskBatteryConsumption(robotPose,lit->tasks);
             lit->waitingTime = lit->tasks.begin()->second.header.stamp - now;
-            lit->cost = A + B *lit->battery + C * lit->waitingTime.toSec() + D * lit->openPossibility + E * lit->priority;
+            lit->cost = CF.A + CF.B *lit->battery + CF.C * lit->waitingTime.toSec() + CF.D * lit->openPossibility + CF.E * lit->priority;
             ROS_INFO("%d        %.3f   %.3f   %.3f  %d  %3f",lit->largeTaskId,lit->battery,lit->waitingTime.toSec(), lit->openPossibility,lit->priority,lit->cost);
         }
     }
@@ -283,6 +297,7 @@ public:
     }
 
     LargeTask SelectLargetask(geometry_msgs::Pose robotPose){
+        ROS_INFO("Start query execute tasks...");
         vector<TaskInTable> sts;
         vector<LargeTask> lts;
         LargeTask lt;
@@ -292,7 +307,7 @@ public:
         if(sts.size() != 0 ){
             lts = MakeLargeTasks(sts);
             CalculateLargeTasksCost(robotPose,lts);
-            ROS_INFO_STREAM("Calculate cost finish");
+            ROS_INFO_STREAM("Calculate execute task cost finish");
             // FilterTask(v);
         }
 
@@ -306,7 +321,7 @@ public:
         }
 
         SortLargeTasksWithCost(lts);
-        ROS_INFO_STREAM("Sort cost finish");
+        ROS_INFO_STREAM("Sort large task finish");
         lt = lts.back();
         return lt;
     }
@@ -380,10 +395,10 @@ public:
 
 
     private:
+    
     ros::ServiceClient _pc;
     SQLClient &_sc;
     ros::NodeHandle& _nh;
-    // vector<int> doors;
-    uint8_t index;
-   
+    vector<int> doors;
+    uint8_t index = 0;
 };

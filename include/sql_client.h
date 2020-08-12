@@ -319,17 +319,40 @@ class SQLClient{
     // Find all records from this time and day of weeks, and calculate new open possibilities
     int UpdateOpenPossibilities(int door_id, ros::Time measure_time){
       _sqlMtx.lock();
-      auto t = QueryStartTimeEndTimeDayFromOpenPossibilitiesTable(door_id,measure_time);
+
+      sql::ResultSet* res;
+      string dw,st,et,mst = Util::time_str(measure_time);
+      
+
+      // select start time, end time, day of week from open possibility table
+      res = stmt->executeQuery(
+        "SELECT start_time, end_time, day_of_week FROM open_possibilities WHERE door_id = '" + to_string( door_id)+
+        "' AND DAYOFWEEK('" + mst + "') = day_of_week AND TIME('" + mst + "') BETWEEN start_time AND end_time"
+      );
+
+      if(res->rowsCount()==0){
+        ROS_INFO("Unknow day time");
+        return -1;
+      }
+
+      res->next();
+      st = res->getString("start_time");
+      et = res->getString("end_time");
+      dw = res->getString("day_of_week");
+
+      ROS_INFO_STREAM("Start time "<<st<<" End time "<<et<<" Day of week "<<dw);
 
       // update open possibility table
       int ret =  stmt->executeUpdate(
         "UPDATE open_possibilities o \
           SET  o.open_pos_st = (SELECT SUM(door_status) / COUNT(door_status)  FROM  door_status ds \
-              WHERE ds.door_id = '" + to_string(door_id) + "' AND DAYOFWEEK(ds.date_time) = '" + to_string(get<2>(t)) + 
-              "' AND TIME(ds.date_time) BETWEEN '" + get<0>(t) + "' AND '"+ get<1>(t) +
-          "') WHERE o.door_id = '" + to_string(door_id) + "' AND o.day_of_week = '" + to_string(get<2>(t)) + "' AND o.start_time =' " + get<0>(t) + "' AND o.end_time = '"+ get<1>(t) +"'"       
+              WHERE ds.door_id = '" + to_string(door_id) + "' AND DAYOFWEEK(ds.date_time) = '" + dw + 
+              "' AND TIME(ds.date_time) BETWEEN '" + st + "' AND '"+ et +
+          "') WHERE o.door_id = '" + to_string(door_id) + "' AND o.day_of_week = '" + dw + "' AND o.start_time =' " + st + "' AND o.end_time = '"+ et +"'"       
       );
       _sqlMtx.unlock();
+
+      delete res;
       return ret;
     }
 

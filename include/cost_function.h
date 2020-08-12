@@ -1,7 +1,11 @@
 #pragma once
-#define COST_LIMIT 1000
-#define A 10
-#define B 10
-#define C 0.1
-#define D -10
-#define E -1
+
+typedef struct CostFunctionWeight{
+    double A;
+    double B;
+    double C;
+    double D;
+    double E;
+}CostFunctionWeight;
+
+const CostFunctionWeight CF  = {10, 10, 0.1, -10, -1};

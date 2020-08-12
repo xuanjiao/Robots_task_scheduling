@@ -25,9 +25,11 @@ TEST_F(TaskManagerTest,example){
     ASSERT_EQ(1,1);
 }
 
-// TEST_F(TaskManagerTest,createTasks){
-//      tm.CreateNewTasks(10);
-// }
+TEST_F(TaskManagerTest,createTasks){
+    TaskManager tm(sc,nh);
+     tm.LoadMapInfo();
+     tm.CreateNewTasks(10);
+}
 
 
 TEST_F(TaskManagerTest,createSeries){

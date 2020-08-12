@@ -21,7 +21,7 @@ typedef actionlib::SimpleActionClient<robot_navigation::GoToTargetAction> GoToTa
 class CentralizedPool{
 
 public:
- CentralizedPool(SQLClient& sc,ros::NodeHandle &nh,TaskManager tm):_sc(sc),_nh(nh),_tm(tm)
+ CentralizedPool(SQLClient& sc,ros::NodeHandle &nh,TaskManager &tm):_sc(sc),_nh(nh),_tm(tm)
         // _gac("/tb3_0/GoToTargetAction",true) //  spins up a thread to service this action's subscriptions. 
     {
         _cv.push_back(new GoToTargetActionClient("/tb3_0/GoToTargetAction",true));
@@ -120,10 +120,6 @@ public:
         
     //     ROS_INFO_STREAM("Send robot a charging task");
     // }
-
-    void ResponceTaskWithLowestCost(robot_navigation::GetATask::Request &req,robot_navigation::GetATask::Response &res){
-
-    }
 
 
     // Send robot new task 
