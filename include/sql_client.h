@@ -115,12 +115,14 @@ class SQLClient{
       _sqlMtx.lock();
       sql::ResultSet* res;
       vector<TaskInTable> v;
+      string now = Util::time_str(ros::Time::now());
       res = stmt->executeQuery(
        "SELECT tasks.dependency, tasks.priority, tasks.target_id, tasks.task_id, tasks.task_type, tasks.start_time, \
         tg.position_x, tg.position_y FROM targets tg \
         INNER JOIN tasks ON tasks.target_id = tg.target_id \
         AND tasks.cur_status IN ('Created','ToReRun') \
-        AND tasks.task_type = 'ExecuteTask'"
+        AND tasks.task_type = 'ExecuteTask' \
+        AND tasks.start_time > '" + now +"'"
       );
       if(res->rowsCount()!=0){
         while(res->next()){
@@ -151,6 +153,7 @@ class SQLClient{
       _sqlMtx.lock();
       sql::ResultSet* res;
       vector<TaskInTable> v;
+      string now = Util::time_str(ros::Time::now());
       res = stmt->executeQuery(
        "SELECT tasks.dependency, tasks.priority, o.open_pos_st, tasks.target_id, tasks.task_id, tasks.task_type, tasks.start_time, \
         tg.position_x, tg.position_y FROM targets tg \
@@ -159,7 +162,8 @@ class SQLClient{
         AND DAYOFWEEK(tasks.start_time) = o.day_of_week \
         AND TIME(tasks.start_time) BETWEEN o.start_time AND o.end_time \
         AND tasks.cur_status IN ('Created' ,'ToReRun') \
-        AND tasks.task_type = 'GatherEnviromentInfo'"
+        AND tasks.task_type = 'GatherEnviromentInfo' \
+        AND tasks.start_time > '" + now +"'"
         
       );
       if(res->rowsCount()!=0){
@@ -381,28 +385,6 @@ class SQLClient{
         _sqlMtx.unlock();
         return cnt;
     }
-
-    tuple<string,string,int> QueryStartTimeEndTimeDayFromOpenPossibilitiesTable(int door_id, ros::Time measure_time){
-      _sqlMtx.lock();
-      sql::ResultSet* res;
-      string st,et,mst = Util::time_str(measure_time);
-      int dw;
-
-      // select start time, end time, day of week from open possibility table
-      res = stmt->executeQuery(
-        "SELECT start_time, end_time, day_of_week FROM open_possibilities WHERE door_id = '" + to_string( door_id)+
-        "' AND DAYOFWEEK('" + mst + "') = day_of_week AND TIME('" + mst + "') BETWEEN start_time AND end_time"
-      );
-
-      res->next();
-      st = res->getString("start_time");
-      et = res->getString("end_time");
-      dw = res->getInt("day_of_week");
-      delete res;
-      _sqlMtx.unlock();
-      return make_tuple(st,et,dw);
-    }
-
 
     ~SQLClient(){
        delete stmt;

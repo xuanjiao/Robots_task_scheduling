@@ -14,15 +14,6 @@ TEST_F(SqlTest,example){
     ASSERT_EQ(1,1);
 }
 
-// // TEST_F(MyTestSuite,transfer_time){
-// //     ASSERT_EQ(ros::Time::now().sec,Util::str_ros_time(Util::time_str(ros::Time::now())).sec);
-// // }
-
-// TEST_F(SqlTest,insert_task){
-//     SQLClient sql_client("root","nes");
-//     int num = sql_client.InsertMultipleGatherInfoTasks(5,ros::Time::now(),ros::Duration(300));
-//     ASSERT_EQ(num,5);
-// }
 
 TEST_F(SqlTest,InsertATargetAssignId){
     SQLClient sql_client("root","nes");

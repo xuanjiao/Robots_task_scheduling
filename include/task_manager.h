@@ -24,22 +24,24 @@ public:
     void LoadMapInfo(){
         ROS_INFO("Loading door and charging station...");       
         auto v = _sc.QueryDoorId();
-        doors.swap(v);
-        if(doors.size()==0){
+        _doors.swap(v);
+        if(_doors.size()==0){
            ROS_INFO("No doors information");
            return;
         }else{
-            ROS_INFO_STREAM("Found " << doors.size() << " doors in database");
-            random_shuffle(doors.begin(),doors.end());
-             for(size_t i = 0; i< doors.size(); i++){
-                ROS_INFO("Door %d ",doors[i]);
-            }
+            ROS_INFO_STREAM("Found " << _doors.size() << " doors in database");
+            random_shuffle(_doors.begin(),_doors.end());
+        }
+
+        _stations = _sc.QueryAvailableChargingStations();
+        for(size_t i = 0; i< _doors.size(); i++){
+                ROS_INFO("Door %d ",_doors[i]);
         }
     }
 
     void CreateNewTasks(int num){
-        for(size_t i = 0; i< doors.size(); i++){
-            ROS_INFO("Door %d ",doors[i]);
+        for(size_t i = 0; i< _doors.size(); i++){
+            ROS_INFO("Door %d ",_doors[i]);
         }
         for(int i = 0; i < num ; i++){
             TaskInTable t;
@@ -47,13 +49,39 @@ public:
             t.taskType = "GatherEnviromentInfo";
             t.goal.header.stamp = ros::Time::now() + ros::Duration(10*i);
             t.goal.header.frame_id = "map";
-            t.targetId = doors[index];
+            t.targetId = _doors[index];
             t.taskId = _sc.InsertATaskAssignId(t);
             index++;
-            if(index>=doors.size()){
+            if(index>=_doors.size()){
                 index = 0;
             }
         }
+    }
+
+
+    TaskInTable CreateChargingTask(geometry_msgs::Pose robotPose){
+        geometry_msgs::Pose rp = robotPose;
+        ros::Time now = ros::Time::now();
+        
+        std::pair<int,double> best; // best charging station (id,distance) 
+        best.second = 1000;  
+
+        auto freeStations = _sc.QueryAvailableChargingStations();
+
+        for(auto i : _stations){
+            double dist = CalculatSmallTaskBatteryConsumption(rp,i.second);
+            if(dist<best.second){
+                best.first = i.first;
+                best.second = dist;
+            }
+        }    
+        TaskInTable bt;
+        bt.taskType = "Charging";
+        bt.priority = 5;
+        bt.goal.header.stamp = now + ros::Duration(10); // create a charging task that start after 10s
+        bt.goal.header.frame_id = "map";
+        bt.goal.pose = _stations[best.first];   
+        return bt;
     }
 
     // vector<vector<TaskInTable>> MakeTaskSerie(vector<TaskInTable> &tasks){
@@ -399,6 +427,8 @@ public:
     ros::ServiceClient _pc;
     SQLClient &_sc;
     ros::NodeHandle& _nh;
-    vector<int> doors;
+    vector<int> _doors;
+    map<int,geometry_msgs::Pose> _stations;
+
     uint8_t index = 0;
 };

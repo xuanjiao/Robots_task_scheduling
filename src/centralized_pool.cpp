@@ -48,16 +48,16 @@ public:
         ROS_INFO("Robot %d request a task",req.robotId);
         
         ROS_INFO_STREAM(req);
-        ros::Time cur_time = ros::Time::now();
-        ROS_INFO_STREAM("current time =  "<<cur_time);   
+        ROS_INFO_STREAM("Current time: "<<Util::time_str(ros::Time::now()));
         if(req.batteryLevel < 20){ // charging
-            // ResponceChargingTask(req,res);
+            TaskInTable bt = _tm.CreateChargingTask(req.pose);
+            _sc.InsertATaskAssignId(bt); // insert task into database
+            SendRobotSmallTask(bt); // send goal to robot
         }else{
             LargeTask lt = _tm.SelectLargetask(req.pose);
-            res.hasTask = true;
-            SendRobotMultipleTargetActionGoal(lt,req.robotId); 
-            // ResponceTaskWithLowestCost(req,res);
+            SendRobotLargeTask(lt,req.robotId); 
         }
+        res.hasTask = true;
         return true;
     }
 
@@ -89,11 +89,11 @@ public:
         
     }
 
-    // Create Respon to robot
-    // void ResponceChargingTask(robot_navigation::GetATask::Request &req,robot_navigation::GetATask::Response &res ){
+    // // Create Respon to robot
+    // LargeTask CreateChargingTask(geometry_msgs::Pose robotPose){
         
     //     std::map<int,geometry_msgs::Pose> map = _sc.QueryAvailableChargingStations();
-    //     geometry_msgs::Pose rp = req.pose;
+    //     geometry_msgs::Pose rp = robotPose;
     //     ros::Time now = ros::Time::now();
     //     if(map.size()==0){
     //         ROS_INFO_STREAM("All charging station are busy");
@@ -116,36 +116,35 @@ public:
     //     bt.goal.header.frame_id = "map";
     //     bt.goal.pose = map[best.first];   
     //     _sc.InsertATaskAssignId(bt); // insert task into database
-    //     SendRobotActionGoal(bt); // send goal to robot
+    //     SendRobotSmallTask(bt); // send goal to robot
         
     //     ROS_INFO_STREAM("Send robot a charging task");
     // }
 
 
     // Send robot new task 
-    // void SendRobotActionGoal(TaskInTable &bt){
-    //     robot_navigation::GoToTargetGoal g;
-    //     g.goals.push_back(bt.goal);
-    //     g.targetId= bt.targetId;
-    //     g.taskType = bt.taskType;
-    //     g.taskId = bt.taskId;
-    //     g.robotId = bt.robotId;
+    void SendRobotSmallTask(TaskInTable &bt){
+        robot_navigation::GoToTargetGoal g;
+         ROS_INFO("Send best small task to robot...");
+        g.goals.push_back(bt.goal);
+        g.taskIds[0] = bt.taskId;
+        g.taskType = bt.taskType;
 
-    //     _acMtx.lock();
-    //     _cv[bt.robotId]->sendGoal(g,
-    //             boost::bind(&CentralizedPool::WhenRobotFinishGoal,this,_1,_2),
-    //             actionlib::SimpleActionClient<robot_navigation::GoToTargetAction>::SimpleActiveCallback(),
-    //             // boost::bind(&CentralizedPool::WhenActionActive,this),
-    //             boost::bind(&CentralizedPool::WhenReceiveInfoFromRobot,this,_1)
-    //     );
-    //     ROS_INFO_STREAM("Send a goal\n"<<g);
-    //     _acMtx.unlock();
-    // }
+        _acMtx.lock();
+        _cv[bt.robotId]->sendGoal(g,
+                boost::bind(&CentralizedPool::WhenRobotFinishGoal,this,_1,_2),
+                actionlib::SimpleActionClient<robot_navigation::GoToTargetAction>::SimpleActiveCallback(),
+                // boost::bind(&CentralizedPool::WhenActionActive,this),
+                boost::bind(&CentralizedPool::WhenReceiveInfoFromRobot,this,_1)
+        );
+        ROS_INFO_STREAM(g);
+        _acMtx.unlock();
+    }
 
-    void SendRobotMultipleTargetActionGoal(LargeTask& lt,int robotId){
+    void SendRobotLargeTask(LargeTask& lt,int robotId){
         robot_navigation::GoToTargetGoal g;
         int taskId;
-        ROS_INFO("Send best large task to robot: ");
+        ROS_INFO("Send best large task to robot.. ");
         g.taskType = lt.taskType;
 
         for(auto it = lt.tasks.begin();it !=  lt.tasks.end(); it++ ){
@@ -164,7 +163,7 @@ public:
                 // boost::bind(&CentralizedPool::WhenActionActive,this),
                 boost::bind(&CentralizedPool::WhenReceiveInfoFromRobot,this,_1)
         );
-        ROS_INFO_STREAM("Send a goal\n"<<g);
+        ROS_INFO_STREAM(g);
         _acMtx.unlock();
     }
 
