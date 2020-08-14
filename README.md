@@ -74,6 +74,10 @@ use estimate position tool in rviz to estimate position
 ```
 ## Structure
 
+Map
+
+![office_map](./img/OfficeCoordinates.png)
+
 ![robot_communication](./img/robot-communication.png)
 
 Centralized pool handle request task
