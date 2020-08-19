@@ -9,3 +9,5 @@ typedef struct CostFunctionWeight{
 }CostFunctionWeight;
 
 const CostFunctionWeight CF  = {10, 10, 0.1, -10, -1};
+
+// llcf = {10,10/ntaks,0.1,-10,-1)}

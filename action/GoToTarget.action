@@ -1,15 +1,15 @@
 #goal definition
 geometry_msgs/PoseStamped[] goals
-int8[] taskIds
+int32[] taskIds
 string taskType
 ---
 #result definition
 bool isCompleted
-int8[] taskIds
-int8 robotId
+int32[] taskIds
+int32 robotId
 ---
 #feedback
-int8 robotId
-int8 doorId 
+int32 robotId
+int32 doorId 
 time measureTime
 uint8 doorStatus
