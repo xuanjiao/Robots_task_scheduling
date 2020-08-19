@@ -162,11 +162,11 @@ public:
         ROS_INFO("-----------------------------------------------------------------------------");
         ros::Time now = ros::Time::now();
         
-        for( auto lit = lts.begin(); lit != lts.end(); lit++){
-            lit->battery = CalculateLargeTaskBatteryConsumption(robotPose,lit->tasks);
-            lit->waitingTime = lit->tasks.begin()->second.header.stamp - now;
-            lit->cost = CF.A + CF.B *lit->battery + CF.C * lit->waitingTime.toSec() + CF.D * lit->openPossibility + CF.E * lit->priority;
-            ROS_INFO("%d        %.3f   %.3f   %.3f  %d  %3f",lit->largeTaskId,lit->battery,lit->waitingTime.toSec(), lit->openPossibility,lit->priority,lit->cost);
+        for(LargeTask t:lts){
+            t.battery = CalculateLargeTaskBatteryConsumption(robotPose,t.tasks);
+            t.waitingTime = t.tasks.begin()->second.header.stamp - now;
+            CostCalculator::CalculateLargeTaskCost(t);
+            ROS_INFO("%d        %.3f   %.3f   %.3f  %d  %3f",t.largeTaskId,t.battery,t.waitingTime.toSec(), t.openPossibility,t.priority,t.cost);
         }
     }
 
