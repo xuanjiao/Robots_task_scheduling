@@ -160,9 +160,11 @@ public:
         TaskInTable st;
         ros::Time now = ros::Time::now();
         auto doors = _sc.QueryRealTimeDoorInfo();
+        ROS_INFO("Found %ld doors",doors.size());
         ROS_INFO_STREAM("Large_task_id Battery WaitTime Open_possibility Priority   Cost");
         ROS_INFO("-----------------------------------------------------------------------------");
         for(auto door : doors){
+            ROS_INFO("calculate from  (%s) door %d to (%s)",Util::pose_str(robotPose).c_str(), door.doorId, Util::pose_str(door.pose).c_str());
             _cc.CalculateDoorCost(now,door,robotPose);
             SortDoorsWithCost(doors);
         }
@@ -172,7 +174,7 @@ public:
         st.goal.header.frame_id = "map";
         st.taskType = "GatherEnviromentInfo";
         st.priority = 1;
-        _sc.InsertATaskAssignId(st);
+        st.taskId =  _sc.InsertATaskAssignId(st);
         return st;
     }
 

@@ -225,7 +225,7 @@ class SQLClient{
     }
 
   double QueryDoorOpenPossibility(int doorId){
-    double o;
+    double o = 0;
     _sqlMtx.lock();
     sql::ResultSet* res;
     string time = Util::time_str(ros::Time::now());
@@ -241,6 +241,7 @@ class SQLClient{
     }
     delete res;
     _sqlMtx.unlock();
+    return o;
   }
 
   vector<Door> QueryRealTimeDoorInfo(){
