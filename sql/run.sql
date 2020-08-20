@@ -20,8 +20,8 @@ CREATE TABLE open_possibilities (
     CONSTRAINT Door_Time UNIQUE (day_of_week , start_time , end_time , door_id)
 );
 
-drop table if exists door_status;
-CREATE TABLE door_status (
+drop table if exists measurements;
+CREATE TABLE measurements (
     door_id INT REFERENCES targets(target_id),
     door_status BOOLEAN,
     date_time DATETIME,
@@ -62,11 +62,14 @@ CREATE TABLE tasks (
     PRIMARY KEY (task_id)																																																																								
 );
 
-DROP TABLE IF EXISTS door_dependencies;
-CREATE TABLE door_dependencies(
+DROP TABLE IF EXISTS door_infos;
+CREATE TABLE door_infos(
 	door_id INT REFERENCES targets(target_id),
-    dependency INT REFERENCES targets(target_id)
-);																																																																								
+    dependency INT REFERENCES targets(target_id),
+    last_update DATETIME,
+    PRIMARY KEY (door_id)	
+);	
+																																																																							
 
 -- insert value to targets table
 INSERT INTO targets 
@@ -77,6 +80,7 @@ VALUES
 (4,'Door',-20.5,7.7),
 (5,'Door',-16.0,7.7),
 (6,'Door',-15.0,6.8),
+(7,'Door',-10.3,5.2),
 (8,'Door',-10.3,7.5),
 (9,'Door',-1.5,5.2),
 (10,'Door',3.2,5.2),
@@ -95,7 +99,7 @@ VALUES
 (23,'Point',7.0,4.0);
 
 -- Create door dependencies
-INSERT INTO door_dependencies
+INSERT INTO door_infos(door_id,dependency)
 VALUES
 (1,0),
 (2,1),
@@ -114,25 +118,26 @@ VALUES
 (15,0),
 (16,0);
 
+
 -- Create some enter room task
 INSERT INTO tasks
 VALUES
 -- task_id, task_type, start_time, target_id, robot_id, priority, cur_status, dependency, result
 (1, 'ExecuteTask', '2020-06-01 9:00:00', 20, NULL, 3, 'Created', 0, NULL),
 (2, 'ExecuteTask', '2020-06-01 9:00:30', 21, NULL, 3, 'Created', 1, NULL),
-(3, 'ExecuteTask', '2020-06-01 9:02:30', 21, NULL, 2, 'Created', 0, NULL),
-(4, 'ExecuteTask', '2020-06-01 9:03:00', 21, NULL, 2, 'Created', 3, NULL);
+(3, 'ExecuteTask', '2020-06-01 9:02:30', 22, NULL, 2, 'Created', 0, NULL),
+(4, 'ExecuteTask', '2020-06-01 9:03:00', 23, NULL, 2, 'Created', 3, NULL);
 
 -- insert charging station to table
 INSERT INTO charging_stations(station_id)
 SELECT target_id FROM targets WHERE target_type = 'ChargingStation';
  
 -- fill in status list and possibility table
-call createPossibilityTable(15);
+call createPossibilityTable(16);
 
-SELECT * FROM door_status;
+SELECT * FROM measurements;
 SELECT * FROM open_possibilities;
 SELECT * FROM targets;
 SELECT * FROM charging_stations;
-SELECT * FROM door_dependencies;
+SELECT * FROM door_infos;
 SELECT * FROM tasks;

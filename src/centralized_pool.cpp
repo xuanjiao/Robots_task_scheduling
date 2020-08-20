@@ -50,12 +50,17 @@ public:
         ROS_INFO_STREAM(req);
         ROS_INFO_STREAM("Current time: "<<Util::time_str(ros::Time::now()));
         if(req.batteryLevel < 20){ // charging
-            TaskInTable bt = _tm.CreateChargingTask(req.pose);
-            _sc.InsertATaskAssignId(bt); // insert task into database
-            SendRobotSmallTask(bt); // send goal to robot
+            // TaskInTable bt = _tm.CreateChargingTask(req.pose);
+            // _sc.InsertATaskAssignId(bt); // insert task into database
+            // SendRobotSmallTask(bt); // send goal to robot
         }else{
-            LargeTask lt = _tm.SelectLargetask(req.pose);
-            SendRobotLargeTask(lt,req.robotId); 
+            LargeTask lt = _tm.SelectExecutetask(req.pose);
+            if(lt.tasks.size()>0){
+                SendRobotLargeTask(lt,req.robotId); 
+            }else{
+                TaskInTable bt = _tm.CreateBestEnviromentTast(req.pose);
+                SendRobotSmallTask(bt);
+            }
         }
         res.hasTask = true;
         return true;
@@ -88,39 +93,6 @@ public:
         }
         
     }
-
-    // // Create Respon to robot
-    // LargeTask CreateChargingTask(geometry_msgs::Pose robotPose){
-        
-    //     std::map<int,geometry_msgs::Pose> map = _sc.QueryAvailableChargingStations();
-    //     geometry_msgs::Pose rp = robotPose;
-    //     ros::Time now = ros::Time::now();
-    //     if(map.size()==0){
-    //         ROS_INFO_STREAM("All charging station are busy");
-    //         res.hasTask = false;
-    //     }
-    //     res.hasTask = true;
-    //     std::pair<int,double> best; // best charging station (id,distance) 
-    //     best.second = 1000;  
-    //         for(auto i : map){
-    //         double dist = _tm.CalculatSmallTaskBatteryConsumption(rp,i.second);
-    //         if(dist<best.second){
-    //             best.first = i.first;
-    //             best.second = dist;
-    //         }
-    //     }    
-    //     TaskInTable bt;
-    //     bt.taskType = "Charging";
-    //     bt.priority = 5;
-    //     bt.goal.header.stamp = now + ros::Duration(10); // create a charging task that start after 10s
-    //     bt.goal.header.frame_id = "map";
-    //     bt.goal.pose = map[best.first];   
-    //     _sc.InsertATaskAssignId(bt); // insert task into database
-    //     SendRobotSmallTask(bt); // send goal to robot
-        
-    //     ROS_INFO_STREAM("Send robot a charging task");
-    // }
-
 
     // Send robot new task 
     void SendRobotSmallTask(TaskInTable &bt){
@@ -182,7 +154,8 @@ int main(int argc, char** argv){
     ros::init(argc,argv,"centralized_poor");
     ros::NodeHandle nodeHandle;
     SQLClient sqlClient("centralized_pool","pass");
-    TaskManager taskManager(sqlClient,nodeHandle);
+    CostCalculator cc(nodeHandle);
+    TaskManager taskManager(sqlClient,cc);
     CentralizedPool pool(sqlClient,nodeHandle,taskManager);
 
     ros::spin(); // block program

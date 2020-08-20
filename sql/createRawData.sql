@@ -14,7 +14,7 @@ begin
     declare cur_time datetime;
     set cur_time = start_date_time;
 	while cnt < cnt_total do
-          insert into door_status
+          insert into measurements
           select 
             id,
             if(rand()< open_pos,1,0), 
@@ -28,12 +28,3 @@ begin
 
     end $$
 delimiter ;
--- 
--- -- -- create raw data with datetime and door status, 
--- call createRawData(1,'2020-06-01 0:00:00','00:10:00',200);
--- -- call createRawData('b','2020-06-01 0:00:00','00:10:00',200);
--- -- call createRawData('c','2020-06-01 0:00:00','00:10:00',200);
--- -- call createRawData('d','2020-06-01 0:00:00','00:10:00',200);
--- 
--- select * from door_status;
--- truncate door_status;

@@ -10,6 +10,7 @@
 #include <cppconn/resultset.h>
 #include <cppconn/statement.h>
 #include "general_task.h"
+#include "door_info.h"
 #include "util.h"
 #include <boost/thread/mutex.hpp>
 
@@ -223,6 +224,77 @@ class SQLClient{
       return doors;
     }
 
+  double QueryDoorOpenPossibility(int doorId){
+    double o;
+    _sqlMtx.lock();
+    sql::ResultSet* res;
+    string time = Util::time_str(ros::Time::now());
+    res = stmt->executeQuery(
+      "SELECT * FROM open_possibilities WHERE door_id = "+ to_string(doorId) + " AND day_of_week = DAYOFWEEK('" + time +  "') and time('" + time +
+      "') between start_time and end_time ");
+    if(res->rowsCount() == 0){
+      ROS_INFO("Target %d not exist",doorId);
+      return -1;
+    }
+    while(res->next()){
+      o = res->getDouble("open_pos_st");
+    }
+    delete res;
+    _sqlMtx.unlock();
+  }
+
+  vector<Door> QueryRealTimeDoorInfo(){
+    _sqlMtx.lock();
+    sql::ResultSet* res;
+    vector<Door> doors;
+    string time = Util::time_str(ros::Time::now());
+    res = stmt->executeQuery(
+      "SELECT i.door_id, i.dependency, i.last_update, t.position_x, t.position_y, o.open_pos_st FROM door_infos i \
+        INNER JOIN targets t ON t.target_id = i.door_id \
+        LEFT JOIN (SELECT * FROM open_possibilities \
+        WHERE day_of_week = DAYOFWEEK('" + time +  "') and time('" + time +"') between start_time and end_time) o \
+        ON i.dependency = o.door_id \
+        ORDER BY i.door_id"
+    );
+
+    if(res->rowsCount() == 0){
+      ROS_INFO_STREAM("No Door Info");
+      return doors;
+    }
+   
+    while(res->next()){
+      Door d;
+      d.doorId = res->getInt("door_id"); // find available door id
+      d.lastUpdate = Util::str_ros_time(res->getString("last_update"));
+      if(res->getInt("dependency")!=0)
+        d.depOpenpossibility = res->getDouble("open_pos_st");
+      d.pose.position.x = res->getInt("position_x");
+      d.pose.position.y = res->getInt("position_y");
+      d.pose.orientation.w = 1.0;
+      doors.push_back(d);
+    }
+    delete res;
+    
+  _sqlMtx.unlock();
+    return doors;
+  }
+
+  // double QueryTargetOpenpossibility(int targetId){
+  //     sql::ResultSet* res;
+  //     double o;
+  //     res = stmt->executeQuery("SELECT * FROM targets WHERE target_id = " + to_string(targetId));
+  //     if(res->rowsCount() == 0){
+  //       ROS_INFO("Target %d not exist",targetId);
+  //       return -1;
+  //     }
+  //     while(res->next()){
+  //       o = res->getDouble("open_pos_st");
+  //     }
+  //     delete res;
+  //     return o;
+  // }
+
+   
 
     
     // Create new task and return its task id
@@ -314,7 +386,7 @@ class SQLClient{
       _sqlMtx.lock();
       string mst = Util::time_str(measure_time);
       // ROS_INFO_STREAM(" insert "<<to_string(door_id)<<" "<<measure_time<<" "<<door_status);
-      int ret = stmt->execute("REPLACE INTO door_status(door_id,door_status,date_time) VALUES('" + to_string(door_id) + "', " +to_string(door_status)+", '"+ mst+"')");
+      int ret = stmt->execute("REPLACE INTO measurements(door_id,door_status,date_time) VALUES('" + to_string(door_id) + "', " +to_string(door_status)+", '"+ mst+"')");
       ret = stmt->getUpdateCount();
       _sqlMtx.unlock();
       return ret;
@@ -349,7 +421,7 @@ class SQLClient{
       // update open possibility table
       int ret =  stmt->executeUpdate(
         "UPDATE open_possibilities o \
-          SET  o.open_pos_st = (SELECT SUM(door_status) / COUNT(door_status)  FROM  door_status ds \
+          SET  o.open_pos_st = (SELECT SUM(door_status) / COUNT(door_status)  FROM  measurements ds \
               WHERE ds.door_id = '" + to_string(door_id) + "' AND DAYOFWEEK(ds.date_time) = '" + dw + 
               "' AND TIME(ds.date_time) BETWEEN '" + st + "' AND '"+ et +
           "') WHERE o.door_id = '" + to_string(door_id) + "' AND o.day_of_week = '" + dw + "' AND o.start_time =' " + st + "' AND o.end_time = '"+ et +"'"       

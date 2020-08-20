@@ -32,7 +32,7 @@ TEST_F(TaskManagerTest,createTasks){
 }
 
 
-TEST_F(TaskManagerTest,createSeries){
+TEST_F(TaskManagerTest,createLargeTask){
     TaskManager tm(sc,nh);
     std::vector<TaskInTable> tasks;
     TaskInTable t1;
@@ -82,11 +82,11 @@ TEST_F(TaskManagerTest,createSeries){
 //     std::map<int,geometry_msgs::PoseStamped> map;
 //     map.insert(make_pair(2,ps2));
 //     map.insert(make_pair(3,ps3));
-//     double d12 = tm.CalculatSmallTaskBatteryConsumption(p1,p2);
-//     double d23 = tm.CalculatSmallTaskBatteryConsumption(p2,p3);
-//     double d13 = tm.CalculatSmallTaskBatteryConsumption(p1,p3);
+//     double d12 = tm.CalculateSimpleBatteryConsumption(p1,p2);
+//     double d23 = tm.CalculateSimpleBatteryConsumption(p2,p3);
+//     double d13 = tm.CalculateSimpleBatteryConsumption(p1,p3);
 //     ASSERT_EQ(d13,d12 + d23);
-//     double d = tm.CalculateLargeTaskBatteryConsumption(p1,map);
+//     double d = tm.CalculateComplexTrajectoryBatteryConsumption(p1,map);
 //     ASSERT_EQ(d13,d);
 
 // }
