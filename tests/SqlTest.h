@@ -1,5 +1,6 @@
 #pragma once
 #include "sql_client.h"
+#include "util.h"
 
 class SqlTest :public ::testing::Test {
     public:
@@ -24,6 +25,8 @@ TEST_F(SqlTest,QueryRealTimeDoorInfo){
     auto doors = sql_client.QueryRealTimeDoorInfo();
     ASSERT_EQ(doors.size(),16);
     ASSERT_EQ(doors[12].doorId,13);
+    ASSERT_EQ(doors[12].pose.position.x,5.8);
+    ASSERT_EQ(doors[12].pose.position.y,7.7);
     ASSERT_EQ(doors[12].depOpenpossibility,0.2);
 }
 
@@ -49,15 +52,15 @@ TEST_F(SqlTest,InsertATaskAssignId){
     ASSERT_GT(t.targetId,0);
     ASSERT_GT( taskId,0);
 }
-// 
-TEST_F(SqlTest,QueryRunableTask){
-     SQLClient sql_client("root","nes");
-    auto v = sql_client.QueryRunableGatherEnviromentInfoTasks();
-    ASSERT_GE(v.size(),0);
-// ASSERT_LT(v.back().goal.header.stamp,ros::Time::now());
-    auto v2 = sql_client.QueryRunableExecuteTasks();
-    ASSERT_GE(v2.size(),0);
-}
+// // 
+// TEST_F(SqlTest,QueryRunableTask){
+//      SQLClient sql_client("root","nes");
+//     auto v = sql_client.QueryRunableGatherEnviromentInfoTasks();
+//     ASSERT_GE(v.size(),0);
+// // ASSERT_LT(v.back().goal.header.stamp,ros::Time::now());
+//     auto v2 = sql_client.QueryRunableExecuteTasks();
+//     ASSERT_GE(v2.size(),0);
+// }
 
 TEST_F(SqlTest,InserDoorStatusRecord){
     SQLClient sql_client("root","nes");

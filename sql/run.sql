@@ -66,10 +66,10 @@ DROP TABLE IF EXISTS door_infos;
 CREATE TABLE door_infos(
 	door_id INT REFERENCES targets(target_id),
     dependency INT REFERENCES targets(target_id),
-    last_update DATETIME,
+    last_update DATETIME DEFAULT '2020-06-01 9:00:00',
     PRIMARY KEY (door_id)	
 );	
-																																																																							
+
 
 -- insert value to targets table
 INSERT INTO targets 
@@ -135,6 +135,19 @@ SELECT target_id FROM targets WHERE target_type = 'ChargingStation';
 -- fill in status list and possibility table
 call createPossibilityTable(16);
 
+
+DROP TRIGGER IF EXISTS last_update_trigger;
+DELIMITER ;;
+CREATE TRIGGER last_update_trigger
+AFTER INSERT ON measurements FOR EACH ROW
+BEGIN
+	UPDATE door_infos
+    SET last_update = NEW.date_time
+    WHERE door_id = NEW.door_id;
+END;
+;;
+DELIMITER ;
+																																																																							
 SELECT * FROM measurements;
 SELECT * FROM open_possibilities;
 SELECT * FROM targets;

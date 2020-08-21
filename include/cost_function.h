@@ -16,7 +16,7 @@ struct TaskWeightBase{
 
 struct DoorWeightBase{
     double W_TIME          = 0.1;
-    double W_BATTERY       = 10;
+    double W_BATTERY       = 100;
     double W_POSSIBILITY   = 10;
 }DWB;
 
@@ -40,8 +40,9 @@ class CostCalculator{
 
     void CalculateDoorCost(ros::Time now, Door& door, geometry_msgs::Pose robotPose){
         double battery =  CalculateSimpleBatteryConsumption(robotPose,door.pose);
-        double timeSinceLastUpdate = (now - door.lastUpdate).sec;      
-        door.cost = DWB.W_BATTERY * battery + DWB.W_POSSIBILITY * door.depOpenpossibility * DWB.W_TIME * timeSinceLastUpdate;
+        long timeSinceLastUpdate = now.sec - door.lastUpdate.sec;      
+        door.cost = DWB.W_BATTERY * battery + DWB.W_POSSIBILITY * door.depOpenpossibility + DWB.W_TIME * timeSinceLastUpdate;
+        ROS_INFO("%d %.3f         %ld          %.3f      %.3f", door.doorId, battery,timeSinceLastUpdate,door.depOpenpossibility,door.cost);
     }
 
 
@@ -77,7 +78,7 @@ class CostCalculator{
             std::vector<geometry_msgs::PoseStamped> &dists = make_plan_srv.response.plan.poses;
 
             if(dists.size()==0){
-                ROS_DEBUG("Receive empty plan");
+                ROS_INFO("ERROR Receive empty plan start (%.3f,%.3f) end (%.3f,%3f)",start.position.x,start.position.y,end.position.x,end.position.y);
                 return -1;
             };   
      
@@ -87,9 +88,10 @@ class CostCalculator{
                                      
                 angle = 2 * acos(dists[i].pose.orientation.w);
                 batteryConsumption = batteryConsumption + 0.01 * distance + 0.001 * angle;
-                // ROS_INFO("From (%.3f,%.3f) to (%.3f,%) linear variation = %.3f, angle variation = %.3f, battery consum = %.3f",
-                        // dists[i-1].pose.position.x,dists[i-1].pose.position.y,dists[i].pose.position.x,dists[i].pose.position.y,distance,angle,batteryConsumption);
+              //   ROS_INFO("From (%.3f,%.3f) to (%.3f,%) linear variation = %.3f, angle variation = %.3f, battery consum = %.3f",
+               //          dists[i-1].pose.position.x,dists[i-1].pose.position.y,dists[i].pose.position.x,dists[i].pose.position.y,distance,angle,batteryConsumption);
             }   
+            //ROS_INFO("From (%.3f,%.3f) to (%.3f,%3f) battery %.3f",start.position.x,start.position.y,end.position.x,end.position.y,batteryConsumption);
             return batteryConsumption;   
     }
 
