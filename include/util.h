@@ -11,7 +11,7 @@ class Util{
     static string pose_str(const geometry_msgs::Pose p){
         stringstream ss;
         ss.precision(3);
-        ss << "("<<p.position.x <<", " <<p.position.y <<", "<< p.position.z<<")";
+        ss << "("<<p.position.x <<", " <<p.position.y <<")";
         return ss.str();
     }
 

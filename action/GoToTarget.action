@@ -8,7 +8,7 @@ bool isCompleted
 int32[] taskIds
 int32 robotId
 ---
-#feedback
+ #feedback
 int32 robotId
 int32 doorId 
 time measureTime

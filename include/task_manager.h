@@ -164,7 +164,7 @@ public:
         ROS_INFO_STREAM("Large_task_id Battery WaitTime Open_possibility Priority   Cost");
         ROS_INFO("-----------------------------------------------------------------------------");
         for(auto door : doors){
-            ROS_INFO("calculate from  (%s) door %d to (%s)",Util::pose_str(robotPose).c_str(), door.doorId, Util::pose_str(door.pose).c_str());
+            //ROS_INFO("calculate from  (%s) door %d to (%s)",Util::pose_str(robotPose).c_str(), door.doorId, Util::pose_str(door.pose).c_str());
             _cc.CalculateDoorCost(now,door,robotPose);
             SortDoorsWithCost(doors);
         }

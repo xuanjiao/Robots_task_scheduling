@@ -45,9 +45,8 @@ public:
     // call back when receive robot request for task //
     bool WhenRobotRequestTask(robot_navigation::GetATask::Request &req, 
         robot_navigation::GetATask::Response &res){  
-        ROS_INFO("Robot %d request a task",req.robotId);
+        ROS_INFO("Robot %d request a task (%f,%f) battery %f",req.robotId,req.pose.position.x,req.pose.position.y,req.batteryLevel);
         
-        ROS_INFO_STREAM(req);
         ROS_INFO_STREAM("Current time: "<<Util::time_str(ros::Time::now()));
         if(req.batteryLevel < 20){ // charging
             // TaskInTable bt = _tm.CreateChargingTask(req.pose);
@@ -68,12 +67,11 @@ public:
 
      // call back when receive a door status from robot 
     void WhenReceiveInfoFromRobot(const robot_navigation::GoToTargetFeedbackConstPtr &feedback){
-        ROS_INFO("Robot %d feedback: ",feedback->robotId);
-        ROS_INFO_STREAM(*feedback);
+        ROS_INFO("Robot %d : Time %s isOpen %d",feedback->robotId,Util::time_str(feedback->measureTime).c_str(),feedback->doorStatus);
         
         int r = _sc.InsertDoorStatusRecord(feedback->doorId,feedback->measureTime,feedback->doorStatus); 
         int u = _sc.UpdateOpenPossibilities(feedback->doorId,feedback->measureTime);
-        ROS_INFO("Insert %d record, update %d rows in possibility table",r,u);
+        ROS_INFO("Robot %d : Insert %d record, update %d rows in possibility table",feedback->robotId,r,u);
         
     }
 
@@ -96,12 +94,11 @@ public:
 
     // Send robot new task 
     void SendRobotSmallTask(TaskInTable &bt,int robotId){
+        ROS_INFO_STREAM("Send to robot"<<robotId<<" "<<bt.getTaskInfo());
         robot_navigation::GoToTargetGoal g;
-        ROS_INFO("Send best small task to robot...");
         g.goals.push_back(bt.goal);
         g.taskIds.push_back(bt.taskId);
         g.taskType = bt.taskType;
-        ROS_INFO_STREAM(g);
         _acMtx.lock();
         _cv[robotId]->sendGoal(g,
                 boost::bind(&CentralizedPool::WhenRobotFinishGoal,this,_1,_2),
@@ -118,7 +115,7 @@ public:
     void SendRobotLargeTask(LargeTask& lt,int robotId){
         robot_navigation::GoToTargetGoal g;
         int taskId;
-        ROS_INFO("Send best large task to robot.. ");
+        ROS_INFO_STREAM("Send to robot "<<robotId<<" "<<lt.getTaskInfo());
         g.taskType = lt.taskType;
 
         for(auto it = lt.tasks.begin();it !=  lt.tasks.end(); it++ ){
@@ -137,7 +134,7 @@ public:
                 // boost::bind(&CentralizedPool::WhenActionActive,this),
                 boost::bind(&CentralizedPool::WhenReceiveInfoFromRobot,this,_1)
         );
-        ROS_INFO_STREAM(g);
+        // ROS_INFO_STREAM(g);
         _acMtx.unlock();
     }
 
