@@ -269,8 +269,8 @@ class SQLClient{
       d.lastUpdate = Util::str_ros_time(res->getString("last_update"));
       if(res->getInt("dependency")!=0)
         d.depOpenpossibility = res->getDouble("open_pos_st");
-      d.pose.position.x = res->getInt("position_x");
-      d.pose.position.y = res->getInt("position_y");
+      d.pose.position.x = res->getDouble("position_x");
+      d.pose.position.y = res->getDouble("position_y");
       d.pose.orientation.w = 1.0;
       doors.push_back(d);
     }
