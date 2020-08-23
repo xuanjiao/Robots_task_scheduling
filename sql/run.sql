@@ -123,7 +123,7 @@ VALUES
 INSERT INTO tasks
 VALUES
 -- task_id, task_type, start_time, target_id, robot_id, priority, cur_status, dependency, result
-(1, 'ExecuteTask', '2020-06-01 9:00:00', 20, NULL, 3, 'Created', 0, NULL),
+(1, 'ExecuteTask', '2020-06-01 9:00:20', 20, NULL, 3, 'Created', 0, NULL),
 (2, 'ExecuteTask', '2020-06-01 9:00:30', 21, NULL, 3, 'Created', 1, NULL),
 (3, 'ExecuteTask', '2020-06-01 9:02:30', 22, NULL, 2, 'Created', 0, NULL),
 (4, 'ExecuteTask', '2020-06-01 9:03:00', 23, NULL, 2, 'Created', 3, NULL);
