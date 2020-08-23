@@ -54,7 +54,7 @@ public:
             // SendRobotSmallTask(bt); // send goal to robot
         }else{
             LargeTask lt = _tm.SelectExecutetask(req.pose);
-            if(lt.tasks.size()>0){
+            if(lt.smallTasks.size()>0){
                 SendRobotLargeTask(lt,req.robotId); 
             }else{
                 TaskInTable bt = _tm.CreateBestEnviromentTask(req.pose);
@@ -81,18 +81,11 @@ public:
         
         ROS_INFO("Get result from robot %d: %s %s ",result->robotId,result->taskType.c_str() ,state.toString().c_str());
 
+
         if(state == actionlib::SimpleClientGoalState::SUCCEEDED){
-           _tm.HandleSucceededTask(result->taskIds);
+           _tm.HandleSucceededTask(result->taskIds,result->targetIds);
         }else{
-            if(result->taskType == "GatherEnviromentInfo"){
-                _tm.HandleFailedEnviromentTask(result->taskIds[0]);
-            }else if (result->taskType == "Charging"){
-                _tm.HandleFailedChargingTask(result->taskIds[0]);
-            }else if(result->taskType == "ExecuteTask"){
-                _tm.HandleFailedExecuteTask(result->taskIds);
-            }else{
-                ROS_INFO("Get a unknown task");
-            }
+            _tm.HandleFailedTask(result->taskType,result->taskIds,result->targetIds);
         }
         
     }
@@ -103,6 +96,7 @@ public:
         robot_navigation::GoToTargetGoal g;
         g.goals.push_back(bt.goal);
         g.taskIds.push_back(bt.taskId);
+        g.targetIds.push_back(bt.targetId);
         g.taskType = bt.taskType;
         _acMtx.lock();
         _cv[robotId]->sendGoal(g,
@@ -123,10 +117,11 @@ public:
         ROS_INFO_STREAM("Send to robot "<<robotId<<" "<<lt.getTaskInfo());
         g.taskType = lt.taskType;
 
-        for(auto it = lt.tasks.begin();it !=  lt.tasks.end(); it++ ){
+        for(auto it = lt.smallTasks.begin();it !=  lt.smallTasks.end(); it++ ){
             taskId = it->first;
-            g.goals.push_back(it->second);
+            g.goals.push_back(it->second.goal);
             g.taskIds.push_back(taskId);
+            g.targetIds.push_back(it->second.targetId);
            
             _sc.UpdateTaskStatus(taskId,"Running");
             _sc.UpdateTaskRobotId(taskId,robotId);

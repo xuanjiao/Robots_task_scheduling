@@ -30,7 +30,7 @@ class LargeTask{
 public:
     int largeTaskId = 0;
     std::string taskType = "";
-    std::map<int,geometry_msgs::PoseStamped> tasks;
+    std::map<int,TaskInTable> smallTasks;
     double openPossibility = 0.0;
     double battery = 0.0;
     ros::Duration waitingTime;
@@ -40,8 +40,8 @@ public:
     string getTaskInfo(){
         stringstream ss;
         ss<<"\n"<<taskType;
-        for(auto it = tasks.begin(); it !=tasks.end(); it++){
-           ss<<"\n["<<it->first<<"] "<< Util::time_str(it->second.header.stamp)<<" "<< " (" <<it->second.pose.position.x<<","<<it->second.pose.position.y<<")";
+        for(auto it = smallTasks.begin(); it !=smallTasks.end(); it++){
+           ss<<"\n["<<it->first<<"] "<< Util::time_str(it->second.goal.header.stamp)<<" "<< " (" <<it->second.goal.pose.position.x<<","<<it->second.goal.pose.position.y<<")";
         }
         return ss.str();
     }

@@ -28,9 +28,9 @@ class CostCalculator{
     }
 
     void CalculateLargeTasksCost(ros::Time now,LargeTask& t, geometry_msgs::Pose robotPose){
-        t.battery = CalculateComplexTrajectoryBatteryConsumption(robotPose,t.tasks);
-        t.waitingTime = t.tasks.begin()->second.header.stamp - now; 
-        t.cost =  TWB.W_BATTERY/ t.tasks.size() * t.battery 
+        CalculateComplexTrajectoryBatteryConsumption(robotPose,t);
+        t.waitingTime = t.smallTasks.begin()->second.goal.header.stamp - now; 
+        t.cost =  TWB.W_BATTERY/ t.smallTasks.size() * t.battery 
                     + TWB.W_TIME  * t.waitingTime.toSec() 
                     + TWB.W_POSSIBILITY * t.openPossibility 
                     + TWB.W_PRIORITY * t.priority;
@@ -46,17 +46,17 @@ class CostCalculator{
     }
 
 
-    double CalculateComplexTrajectoryBatteryConsumption(geometry_msgs::Pose robotPose,std::map<int,geometry_msgs::PoseStamped> points){
+    void CalculateComplexTrajectoryBatteryConsumption(geometry_msgs::Pose robotPose,LargeTask& lt){
         double battery = 0.0;
         geometry_msgs::Pose start;
-        map<int,geometry_msgs::PoseStamped>::iterator it = points.begin();
-        battery += CalculateSimpleBatteryConsumption(robotPose,it->second.pose);
-        start = it->second.pose;
-        for( it++;it != points.end();it++){
-          battery += CalculateSimpleBatteryConsumption(start,it->second.pose);
-          start = it->second.pose;
+        std::map<int,TaskInTable>::iterator it = lt.smallTasks.begin();
+        battery += CalculateSimpleBatteryConsumption(robotPose,it->second.goal.pose);
+        start = it->second.goal.pose; // store last trajectory end point
+        for( it++;it != lt.smallTasks.end();it++){
+          battery += CalculateSimpleBatteryConsumption(start,it->second.goal.pose);
+          start = it->second.goal.pose;
         }
-        return battery;
+        lt.battery = battery;
     }
 
     double CalculateSimpleBatteryConsumption(geometry_msgs::Pose start, geometry_msgs::Pose end){

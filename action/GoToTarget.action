@@ -1,5 +1,6 @@
 #goal definition
 geometry_msgs/PoseStamped[] goals
+int32[] targetIds
 int32[] taskIds
 string taskType
 ---
@@ -7,6 +8,7 @@ string taskType
 bool isCompleted
 string taskType
 int32[] taskIds
+int32[] targetIds
 int32 robotId
 ---
  #feedback

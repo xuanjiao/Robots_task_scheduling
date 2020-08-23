@@ -84,7 +84,7 @@ public:
         for(vector<TaskInTable>::iterator it = sts.begin(); it != sts.end(); ){
             if(it->dependency==0){ // Find task with no dependency
                 LargeTask lt; // Create a large task
-                lt.tasks.insert(make_pair(it->taskId,it->goal));
+                lt.smallTasks.insert(make_pair(it->taskId,*it));
                 lt.priority = it->priority;
                 lt.openPossibility = it->openPossibility;
                 lt.largeTaskId = lts.size();
@@ -95,19 +95,19 @@ public:
                 it++;
             }
         }
-         ROS_INFO("Create %ld large task finished. Allocate remain %ld tasks",lts.size(),sts.size());
+         ROS_INFO("Create %ld large task finished. Allocate remain %ld smallTasks",lts.size(),sts.size());
     
         while(!sts.empty()){
             for(vector<TaskInTable>::iterator it = sts.begin(); it != sts.end();){
                 const int d = it->dependency; // Find dependency task
                 vector<LargeTask>::iterator lit = find_if(lts.begin(),lts.end(),
-                    [d](const LargeTask& l) ->bool {return l.tasks.count(d) > 0 ;}
+                    [d](const LargeTask& l) ->bool {return l.smallTasks.count(d) > 0 ;}
                 );
                 if(lit == lts.end()){
                     ROS_INFO("Task %d dependence on unknown task",it->taskId);
                     _sc.UpdateTaskStatus(it->taskId,"Error"); // If a task is depend on unknown task, set it to error 
                 }else{ 
-                    lit->tasks.insert(make_pair(it->taskId,it->goal));
+                    lit->smallTasks.insert(make_pair(it->taskId,*it));
                     lit->priority = it->priority;
                     lit->openPossibility = lit->openPossibility * it->openPossibility;
                     lit->largeTaskId = lit - lts.begin();
@@ -212,22 +212,30 @@ public:
         });
     }
 
-    void HandleFailedExecuteTask(const vector<int>& taskIds){
-        // change task status from Running to ToReRun, increase priority 3 and increase 60200s start time 
-        _sc.UpdateFailedExecuteTask(taskIds);
+    void HandleFailedTask(string taskType,const vector<int>& taskIds,const vector<int>& targetIds){
+        if(taskType == "GatherEnviromentInfo"){
+            _sc.UpdateTaskStatus(taskIds[0],"Error");
+        }else if (taskType == "Charging"){
+            _sc.UpdateTaskStatus(taskIds[0],"Canceled");
+        }else if(taskType == "ExecuteTask"){
+            // Change task status from Running to ToReRun, increase priority 3 and increase 60200s start time 
+            _sc.UpdateFailedExecuteTask(taskIds);
+        }else{
+            ROS_INFO("Get a unknown task");
+        }
+
+        for(int target : targetIds){
+            exploringDoors.erase(target); // Allow other robot o to this room
+        }
+        
     }
 
-    void HandleFailedChargingTask(int taskId){
-        _sc.UpdateTaskStatus(taskId,"Canceled");
-    }
-
-    void HandleFailedEnviromentTask(int taskId){
-        _sc.UpdateTaskStatus(taskId,"Error");
-    }
-
-    void HandleSucceededTask(const vector<int>& taskIds){
+    void HandleSucceededTask(const vector<int>& taskIds,const vector<int>& targetIds){
         for(auto it = taskIds.begin(); it != taskIds.end(); it++)
             ROS_INFO("Task Succedd. Update %d task status",_sc.UpdateTaskStatus(*it,"RanToCompletion"));
+            for(int target : targetIds){
+                exploringDoors.erase(target); // Allow other robot o to this room
+        }
     }
 
     // void FilterTask(std::vector<TaskInTable>& v){
