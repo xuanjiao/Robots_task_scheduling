@@ -10,14 +10,14 @@ using namespace std;
 struct TaskWeightBase{
     double W_BATTERY       = 10;
     double W_TIME          = 0.1;
-    double W_POSSIBILITY   = 10;
-    double W_PRIORITY      = 10;
+    double W_POSSIBILITY   = -10;
+    double W_PRIORITY      = -1;
 }TWB;
 
 struct DoorWeightBase{
-    double W_TIME          = 0.1;
-    double W_BATTERY       = 100;
-    double W_POSSIBILITY   = 10;
+    double W_TIME          = -1; // large time since last update-> lower cost
+    double W_BATTERY       = 0;
+    double W_POSSIBILITY   = -10;
 }DWB;
 
 class CostCalculator{

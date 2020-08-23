@@ -141,7 +141,7 @@ public:
             lts = MakeLargeTasks(sts);
             ROS_INFO_STREAM("Large_task_id Battery WaitTime Open_possibility Priority   Cost");
             ROS_INFO("-----------------------------------------------------------------------------");
-            for(LargeTask t:lts){
+            for(LargeTask& t:lts){
                 _cc.CalculateLargeTasksCost(now,t,robotPose);
                 ROS_INFO_STREAM("Calculate execute task cost finish");
 
@@ -151,23 +151,30 @@ public:
         if(lts.size() != 0){ // after filter, if there is no execute task, gather inviroment
             SortLargeTasksWithCost(lts);
             lt = lts.back();
+            ROS_INFO("Best execute task is %d",lt.largeTaskId);
         }
 
         return lt;
     }
 
-    TaskInTable CreateBestEnviromentTast(geometry_msgs::Pose robotPose){
+    TaskInTable CreateBestEnviromentTask(geometry_msgs::Pose robotPose){
         TaskInTable st;
         ros::Time now = ros::Time::now();
         auto doors = _sc.QueryRealTimeDoorInfo();
         ROS_INFO("Found %ld doors",doors.size());
+        if(doors.empty()){
+            ROS_INFO("No door data in database");
+            exit(1);
+        }
         ROS_INFO_STREAM("Id BatteryComsume TimeSinceLastUpdate Openpossibility Cost");
         ROS_INFO("-----------------------------------------------------------------------------");
-        for(auto door : doors){
+        for(Door& door : doors){
             //ROS_INFO("calculate from  (%s) door %d to (%s)",Util::pose_str(robotPose).c_str(), door.doorId, Util::pose_str(door.pose).c_str());
-            _cc.CalculateDoorCost(now,door,robotPose);
-            SortDoorsWithCost(doors);
+            _cc.CalculateDoorCost(now,door,robotPose);     
         }
+        SortDoorsWithCost(doors);
+
+        ROS_INFO("Best door is %d",doors.back().doorId);
         st.targetId = doors.back().doorId;
         st.goal.pose = doors.back().pose;
         st.goal.header.stamp = now + ros::Duration(10);

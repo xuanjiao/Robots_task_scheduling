@@ -57,7 +57,7 @@ public:
             if(lt.tasks.size()>0){
                 SendRobotLargeTask(lt,req.robotId); 
             }else{
-                TaskInTable bt = _tm.CreateBestEnviromentTast(req.pose);
+                TaskInTable bt = _tm.CreateBestEnviromentTask(req.pose);
                 SendRobotSmallTask(bt,req.robotId);
             }
         }

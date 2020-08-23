@@ -19,7 +19,7 @@ public:
 
     string getTaskInfo(){
         stringstream ss;
-        ss<<"\n"<< taskType <<" : "<<Util::time_str(goal.header.stamp)<<
+        ss<< taskType <<" : "<<Util::time_str(goal.header.stamp)<<
          " (" <<goal.pose.position.x<<","<<goal.pose.position.y<<")";
         return ss.str();
     }
