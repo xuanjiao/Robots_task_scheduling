@@ -371,13 +371,13 @@ class SQLClient{
     } 
 
     // Change time and Priority of a returned task
-    int UpdateReturnedTask(int task_id, int priority_inc, ros::Duration time_inc){
-      _sqlMtx.lock();
+    int UpdateReturnedTask(int task_id){
+       _sqlMtx.lock();
       int ret = stmt->executeUpdate("UPDATE tasks \
-              SET priority = IF((priority + " + to_string(priority_inc) +  ")>5,5,priority + " + to_string(priority_inc) + 
-        "), start_time = TIMESTAMPADD(SECOND," + to_string(time_inc.sec) + 
-        ",start_time), cur_status = 'ToReRun' WHERE task_id = "+ to_string(task_id)
-        );
+        SET priority 	= CASE priority  WHEN 5 THEN 5 ELSE priority + 1 END, \
+          start_time 	= CASE priority  WHEN 5 THEN start_time ELSE TIMESTAMPADD(SECOND,60,start_time) END, \
+          cur_status 	= CASE priority  WHEN 5 THEN 'Canceled' ELSE 'ToReRun' END \
+        WHERE task_id = " + to_string(task_id));
       _sqlMtx.unlock();
       return ret;
     }

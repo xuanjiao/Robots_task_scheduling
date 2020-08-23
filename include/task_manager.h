@@ -7,6 +7,7 @@
 #include "cost_function.h"
 #include <vector>
 #include <queue>
+#include <set>
 #include "sql_client.h"
 
 using namespace std;
@@ -166,11 +167,18 @@ public:
             ROS_INFO("No door data in database");
             exit(1);
         }
-        ROS_INFO_STREAM("Id BatteryComsume TimeSinceLastUpdate Openpossibility Cost");
+        ROS_INFO_STREAM("Id BatteryComsume TimeSinceLastUpdate Openpossibility Cost exploring");
         ROS_INFO("-----------------------------------------------------------------------------");
         for(Door& door : doors){
+                // this door is not exploring by other doors;
+                _cc.CalculateDoorCost(now,door,robotPose);     
+
+                auto it = find(exploringDoors.begin(),exploringDoors.end(),door.doorId);
+                if(it!=exploringDoors.end()){
+                    ROS_INFO_STREAM("This door is exploring by other robot");
+                    door.cost +=100;
+                }
             //ROS_INFO("calculate from  (%s) door %d to (%s)",Util::pose_str(robotPose).c_str(), door.doorId, Util::pose_str(door.pose).c_str());
-            _cc.CalculateDoorCost(now,door,robotPose);     
         }
         SortDoorsWithCost(doors);
 
@@ -182,6 +190,8 @@ public:
         st.taskType = "GatherEnviromentInfo";
         st.priority = 1;
         st.taskId =  _sc.InsertATaskAssignId(st);
+        exploringDoors.insert(st.targetId);
+
         return st;
     }
 
@@ -215,11 +225,13 @@ public:
     //     }
     // }
 
-
+    set<int> exploringDoors;
     private:
 
     SQLClient& _sc;
     CostCalculator& _cc;
+    
+    
     // ros::NodeHandle& _nh;
     // vector<int> _doors;
     // map<int,geometry_msgs::Pose> _stations;

@@ -85,9 +85,10 @@ TEST_F(SqlTest,QueryAvailableChargingStations){
 
 
 
-// // TEST_F(SqlTest,UpdateReturnedTask){
-// //     sql_client.UpdateReturnedTask(1,3,ros::Duration(2000));
-// // }
+TEST_F(SqlTest,UpdateReturnedTask){
+    SQLClient sql_client("root","nes");
+    sql_client.UpdateReturnedTask(3);
+}
 
 // // // TEST_F(SqlTest,create_database){
 // // //     std::map<int,geometry_msgs::Pose> map;

@@ -87,7 +87,7 @@ public:
         }else{
             // change task status from Running to ToReRun, increase priority 3 and increase 200s start time 
             for(auto it = result->taskIds.begin(); it != result->taskIds.end(); it++)
-                ROS_INFO("Task failed. Update %d returned task ",_sc.UpdateReturnedTask(*it,3,ros::Duration(200)));
+                ROS_INFO("Task failed. Update %d returned task ",_sc.UpdateReturnedTask(*it));
         }
         
     }
