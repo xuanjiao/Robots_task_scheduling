@@ -25,15 +25,10 @@ TEST_F(TaskManagerTest,example){
     ASSERT_EQ(1,1);
 }
 
-TEST_F(TaskManagerTest,createTasks){
-    TaskManager tm(sc,nh);
-     tm.LoadMapInfo();
-     tm.CreateNewTasks(10);
-}
-
 
 TEST_F(TaskManagerTest,createLargeTask){
-    TaskManager tm(sc,nh);
+    CostCalculator cc(nh);
+    TaskManager tm(sc,cc);
     std::vector<TaskInTable> tasks;
     TaskInTable t1;
     t1.taskId = 1;
@@ -69,6 +64,16 @@ TEST_F(TaskManagerTest,createLargeTask){
     // ASSERT_EQ(lts[0][1].cost,0);
     // ASSERT_EQ(lts[1][0].cost,0);
 
+}
+
+TEST_F(TaskManagerTest,HandleFailedExecuteTask){
+    CostCalculator cc(nh);
+    TaskManager tm(sc,cc);
+    std::vector<int> taskIds;
+    taskIds.push_back(1);
+    taskIds.push_back(2);
+    taskIds.push_back(3);
+    tm.HandleFailedExecuteTask(taskIds);
 }
 
 // TEST_F(TaskManagerTest,calculateBattery){

@@ -79,15 +79,20 @@ public:
     void WhenRobotFinishGoal(const actionlib::SimpleClientGoalState& state,
            const robot_navigation::GoToTargetResult::ConstPtr &result){
         
-        ROS_INFO("Robot %d result:",result->robotId);
-        ROS_INFO_STREAM(*result); 
-         if(state == actionlib::SimpleClientGoalState::SUCCEEDED){
-             for(auto it = result->taskIds.begin(); it != result->taskIds.end(); it++)
-                ROS_INFO("Task Succedd. Update %d task status",_sc.UpdateTaskStatus(*it,"RanToCompletion"));
+        ROS_INFO("Get result from robot %d: %s %s ",result->robotId,result->taskType.c_str() ,state.toString().c_str());
+
+        if(state == actionlib::SimpleClientGoalState::SUCCEEDED){
+           _tm.HandleSucceededTask(result->taskIds);
         }else{
-            // change task status from Running to ToReRun, increase priority 3 and increase 200s start time 
-            for(auto it = result->taskIds.begin(); it != result->taskIds.end(); it++)
-                ROS_INFO("Task failed. Update %d returned task ",_sc.UpdateReturnedTask(*it));
+            if(result->taskType == "GatherEnviromentInfo"){
+                _tm.HandleFailedEnviromentTask(result->taskIds[0]);
+            }else if (result->taskType == "Charging"){
+                _tm.HandleFailedChargingTask(result->taskIds[0]);
+            }else if(result->taskType == "ExecuteTask"){
+                _tm.HandleFailedExecuteTask(result->taskIds);
+            }else{
+                ROS_INFO("Get a unknown task");
+            }
         }
         
     }

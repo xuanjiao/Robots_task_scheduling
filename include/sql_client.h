@@ -4,6 +4,7 @@
 #include <ros/ros.h>
 #include <vector>
 #include <iostream>
+#include <sstream>
 #include "mysql_connection.h"
 #include <cppconn/driver.h>
 #include <cppconn/exception.h>
@@ -371,13 +372,20 @@ class SQLClient{
     } 
 
     // Change time and Priority of a returned task
-    int UpdateReturnedTask(int task_id){
-       _sqlMtx.lock();
+    int UpdateFailedExecuteTask(const vector<int>& taskIds){
+      _sqlMtx.lock();
+      stringstream ss;
+      ss<<"(";
+      for(size_t i = 0 ; i< taskIds.size()-1; i++){
+        ss << taskIds[i]<<", ";
+      }
+      ss<<taskIds[taskIds.size()-1]<<")";
+
       int ret = stmt->executeUpdate("UPDATE tasks \
         SET priority 	= CASE priority  WHEN 5 THEN 5 ELSE priority + 1 END, \
           start_time 	= CASE priority  WHEN 5 THEN start_time ELSE TIMESTAMPADD(SECOND,60,start_time) END, \
           cur_status 	= CASE priority  WHEN 5 THEN 'Canceled' ELSE 'ToReRun' END \
-        WHERE task_id = " + to_string(task_id));
+        WHERE task_id IN " +ss.str());
       _sqlMtx.unlock();
       return ret;
     }

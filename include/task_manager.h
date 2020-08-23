@@ -212,6 +212,24 @@ public:
         });
     }
 
+    void HandleFailedExecuteTask(const vector<int>& taskIds){
+        // change task status from Running to ToReRun, increase priority 3 and increase 60200s start time 
+        _sc.UpdateFailedExecuteTask(taskIds);
+    }
+
+    void HandleFailedChargingTask(int taskId){
+        _sc.UpdateTaskStatus(taskId,"Canceled");
+    }
+
+    void HandleFailedEnviromentTask(int taskId){
+        _sc.UpdateTaskStatus(taskId,"Error");
+    }
+
+    void HandleSucceededTask(const vector<int>& taskIds){
+        for(auto it = taskIds.begin(); it != taskIds.end(); it++)
+            ROS_INFO("Task Succedd. Update %d task status",_sc.UpdateTaskStatus(*it,"RanToCompletion"));
+    }
+
     // void FilterTask(std::vector<TaskInTable>& v){
     //     ros::Time now = ros::Time::now();
     //     ROS_INFO_STREAM("Filter Task  not expired and cost < "<<to_string(COST_LIMIT));

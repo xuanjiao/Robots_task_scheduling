@@ -5,6 +5,7 @@ string taskType
 ---
 #result definition
 bool isCompleted
+string taskType
 int32[] taskIds
 int32 robotId
 ---

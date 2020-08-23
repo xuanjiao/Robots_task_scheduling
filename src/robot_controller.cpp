@@ -124,6 +124,7 @@ public:
         ROS_INFO_STREAM("Get a task from pool\n"<<*task);
         _rs.isCompleted = false;
         _rs.taskIds = task->taskIds;
+        _rs.taskType = task->taskType;
         
         for(size_t i = 0; i < task->taskIds.size(); i++){
             _tasks.push_back(make_pair(task->taskIds[i],task->goals[i]));
