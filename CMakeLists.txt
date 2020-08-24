@@ -117,9 +117,9 @@ add_action_files(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-#  LIBRARIES robot_navigation
+  LIBRARIES robot_navigation
   CATKIN_DEPENDS move_base_msgs roscpp std_msgs actionlib_msgs
-#  DEPENDS system_lib
+  DEPENDS system_lib
 )
 
 
@@ -154,28 +154,31 @@ include_directories(
 # add_executable(${PROJECT_NAME}_node src/robot_navigation_node.cpp)
 
 add_definitions(${MYSQL_DEFINITIONS})
-add_executable(door_status_advertiser src/door_status_advertiser.cpp)
-add_dependencies(door_status_advertiser ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(door_status_advertiser
+add_executable(door_status_node src/door_status_node.cpp)
+add_dependencies(door_status_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(door_status_node
   ${catkin_LIBRARIES}
   mysqlclient
   mysqlcppconn
 )
 
-add_executable(robot_controller src/robot_controller.cpp)
-add_dependencies(robot_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(robot_controller ${catkin_LIBRARIES})
+add_executable(robot_controller_node src/robot_controller_node.cpp)
+add_dependencies(robot_controller_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(robot_controller_node ${catkin_LIBRARIES})
 
 
-add_executable(centralized_pool src/centralized_pool.cpp)
-add_dependencies(centralized_pool ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(centralized_pool mysqlcppconn ${catkin_LIBRARIES})
+add_executable(centralized_pool_node src/centralized_pool_node.cpp)
+add_dependencies(centralized_pool_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(centralized_pool_node mysqlcppconn ${catkin_LIBRARIES})
 
 
-add_executable(task_generator src/task_generator.cpp)
-add_dependencies(task_generator ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(task_generator mysqlcppconn ${catkin_LIBRARIES})
+add_executable(task_generator_node src/task_generator_node.cpp)
+add_dependencies(task_generator_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(task_generator_node mysqlcppconn ${catkin_LIBRARIES})
 
+add_executable(charging_station_node src/charging_station_node.cpp)
+add_dependencies(charging_station_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(charging_station_node mysqlcppconn ${catkin_LIBRARIES})
 
 ## Rename C++ execu(table without prefix
 ## The above recommended prefix causes long target names, the following renames the

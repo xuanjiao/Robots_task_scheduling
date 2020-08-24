@@ -6,12 +6,12 @@
                 "limitSymbolsToIncludedHeaders": true
             },
             "includePath": [
-                "/home/roboticserver/catkin_ws/devel/include/**",
+                "/home/nes/catkin_ws/devel/include/**",
                 "/opt/ros/kinetic/include/**",
-                "/home/roboticserver/catkin_ws/src/robot_navigation/include/**",
-                "/home/roboticserver/catkin_ws/src/turtlebot3_simulations/turtlebot3_fake/include/**",
-                "/home/roboticserver/catkin_ws/src/turtlebot3_simulations/turtlebot3_gazebo/include/**",
-                "/home/roboticserver/catkin_ws/src/turtlebot3/turtlebot3_slam/include/**",
+                "/home/nes/catkin_ws/src/robot_navigation/include/**",
+                "/home/nes/catkin_ws/src/turtlebot3_simulations/turtlebot3_fake/include/**",
+                "/home/nes/catkin_ws/src/turtlebot3_simulations/turtlebot3_gazebo/include/**",
+                "/home/nes/catkin_ws/src/turtlebot3/turtlebot3_slam/include/**",
                 "/usr/include/**"
             ],
             "name": "ROS",

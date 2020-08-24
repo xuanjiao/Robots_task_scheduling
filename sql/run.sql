@@ -2,10 +2,12 @@ create database if not exists sensor_db character set utf8 collate utf8_general_
 create user if not exists 'centralized_pool'@'localhost' identified by 'pass';
 create user if not exists 'door_simulator'@'localhost' identified by 'pass';
 create user if not exists 'task_generator'@'localhost' identified by 'pass';
+create user if not exists 'charging_station'@'localhost' identified by 'pass';
 
 grant all on sensor_db.* to 'centralized_pool'@'localhost';
 grant all on sensor_db.* to 'door_simulator'@'localhost';
 grant all on sensor_db.* to 'task_generator'@'localhost';
+grant all on sensor_db.* to 'charging_station'@'localhost';
 
 use sensor_db;
 
