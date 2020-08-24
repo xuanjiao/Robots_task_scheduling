@@ -16,15 +16,24 @@ struct TaskWeightBase{
 
 struct DoorWeightBase{
     double W_TIME          = -1; // large time since last update-> lower cost
-    double W_BATTERY       = 0;
+    double W_BATTERY       = 10;
     double W_POSSIBILITY   = -10;
 }DWB;
+
+struct ChargingWeightBase{
+    double W_REMAINING_TIME   = 1;
+    double W_BATTERY          = 1; // Battery cosumption
+}CWB;
 
 class CostCalculator{
     public:
 
     CostCalculator(ros::NodeHandle &nh):_nh(nh){
         _pc = _nh.serviceClient<nav_msgs::GetPlan>("/tb3_0/move_base/NavfnROS/make_plan"); 
+    }
+
+    void CalculateChargingStationCost(){
+        
     }
 
     void CalculateLargeTasksCost(ros::Time now,LargeTask& t, geometry_msgs::Pose robotPose){

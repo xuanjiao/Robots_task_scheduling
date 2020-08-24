@@ -61,6 +61,9 @@ in draw.io
 
 https://1drv.ms/u/s!AvKeK97aLoV37WDBLo7S3wfbDctK
 
+## COST function part
+
+https://1drv.ms/w/s!AvKeK97aLoV37yiGK_6f6ynuOFSn?e=5zL6HB
 
 ## Relative work
 
