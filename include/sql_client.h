@@ -245,13 +245,13 @@ class SQLClient{
     return o;
   }
 
-  vector<Door> QueryRealTimeDoorInfo(){
+  vector<Door> QueryDoorInfo(){
     _sqlMtx.lock();
     sql::ResultSet* res;
     vector<Door> doors;
     string time = Util::time_str(ros::Time::now());
     res = stmt->executeQuery(
-      "SELECT i.door_id, i.dependency, i.last_update, t.position_x, t.position_y, o.open_pos_st FROM door_infos i \
+      "SELECT i.door_id, i.dependency, i.last_update, i.is_used, t.position_x, t.position_y, o.open_pos_st FROM door_infos i \
         INNER JOIN targets t ON t.target_id = i.door_id \
         LEFT JOIN (SELECT * FROM open_possibilities \
         WHERE day_of_week = DAYOFWEEK('" + time +  "') and time('" + time +"') between start_time and end_time) o \
@@ -270,10 +270,11 @@ class SQLClient{
       d.lastUpdate = Util::str_ros_time(res->getString("last_update"));
       if(res->getInt("dependency")!=0)
         d.depOpenpossibility = res->getDouble("open_pos_st");
-      d.pose.position.x = res->getDouble("position_x");
-      d.pose.position.y = res->getDouble("position_y");
-      d.pose.orientation.w = 1.0;
-      doors.push_back(d);
+        d.pose.position.x = res->getDouble("position_x");
+        d.pose.position.y = res->getDouble("position_y");
+        d.pose.orientation.w = 1.0;
+        d.isUsed = res->getBoolean("is_used");
+        doors.push_back(d);
     }
     delete res;
     
@@ -453,17 +454,6 @@ class SQLClient{
       int ret =  stmt->executeUpdate("UPDATE tasks set robot_id = '"+to_string(robotId) + "' WHERE task_id = " + to_string(taskId));
       _sqlMtx.unlock();
       return ret;
-    }
-
-    // Change expired "Created", "WaitingToRun" getEnviromentInfo task status to 'Canceled'
-    // Change expired and uncompleted Execute TaskInTable status to a new time
-    int UpdateExpiredTask(ros::Time newTime){
-      _sqlMtx.lock();
-        int cnt = 0;
-        cnt += stmt->executeUpdate("UPDATE tasks set cur_status = 'Canceled' WHERE start_time < '" + Util::time_str(newTime)+"' AND task_type = 'GatherEnviromentInfo' AND cur_status IN ('Created','WaitingToRun','ToReRun')");
-        cnt += stmt->executeUpdate("UPDATE tasks set start_time = '"+Util::time_str(newTime)+"' WHERE start_time < '" + Util::time_str(newTime)+"' AND task_type = 'ExecuteTask' AND cur_status NOT IN ('RanToCompletion')");
-        _sqlMtx.unlock();
-        return cnt;
     }
 
     ~SQLClient(){

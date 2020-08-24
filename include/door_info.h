@@ -9,11 +9,12 @@ class Door{
     geometry_msgs::Pose pose;
     double depOpenpossibility;
     ros::Time lastUpdate;
+    bool isUsed;
     double cost;
 
     void printDoorInfo(){
-        ROS_INFO("Door %d at (%f,%f) dependency open possibility %f, last update %s",
-            doorId,pose.position.x,pose.position.y,depOpenpossibility,Util::time_str(lastUpdate).c_str());
+        ROS_INFO("Door %d at (%f,%f) dependency open possibility %f, last update %s is used %d",
+            doorId,pose.position.x,pose.position.y,depOpenpossibility,Util::time_str(lastUpdate).c_str(),isUsed);
     }
 
 };

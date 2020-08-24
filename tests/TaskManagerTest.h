@@ -10,14 +10,19 @@ using namespace std;
 class TaskManagerTest :public ::testing::Test {
     public:
         TaskManagerTest()
-        : 
-        sc("root","nes")
-        // ,tm(sc,nh)
         {
-
+            sc= new SQLClient("centralized_pool","pass");
+            cc = new CostCalculator(nh);
+            tm = new TaskManager(*sc,*cc);
         }
-        ~TaskManagerTest(){}
-    SQLClient sc;
+        ~TaskManagerTest(){
+            delete sc;
+            delete cc;
+            delete tm;
+        }
+    SQLClient *sc;
+    TaskManager * tm;
+     CostCalculator* cc;
     ros::NodeHandle nh;
 };
 
@@ -27,8 +32,6 @@ TEST_F(TaskManagerTest,example){
 
 
 TEST_F(TaskManagerTest,createLargeTask){
-    CostCalculator cc(nh);
-    TaskManager tm(sc,cc);
     std::vector<TaskInTable> tasks;
     TaskInTable t1;
     t1.taskId = 1;
@@ -46,38 +49,25 @@ TEST_F(TaskManagerTest,createLargeTask){
     tasks.push_back(t1);
     tasks.push_back(t2);
     tasks.push_back(t3);
-    auto lts = tm.MakeLargeTasks(tasks);
+    auto lts = tm->MakeLargeTasks(tasks);
     ASSERT_EQ(lts.size(),2);
-    ASSERT_EQ(lts[0].tasks.size(),2);
-    ASSERT_EQ(lts[1].tasks.size(),1);
+    ASSERT_EQ(lts[0].smallTasks.size(),2);
+    ASSERT_EQ(lts[1].smallTasks.size(),1);
 
-    ASSERT_EQ(lts[0].tasks[1].pose.position.x,t1.goal.pose.position.x);
-    ASSERT_EQ(lts[0].tasks[2].pose.position.x,t2.goal.pose.position.x);
-    ASSERT_EQ(lts[1].tasks[3].pose.position.x,t3.goal.pose.position.x);
-    // ASSERT_EQ(lts[1].tasks[3],t3.goal);
-
-    // geometry_msgs::Pose robotPose;
-    // robotPose.position.x = 3;
-    // robotPose.orientation.w = 1;
-    // tm.CalculateCostForSerie(lts,robotPose);
-    // ASSERT_EQ(lts[0][0].cost,0);
-    // ASSERT_EQ(lts[0][1].cost,0);
-    // ASSERT_EQ(lts[1][0].cost,0);
-
+    ASSERT_EQ(lts[0].smallTasks[1].goal.pose.position.x,t1.goal.pose.position.x);
+    ASSERT_EQ(lts[0].smallTasks[2].goal.pose.position.x,t2.goal.pose.position.x);
+    ASSERT_EQ(lts[1].smallTasks[3].goal.pose.position.x,t3.goal.pose.position.x);
 }
 
 TEST_F(TaskManagerTest,HandleFailedExecuteTask){
-    CostCalculator cc(nh);
-    TaskManager tm(sc,cc);
     std::vector<int> taskIds;
     taskIds.push_back(1);
     taskIds.push_back(2);
     taskIds.push_back(3);
-    tm.HandleFailedExecuteTask(taskIds);
+    tm->HandleFailedTask("ExecuteTask",taskIds);
 }
 
 // TEST_F(TaskManagerTest,calculateBattery){
-//     TaskManager tm(sc,nh);
 //     geometry_msgs::Pose p1,p2,p3;
 //     geometry_msgs::PoseStamped ps2,ps3;
 //     p1.position.x = 0.0; p1.position.y = 5.0; p1.orientation.w = 1.0;
@@ -87,11 +77,11 @@ TEST_F(TaskManagerTest,HandleFailedExecuteTask){
 //     std::map<int,geometry_msgs::PoseStamped> map;
 //     map.insert(make_pair(2,ps2));
 //     map.insert(make_pair(3,ps3));
-//     double d12 = tm.CalculateSimpleBatteryConsumption(p1,p2);
-//     double d23 = tm.CalculateSimpleBatteryConsumption(p2,p3);
-//     double d13 = tm.CalculateSimpleBatteryConsumption(p1,p3);
+//     double d12 = tm->CalculateSimpleBatteryConsumption(p1,p2);
+//     double d23 = tm->CalculateSimpleBatteryConsumption(p2,p3);
+//     double d13 = tm->CalculateSimpleBatteryConsumption(p1,p3);
 //     ASSERT_EQ(d13,d12 + d23);
-//     double d = tm.CalculateComplexTrajectoryBatteryConsumption(p1,map);
+//     double d = tm->CalculateComplexTrajectoryBatteryConsumption(p1,map);
 //     ASSERT_EQ(d13,d);
 
 // }

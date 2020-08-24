@@ -71,7 +71,7 @@ public:
         
         int r = _sc.InsertDoorStatusRecord(feedback->doorId,feedback->measureTime,feedback->doorStatus); 
         int u = _sc.UpdateOpenPossibilities(feedback->doorId,feedback->measureTime);
-        ROS_INFO("   Insert %d record, update %d rows in possibility table",feedback->robotId,r,u);
+        ROS_INFO("   Insert %d record, update %d rows in possibility table",r,u);
         
     }
 
@@ -80,9 +80,9 @@ public:
            const robot_navigation::GoToTargetResult::ConstPtr &result){
         ROS_INFO("/nRESULT from robot %d: %s %s ",result->robotId,result->taskType.c_str() ,state.toString().c_str());
         if(state == actionlib::SimpleClientGoalState::SUCCEEDED){
-           _tm.HandleSucceededTask(result->taskIds,result->targetIds);
+           _tm.HandleSucceededTask(result->taskIds);
         }else{
-            _tm.HandleFailedTask(result->taskType,result->taskIds,result->targetIds);
+            _tm.HandleFailedTask(result->taskType,result->taskIds);
         }
         
     }

@@ -153,14 +153,13 @@ public:
             lt = lts.back();
             ROS_INFO("Best execute task is %d",lt.largeTaskId);
         }
-
         return lt;
     }
 
     TaskInTable CreateBestEnviromentTask(geometry_msgs::Pose robotPose){
         TaskInTable st;
         ros::Time now = ros::Time::now();
-        auto doors = _sc.QueryRealTimeDoorInfo();
+        auto doors = _sc.QueryDoorInfo();
         ROS_INFO("Found %ld doors",doors.size());
         if(doors.empty()){
             ROS_INFO("No door data in database");
@@ -171,12 +170,6 @@ public:
         for(Door& door : doors){
                 // this door is not exploring by other doors;
                 _cc.CalculateDoorCost(now,door,robotPose);     
-
-                auto it = find(exploringDoors.begin(),exploringDoors.end(),door.doorId);
-                if(it!=exploringDoors.end()){
-                    ROS_INFO_STREAM("This door is exploring by other robot");
-                    door.cost +=100;
-                }
             //ROS_INFO("calculate from  (%s) door %d to (%s)",Util::pose_str(robotPose).c_str(), door.doorId, Util::pose_str(door.pose).c_str());
         }
         SortDoorsWithCost(doors);
@@ -189,7 +182,6 @@ public:
         st.taskType = "GatherEnviromentInfo";
         st.priority = 1;
         st.taskId =  _sc.InsertATaskAssignId(st);
-        exploringDoors.insert(st.targetId);
 
         return st;
     }
@@ -211,7 +203,7 @@ public:
         });
     }
 
-    void HandleFailedTask(string taskType,const vector<int>& taskIds,const vector<int>& targetIds){
+    void HandleFailedTask(string taskType,const vector<int>& taskIds){
         if(taskType == "GatherEnviromentInfo"){
             _sc.UpdateTaskStatus(taskIds[0],"Error");
         }else if (taskType == "Charging"){
@@ -221,20 +213,12 @@ public:
             _sc.UpdateFailedExecuteTask(taskIds);
         }else{
             ROS_INFO("Get a unknown task");
-        }
-
-        for(int target : targetIds){
-            exploringDoors.erase(target); // Allow other robot o to this room
-        }
-        
+        }        
     }
 
-    void HandleSucceededTask(const vector<int>& taskIds,const vector<int>& targetIds){
+    void HandleSucceededTask(const vector<int>& taskIds){
         for(auto it = taskIds.begin(); it != taskIds.end(); it++)
             ROS_INFO("Task Succedd. Update %d task status",_sc.UpdateTaskStatus(*it,"RanToCompletion"));
-            for(int target : targetIds){
-                exploringDoors.erase(target); // Allow other robot o to this room
-        }
     }
 
     void AfterSendingTask(int taskId, int robotId){
@@ -243,7 +227,6 @@ public:
     }
 
     void FilterTask(std::vector<TaskInTable>& v){
-        ros::Time now = ros::Time::now();
         ROS_INFO_STREAM("Filter Task cost < "<<to_string(COST_LIMIT));
         for(vector<TaskInTable>::iterator it = v.begin(); it != v.end(); ){
             if(it->cost > COST_LIMIT){
@@ -256,7 +239,6 @@ public:
     }
 
     void FilterTask(std::vector<LargeTask>& v){
-        ros::Time now = ros::Time::now();
         ROS_INFO_STREAM("Filter Task cost < "<<to_string(COST_LIMIT));
         for(vector<LargeTask>::iterator it = v.begin(); it != v.end(); ){
             if(it->cost > COST_LIMIT){
@@ -268,7 +250,6 @@ public:
         }
     }
 
-    set<int> exploringDoors;
     private:
 
     SQLClient& _sc;
