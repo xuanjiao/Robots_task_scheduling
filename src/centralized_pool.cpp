@@ -45,7 +45,7 @@ public:
     // call back when receive robot request for task //
     bool WhenRobotRequestTask(robot_navigation::GetATask::Request &req, 
         robot_navigation::GetATask::Response &res){  
-        ROS_INFO("Robot %d request a task (%f,%f) battery %f",req.robotId,req.pose.position.x,req.pose.position.y,req.batteryLevel);
+        ROS_INFO("REQUEST from Robot %d (%f,%f) battery %f",req.robotId,req.pose.position.x,req.pose.position.y,req.batteryLevel);
         
         ROS_INFO_STREAM("Current time: "<<Util::time_str(ros::Time::now()));
         if(req.batteryLevel < 20){ // charging
@@ -67,21 +67,18 @@ public:
 
      // call back when receive a door status from robot 
     void WhenReceiveInfoFromRobot(const robot_navigation::GoToTargetFeedbackConstPtr &feedback){
-        ROS_INFO("Robot %d : Time %s isOpen %d",feedback->robotId,Util::time_str(feedback->measureTime).c_str(),feedback->doorStatus);
+        ROS_INFO("/nFEEDBACK from Robot %d : Time %s isOpen %d",feedback->robotId,Util::time_str(feedback->measureTime).c_str(),feedback->doorStatus);
         
         int r = _sc.InsertDoorStatusRecord(feedback->doorId,feedback->measureTime,feedback->doorStatus); 
         int u = _sc.UpdateOpenPossibilities(feedback->doorId,feedback->measureTime);
-        ROS_INFO("Robot %d : Insert %d record, update %d rows in possibility table",feedback->robotId,r,u);
+        ROS_INFO("   Insert %d record, update %d rows in possibility table",feedback->robotId,r,u);
         
     }
 
     // Call when receive a complet event from robot
     void WhenRobotFinishGoal(const actionlib::SimpleClientGoalState& state,
            const robot_navigation::GoToTargetResult::ConstPtr &result){
-        
-        ROS_INFO("Get result from robot %d: %s %s ",result->robotId,result->taskType.c_str() ,state.toString().c_str());
-
-
+        ROS_INFO("/nRESULT from robot %d: %s %s ",result->robotId,result->taskType.c_str() ,state.toString().c_str());
         if(state == actionlib::SimpleClientGoalState::SUCCEEDED){
            _tm.HandleSucceededTask(result->taskIds,result->targetIds);
         }else{
@@ -92,7 +89,7 @@ public:
 
     // Send robot new task 
     void SendRobotSmallTask(TaskInTable &bt,int robotId){
-        ROS_INFO_STREAM("Send to robot"<<robotId<<" "<<bt.getTaskInfo());
+        ROS_INFO_STREAM("Send task to robot"<<robotId<<" "<<bt.getTaskInfo());
         robot_navigation::GoToTargetGoal g;
         g.goals.push_back(bt.goal);
         g.taskIds.push_back(bt.taskId);
@@ -107,8 +104,7 @@ public:
         );
       //  ROS_INFO_STREAM(g);
         _acMtx.unlock();
-        _sc.UpdateTaskStatus(bt.taskId,"Running");
-        _sc.UpdateTaskRobotId(bt.taskId,robotId);
+        _tm.AfterSendingTask(bt.taskId,robotId); // Update task status and robot id column in task table
     }
 
     void SendRobotLargeTask(LargeTask& lt,int robotId){
@@ -123,8 +119,7 @@ public:
             g.taskIds.push_back(taskId);
             g.targetIds.push_back(it->second.targetId);
            
-            _sc.UpdateTaskStatus(taskId,"Running");
-            _sc.UpdateTaskRobotId(taskId,robotId);
+            _tm.AfterSendingTask(taskId,robotId); 
         }
 
         _acMtx.lock();

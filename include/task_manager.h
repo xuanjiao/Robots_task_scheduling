@@ -238,6 +238,11 @@ public:
         }
     }
 
+    void AfterSendingTask(int taskId, int robotId){
+        _sc.UpdateTaskStatus(taskId,"Running");
+        _sc.UpdateTaskRobotId(taskId,robotId);
+    }
+
     // void FilterTask(std::vector<TaskInTable>& v){
     //     ros::Time now = ros::Time::now();
     //     ROS_INFO_STREAM("Filter Task  not expired and cost < "<<to_string(COST_LIMIT));
