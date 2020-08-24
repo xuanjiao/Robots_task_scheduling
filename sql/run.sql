@@ -72,8 +72,6 @@ CREATE TABLE door_infos(
     PRIMARY KEY (door_id)	
 );	
 
-
-
 DROP TRIGGER IF EXISTS last_update_trigger;
 DELIMITER ;;
 CREATE TRIGGER last_update_trigger
@@ -88,12 +86,12 @@ DELIMITER ;
 
 DROP TRIGGER IF EXISTS door_used;
 DELIMITER ;;
-CREATE TRIGGER door_used_trigger
+CREATE TRIGGER door_used
 AFTER UPDATE ON tasks FOR EACH ROW
 BEGIN
 	UPDATE door_infos
-    SET is_used = IF(cur_status = 'Running',true,false)
-    where NEW.task_id = door_id;
+    SET is_used = IF(NEW.cur_status = 'Running',1,0)
+    where NEW.target_id = door_id;
 END;
 ;;
 DELIMITER ;

@@ -1,6 +1,7 @@
 #pragma once
-#include "sql_client.h"
+#include "../include/sql_client.h"
 #include "util.h"
+#include <gtest/gtest.h>
 
 class SqlTest :public ::testing::Test {
     public:
@@ -64,11 +65,6 @@ TEST_F(SqlTest,InserDoorStatusRecord){
 
 }
 
-
-// // TEST_F(SqlTest,UpdateExpiredTask){
-// // }
-
-
 // TEST_F(SqlTest,QueryAvailableChargingStations){
 //     SQLClient sql_client("root","nes");
 //     auto v = sc->QueryAvailableChargingStations();
@@ -85,22 +81,28 @@ TEST_F(SqlTest,InserDoorStatusRecord){
 // // //     ASSERT_GT(map.size(),0);
 // // // }
 
-// // // TEST_F(SqlTest,insertRecord){   
-// // //     ros::Time now = ros::Time::now();
-// // //     auto p = sc->query_targetId_type_from_task(2);
-// // //     ASSERT_EQ(p.first,'b');
-// // //     ASSERT_EQ(p.second,"EnterRoom");
-// // //     sc->InsertDoorStatusRecord(p.first,now,0);
-// // //     auto t = sc->QueryStartTimeEndTimeDayFromOpenPossibilitiesTable(p.first,ros::Time::now());
-// // //     // ASSERT_EQ(get<0>(t),"16:00:00");
-// // //     // ASSERT_EQ(get<1>(t),"23:59:59");
-// // //     ASSERT_EQ(get<2>(t),5);
-// // //     //sc->UpdateOpenPossibilities(targetId,now);
-// // // }
 
-TEST_F(SqlTest,UpdateTaskStatus){
-    sc->UpdateTaskStatus(1,"Canceled");
+
+TEST_F(SqlTest,TaskInUseTrigger){
+    TaskInTable t;
+    t.targetId = 3;
+    t.taskType = "GatherEnviromentInfo";
+    t.taskId = sc->InsertATaskAssignId(t); 
+    int ret = sc->UpdateTaskStatus(t.taskId,"Running");
+    ASSERT_EQ(ret,1);
+    auto v = sc->QueryDoorInfo();
+    ASSERT_EQ(v[2].isUsed,1);
 }
+
+TEST_F(SqlTest,TaskUpdateStatus){
+    TaskInTable t;
+    t.targetId = 3;
+    t.taskType = "GatherEnviromentInfo";
+    t.taskId = sc->InsertATaskAssignId(t); 
+    int ret = sc->UpdateTaskStatus(t.taskId,"Running");
+    ASSERT_EQ(ret,1);
+}
+
 
 // // TEST_F(SqlTest,insert_to_door_status){
 // //     ros::Time now = ros::Time::now();

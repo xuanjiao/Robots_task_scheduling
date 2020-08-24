@@ -1,9 +1,9 @@
 #pragma once
 #include "ros/ros.h"
 #include <geometry_msgs/PoseStamped.h>
-#include "task_manager.h"
-#include "sql_client.h"
-#include "general_task.h"
+#include "../include/task_manager.h"
+#include "../include/sql_client.h"
+#include "../include/general_task.h"
 
 using namespace std;
 
