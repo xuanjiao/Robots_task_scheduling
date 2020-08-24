@@ -49,7 +49,7 @@ public:
         
         ROS_INFO_STREAM("Current time: "<<Util::time_str(ros::Time::now()));
         if(req.batteryLevel < 20){ // charging
-            // TaskInTable bt = _tm.CreateChargingTask(req.pose);
+            // SmallExecuteTask bt = _tm.CreateChargingTask(req.pose);
             // _sc.InsertATaskAssignId(bt); // insert task into database
             // SendRobotSmallTask(bt); // send goal to robot
         }else{
@@ -57,7 +57,7 @@ public:
             if(lt.smallTasks.size()>0){
                 SendRobotLargeTask(lt,req.robotId); 
             }else{
-                TaskInTable bt = _tm.CreateBestEnviromentTask(req.pose);
+                SmallTask bt = _tm.CreateBestEnviromentTask(req.pose);
                 SendRobotSmallTask(bt,req.robotId);
             }
         }
@@ -88,7 +88,7 @@ public:
     }
 
     // Send robot new task 
-    void SendRobotSmallTask(TaskInTable &bt,int robotId){
+    void SendRobotSmallTask(SmallTask &bt,int robotId){
         ROS_INFO_STREAM("Send task to robot"<<robotId<<" "<<bt.getTaskInfo());
         robot_navigation::GoToTargetGoal g;
         g.goals.push_back(bt.goal);

@@ -41,7 +41,7 @@ TEST_F(SqlTest,InsertATargetAssignId){
 }
 TEST_F(SqlTest,InsertATaskAssignId){
         SQLClient sql_client("root","nes"); 
-    TaskInTable t;
+    SmallExecuteTask t;
     t.taskType = "ExecuteTask";
     t.priority = 4;
     t.goal.pose.position.x = 4.38077210276;
@@ -84,7 +84,7 @@ TEST_F(SqlTest,InserDoorStatusRecord){
 
 
 TEST_F(SqlTest,TaskInUseTrigger){
-    TaskInTable t;
+    SmallExecuteTask t;
     t.targetId = 3;
     t.taskType = "GatherEnviromentInfo";
     t.taskId = sc->InsertATaskAssignId(t); 
@@ -95,7 +95,7 @@ TEST_F(SqlTest,TaskInUseTrigger){
 }
 
 TEST_F(SqlTest,TaskUpdateStatus){
-    TaskInTable t;
+    SmallExecuteTask t;
     t.targetId = 3;
     t.taskType = "GatherEnviromentInfo";
     t.taskId = sc->InsertATaskAssignId(t); 

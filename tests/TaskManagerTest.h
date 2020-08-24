@@ -32,17 +32,17 @@ TEST_F(TaskManagerTest,example){
 
 
 TEST_F(TaskManagerTest,createLargeTask){
-    std::vector<TaskInTable> tasks;
-    TaskInTable t1;
+    std::vector<SmallExecuteTask> tasks;
+    SmallExecuteTask t1;
     t1.taskId = 1;
     t1.goal.pose.position.x = 2;
     t1.goal.pose.orientation.w = 2;
     t1.dependency = 0;
-    TaskInTable t2;
+    SmallExecuteTask t2;
     t2.taskId = 2;
     t2.goal.pose.position.x = 4;
     t2.dependency = 1;
-    TaskInTable t3;
+    SmallExecuteTask t3;
     t3.taskId = 3;
     t3.goal.pose.position.x = 8;
     t3.dependency = 0;

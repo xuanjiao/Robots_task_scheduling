@@ -38,7 +38,7 @@ public:
 
     // void CreateNewTasks(int num){
     //     for(int i = 0; i < num ; i++){
-    //         TaskInTable t;
+    //         SmallExecuteTask t;
     //         t.priority = 1;
     //         t.taskType = "GatherEnviromentInfo";
     //         t.goal.header.stamp = ros::Time::now() + ros::Duration(10*i);
@@ -53,7 +53,7 @@ public:
     // }
 
 
-    // TaskInTable CreateChargingTask(geometry_msgs::Pose robotPose){
+    // SmallExecuteTask CreateChargingTask(geometry_msgs::Pose robotPose){
     //     geometry_msgs::Pose rp = robotPose;
     //     ros::Time now = ros::Time::now();
         
@@ -69,7 +69,7 @@ public:
     //             best.second = dist;
     //         }
     //     }    
-    //     TaskInTable bt;
+    //     SmallExecuteTask bt;
     //     bt.taskType = "Charging";
     //     bt.priority = 5;
     //     bt.goal.header.stamp = now + ros::Duration(10); // create a charging task that start after 10s
@@ -79,9 +79,9 @@ public:
     // }
 
     // Convert dependend small tasks to large task
-    vector<LargeTask> MakeLargeTasks(vector<TaskInTable>& sts){
+    vector<LargeTask> MakeLargeTasks(vector<SmallExecuteTask>& sts){
         vector<LargeTask> lts;
-        for(vector<TaskInTable>::iterator it = sts.begin(); it != sts.end(); ){
+        for(vector<SmallExecuteTask>::iterator it = sts.begin(); it != sts.end(); ){
             if(it->dependency==0){ // Find task with no dependency
                 LargeTask lt; // Create a large task
                 lt.smallTasks.insert(make_pair(it->taskId,*it));
@@ -98,7 +98,7 @@ public:
          ROS_INFO("Create %ld large task finished. Allocate remain %ld smallTasks",lts.size(),sts.size());
     
         while(!sts.empty()){
-            for(vector<TaskInTable>::iterator it = sts.begin(); it != sts.end();){
+            for(vector<SmallExecuteTask>::iterator it = sts.begin(); it != sts.end();){
                 const int d = it->dependency; // Find dependency task
                 vector<LargeTask>::iterator lit = find_if(lts.begin(),lts.end(),
                     [d](const LargeTask& l) ->bool {return l.smallTasks.count(d) > 0 ;}
@@ -131,7 +131,7 @@ public:
 
     LargeTask SelectExecutetask(geometry_msgs::Pose robotPose){
         ROS_INFO("Start query execute tasks...");
-        vector<TaskInTable> sts;
+        vector<SmallExecuteTask> sts;
         vector<LargeTask> lts;
         LargeTask lt;
         ros::Time now = ros::Time::now();
@@ -156,8 +156,8 @@ public:
         return lt;
     }
 
-    TaskInTable CreateBestEnviromentTask(geometry_msgs::Pose robotPose){
-        TaskInTable st;
+    SmallTask CreateBestEnviromentTask(geometry_msgs::Pose robotPose){
+        SmallTask st;
         ros::Time now = ros::Time::now();
         auto doors = _sc.QueryDoorInfo();
         ROS_INFO("Found %ld doors",doors.size());
@@ -165,7 +165,7 @@ public:
             ROS_INFO("No door data in database");
             exit(1);
         }
-        ROS_INFO_STREAM("Id BatteryComsume TimeSinceLastUpdate Openpossibility Cost exploring");
+        ROS_INFO_STREAM("Id BatteryComsume TimeSinceLastUpdate Openpossibility IsUsed Cost");
         ROS_INFO("-----------------------------------------------------------------------------");
         for(Door& door : doors){
                 // this door is not exploring by other doors;
@@ -195,9 +195,9 @@ public:
         });
     }
 
-    void SortTaskWithCost(std::vector<TaskInTable>& v){
+    void SortTaskWithCost(std::vector<SmallExecuteTask>& v){
          std::sort(v.begin(),v.end(),
-        [](const TaskInTable& a, const TaskInTable&b)->bool
+        [](const SmallExecuteTask& a, const SmallExecuteTask&b)->bool
         {
                 return a.cost >b.cost;
         });
@@ -226,9 +226,9 @@ public:
         _sc.UpdateTaskRobotId(taskId,robotId);
     }
 
-    void FilterTask(std::vector<TaskInTable>& v){
+    void FilterTask(std::vector<SmallExecuteTask>& v){
         ROS_INFO_STREAM("Filter Task cost < "<<to_string(COST_LIMIT));
-        for(vector<TaskInTable>::iterator it = v.begin(); it != v.end(); ){
+        for(vector<SmallExecuteTask>::iterator it = v.begin(); it != v.end(); ){
             if(it->cost > COST_LIMIT){
                ROS_INFO_STREAM("Delete small task "<<it->taskId);
                it = v.erase(it);

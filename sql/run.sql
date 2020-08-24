@@ -72,29 +72,6 @@ CREATE TABLE door_infos(
     PRIMARY KEY (door_id)	
 );	
 
-DROP TRIGGER IF EXISTS last_update_trigger;
-DELIMITER ;;
-CREATE TRIGGER last_update_trigger
-AFTER INSERT ON measurements FOR EACH ROW
-BEGIN
-	UPDATE door_infos
-    SET last_update = NEW.date_time
-    WHERE door_id = NEW.door_id;
-END;
-;;
-DELIMITER ;
-
-DROP TRIGGER IF EXISTS door_used;
-DELIMITER ;;
-CREATE TRIGGER door_used
-AFTER UPDATE ON tasks FOR EACH ROW
-BEGIN
-	UPDATE door_infos
-    SET is_used = IF(NEW.cur_status = 'Running',1,0)
-    where NEW.target_id = door_id;
-END;
-;;
-DELIMITER ;
 
 
 -- insert value to targets table
@@ -160,6 +137,30 @@ SELECT target_id FROM targets WHERE target_type = 'ChargingStation';
  
 -- fill in status list and possibility table
 call createPossibilityTable(16);
+
+DROP TRIGGER IF EXISTS last_update_trigger;
+DELIMITER ;;
+CREATE TRIGGER last_update_trigger
+AFTER INSERT ON measurements FOR EACH ROW
+BEGIN
+	UPDATE door_infos
+    SET last_update = NEW.date_time
+    WHERE door_id = NEW.door_id;
+END;
+;;
+DELIMITER ;
+
+DROP TRIGGER IF EXISTS door_used;
+DELIMITER ;;
+CREATE TRIGGER door_used
+AFTER UPDATE ON tasks FOR EACH ROW
+BEGIN
+	UPDATE door_infos
+    SET is_used = IF(NEW.cur_status = 'Running',1,0)
+    where NEW.target_id = door_id;
+END;
+;;
+DELIMITER ;
 
 																																																																							
 SELECT * FROM measurements;

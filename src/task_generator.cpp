@@ -12,7 +12,7 @@ int main(int argc, char** argv){
    
     ros::Rate loop(2);
     while(ros::ok()){
-            TaskInTable t;
+            SmallExecuteTask t;
             t.taskType = "ExecuteTask";
 
             cout << "Please enter priority(2-4) , x , y , dependency"<<endl;

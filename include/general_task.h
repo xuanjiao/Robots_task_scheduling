@@ -6,31 +6,34 @@
 #include "util.h"
 
 using namespace std;
-class TaskInTable{
+class SmallTask{
 public:
-    int taskId = 0;
-    int dependency = 0;
-    std::string taskType = "";
-    int targetId = 0;
-    double openPossibility = 0.0;
-    int priority = 0;
-    geometry_msgs::PoseStamped goal; // distination and timestamp
-    double cost = 0.0;
-
-    string getTaskInfo(){
+    virtual string getTaskInfo(){
         stringstream ss;
         ss<< taskType <<" : "<<Util::time_str(goal.header.stamp)<<
          " (" <<goal.pose.position.x<<","<<goal.pose.position.y<<")";
         return ss.str();
     }
-
+    int taskId = 0;
+    string taskType = "";
+    int targetId = 0;
+    int priority = 0;
+    geometry_msgs::PoseStamped goal; // distination and timestamp
 };
+
+class SmallExecuteTask: public SmallTask{
+public:
+    int dependency = 0;
+    double openPossibility = 0.0;
+    double cost = 0.0;
+};
+
 
 class LargeTask{
 public:
     int largeTaskId = 0;
     std::string taskType = "";
-    std::map<int,TaskInTable> smallTasks;
+    std::map<int,SmallExecuteTask> smallTasks;
     double openPossibility = 0.0;
     double battery = 0.0;
     ros::Duration waitingTime;

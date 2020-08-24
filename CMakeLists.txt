@@ -116,7 +116,7 @@ add_action_files(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
+  INCLUDE_DIRS include
 #  LIBRARIES robot_navigation
   CATKIN_DEPENDS move_base_msgs roscpp std_msgs actionlib_msgs
 #  DEPENDS system_lib

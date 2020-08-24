@@ -3,7 +3,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <nav_msgs/GetPlan.h>
 #include "ros/ros.h"
-#include "door_info.h"
+#include "door.h"
 
 using namespace std;
 
@@ -18,6 +18,7 @@ struct DoorWeightBase{
     double W_TIME          = -1; // large time since last update-> lower cost
     double W_BATTERY       = 10;
     double W_POSSIBILITY   = -10;
+    double W_IS_USED       = 100;
 }DWB;
 
 struct ChargingWeightBase{
@@ -50,15 +51,15 @@ class CostCalculator{
     void CalculateDoorCost(ros::Time now, Door& door, geometry_msgs::Pose robotPose){
         double battery =  CalculateSimpleBatteryConsumption(robotPose,door.pose);
         long timeSinceLastUpdate = now.sec - door.lastUpdate.sec;      
-        door.cost = DWB.W_BATTERY * battery + DWB.W_POSSIBILITY * door.depOpenpossibility + DWB.W_TIME * timeSinceLastUpdate;
-        ROS_INFO("%d %.3f         %ld          %.3f      %.3f", door.doorId, battery,timeSinceLastUpdate,door.depOpenpossibility,door.cost);
+        door.cost = DWB.W_BATTERY * battery + DWB.W_POSSIBILITY * door.depOpenpossibility + DWB.W_TIME * timeSinceLastUpdate + DWB.W_IS_USED * door.isUsed;
+        ROS_INFO("%d %.3f         %ld          %.3f     %d  %.3f", door.doorId, battery,timeSinceLastUpdate,door.depOpenpossibility, door.isUsed, door.cost);
     }
 
 
     void CalculateComplexTrajectoryBatteryConsumption(geometry_msgs::Pose robotPose,LargeTask& lt){
         double battery = 0.0;
         geometry_msgs::Pose start;
-        std::map<int,TaskInTable>::iterator it = lt.smallTasks.begin();
+        std::map<int,SmallExecuteTask>::iterator it = lt.smallTasks.begin();
         battery += CalculateSimpleBatteryConsumption(robotPose,it->second.goal.pose);
         start = it->second.goal.pose; // store last trajectory end point
         for( it++;it != lt.smallTasks.end();it++){

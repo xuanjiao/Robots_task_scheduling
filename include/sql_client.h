@@ -11,7 +11,7 @@
 #include <cppconn/resultset.h>
 #include <cppconn/statement.h>
 #include "general_task.h"
-#include "door_info.h"
+#include "door.h"
 #include "util.h"
 #include <boost/thread/mutex.hpp>
 
@@ -112,11 +112,11 @@ class SQLClient{
     }
     
         // get task info to calculate cost
-    vector<TaskInTable>
+    vector<SmallExecuteTask>
     QueryRunableExecuteTasks(){
       _sqlMtx.lock();
       sql::ResultSet* res;
-      vector<TaskInTable> v;
+      vector<SmallExecuteTask> v;
       string now = Util::time_str(ros::Time::now());
       res = stmt->executeQuery(
        "SELECT tasks.dependency, tasks.priority, tasks.target_id, tasks.task_id, tasks.task_type, tasks.start_time, \
@@ -128,7 +128,7 @@ class SQLClient{
       );
       if(res->rowsCount()!=0){
         while(res->next()){
-          TaskInTable t;
+          SmallExecuteTask t;
           t.priority = res->getInt("priority");
           t.targetId = res->getInt("target_id");
           t.taskId = res->getInt("task_id");
@@ -150,11 +150,11 @@ class SQLClient{
     }
 
     // get task info to calculate cost
-    vector<TaskInTable>
+    vector<SmallExecuteTask>
     QueryRunableGatherEnviromentInfoTasks(){
       _sqlMtx.lock();
       sql::ResultSet* res;
-      vector<TaskInTable> v;
+      vector<SmallExecuteTask> v;
       string now = Util::time_str(ros::Time::now());
       res = stmt->executeQuery(
        "SELECT tasks.dependency, tasks.priority, o.open_pos_st, tasks.target_id, tasks.task_id, tasks.task_type, tasks.start_time, \
@@ -170,7 +170,7 @@ class SQLClient{
       );
       if(res->rowsCount()!=0){
         while(res->next()){
-          TaskInTable t;
+          SmallExecuteTask t;
           t.priority = res->getInt("priority");
           t.openPossibility = res->getDouble("open_pos_st");
           t.targetId = res->getInt("target_id");
@@ -301,7 +301,7 @@ class SQLClient{
 
     
     // Create new task and return its task id
-    int InsertATaskAssignId(TaskInTable& t){
+    int InsertATaskAssignId(SmallExecuteTask& t){
       _sqlMtx.lock();
         sql::ResultSet* res;        
         stmt->execute(
@@ -315,6 +315,22 @@ class SQLClient{
         delete res;
         _sqlMtx.unlock();
         return t.taskId;
+    }
+
+    int InsertATaskAssignId(SmallTask& t){
+      _sqlMtx.lock();
+      sql::ResultSet* res;        
+      stmt->execute(
+        "INSERT INTO tasks(task_type, priority, target_id, start_time) VALUES('"
+        + t.taskType +"','" + to_string(t.priority) +"','" + to_string(t.targetId) + "','" + Util::time_str(t.goal.header.stamp)+"')"
+        
+        );
+      res = stmt->executeQuery("SELECT last_insert_id() as id");
+      res->next();
+      t.taskId = res->getInt("id");
+      delete res;
+      _sqlMtx.unlock();
+      return t.taskId;
     }
 
     int InsertATargetAssignId(geometry_msgs::PoseStamped target, string targetType){
