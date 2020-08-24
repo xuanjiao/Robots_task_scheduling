@@ -408,7 +408,6 @@ class SQLClient{
       sql::ResultSet* res;
       string dw,st,et,mst = Util::time_str(measure_time);
       
-
       // select start time, end time, day of week from open possibility table
       res = stmt->executeQuery(
         "SELECT start_time, end_time, day_of_week FROM open_possibilities WHERE door_id = '" + to_string( door_id)+

@@ -12,7 +12,7 @@
 
 using namespace std;
 
-
+#define COST_LIMIT 50
 
 class TaskManager{
 public:
@@ -145,9 +145,8 @@ public:
             for(LargeTask& t:lts){
                 _cc.CalculateLargeTasksCost(now,t,robotPose);
                 ROS_INFO_STREAM("Calculate execute task cost finish");
-
-                // FilterTask(v);
-            }
+            } 
+            FilterTask(lts); // remove task exceed cost limit
         }
         if(lts.size() != 0){ // after filter, if there is no execute task, gather inviroment
             SortLargeTasksWithCost(lts);
@@ -243,18 +242,31 @@ public:
         _sc.UpdateTaskRobotId(taskId,robotId);
     }
 
-    // void FilterTask(std::vector<TaskInTable>& v){
-    //     ros::Time now = ros::Time::now();
-    //     ROS_INFO_STREAM("Filter Task  not expired and cost < "<<to_string(COST_LIMIT));
-    //     for(vector<TaskInTable>::iterator it = v.begin(); it != v.end(); ){
-    //         if(it->cost > COST_LIMIT || it ->goal.header.stamp < now ){
-    //            ROS_INFO_STREAM("Delete task "<<it->taskId);
-    //            it = v.erase(it);
-    //         }else{
-    //             it++;
-    //         }
-    //     }
-    // }
+    void FilterTask(std::vector<TaskInTable>& v){
+        ros::Time now = ros::Time::now();
+        ROS_INFO_STREAM("Filter Task cost < "<<to_string(COST_LIMIT));
+        for(vector<TaskInTable>::iterator it = v.begin(); it != v.end(); ){
+            if(it->cost > COST_LIMIT){
+               ROS_INFO_STREAM("Delete small task "<<it->taskId);
+               it = v.erase(it);
+            }else{
+                it++;
+            }
+        }
+    }
+
+    void FilterTask(std::vector<LargeTask>& v){
+        ros::Time now = ros::Time::now();
+        ROS_INFO_STREAM("Filter Task cost < "<<to_string(COST_LIMIT));
+        for(vector<LargeTask>::iterator it = v.begin(); it != v.end(); ){
+            if(it->cost > COST_LIMIT){
+               ROS_INFO_STREAM("Delete large task "<<it->largeTaskId);
+               it = v.erase(it);
+            }else{
+                it++;
+            }
+        }
+    }
 
     set<int> exploringDoors;
     private:
