@@ -1,5 +1,5 @@
 #pragma once
-#include "general_task.h"
+#include "task_type.h"
 #include <geometry_msgs/PoseStamped.h>
 #include <nav_msgs/GetPlan.h>
 #include "ros/ros.h"

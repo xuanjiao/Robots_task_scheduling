@@ -10,7 +10,7 @@
 #include <cppconn/exception.h>
 #include <cppconn/resultset.h>
 #include <cppconn/statement.h>
-#include "general_task.h"
+#include "task_type.h"
 #include "door.h"
 #include "util.h"
 #include <boost/thread/mutex.hpp>

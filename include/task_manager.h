@@ -1,9 +1,10 @@
 #pragma once
+
 #include "ros/ros.h"
 #include <geometry_msgs/PoseStamped.h>
 #include <nav_msgs/GetPlan.h>
 #include <algorithm>
-#include "general_task.h"
+#include "task_type.h"
 #include "cost_function.h"
 #include <vector>
 #include <queue>
