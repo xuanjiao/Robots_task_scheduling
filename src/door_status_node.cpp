@@ -11,13 +11,13 @@
 using namespace std;
 class Advertiser{
     public:
-    Advertiser():sql_client("door_simulator","pass"){
+    Advertiser(){
         ROS_INFO_STREAM("using simulation time "<<ros::Time::isSimTime());
         ROS_INFO_STREAM("using system time "<<ros::Time::isSystemTime());
         ros::Duration(1).sleep();
         ROS_INFO_STREAM("Current time "<<ros::Time::now());
        
-        sql_client.ConnectToDatabase();
+        sql_client.ConnectToDatabase("door_simulator","pass");
         sql_client.PrintTable("targets");
         // load_room_position();
         pub = nh.advertise<robot_navigation::sensor_data>("sensor_data",100);

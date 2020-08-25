@@ -39,7 +39,6 @@ public:
 	    ros::Duration(1).sleep();
         ROS_INFO_STREAM("Current office time: "<<Util::time_str(ros::Time::now()));
         _ts = _nh.advertiseService("/GetATask",&CentralizedPool::WhenRobotRequestTask,this);
-        // _sc.TruncateTable("tasks");     
     }
 
     // call back when receive robot request for task //
@@ -53,7 +52,7 @@ public:
             // _sc.InsertATaskAssignId(bt); // insert task into database
             // SendRobotSmallTask(bt); // send goal to robot
         }else{
-            LargeTask lt = _tm.SelectExecutetask(req.pose);
+            LargeExecuteTask lt = _tm.SelectExecutetask(req.pose);
             if(lt.smallTasks.size()>0){
                 SendRobotLargeTask(lt,req.robotId); 
             }else{
@@ -107,7 +106,7 @@ public:
         _tm.AfterSendingTask(bt.taskId,robotId); // Update task status and robot id column in task table
     }
 
-    void SendRobotLargeTask(LargeTask& lt,int robotId){
+    void SendRobotLargeTask(LargeExecuteTask& lt,int robotId){
         robot_navigation::GoToTargetGoal g;
         int taskId;
         ROS_INFO_STREAM("Send to robot "<<robotId<<" "<<lt.getTaskInfo());
@@ -135,8 +134,6 @@ public:
 
 private:
     ros::ServiceServer _ts;
-    
-    // GoToTargetActionClient _gac;
     boost::mutex _acMtx;
     std::vector<GoToTargetActionClient*> _cv;
     SQLClient &_sc;

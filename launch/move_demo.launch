@@ -1,8 +1,8 @@
 <launch>
     <param name="/use_sim_time" value="true"/>
-    <node pkg="robot_navigation" type="centralized_pool" name="centralized_pool" output = "screen"/>
-    <node pkg="robot_navigation" type ="door_status_advertiser" name="door_status_advertiser" output="screen" launch-prefix="xterm -e"/> 
-    <node pkg="robot_navigation" ns="tb3_0" type="robot_controller" args="0" name="robot_controller_0" output="screen" launch-prefix="xterm -e"/>    
-    <node pkg="robot_navigation" ns="tb3_1" type="robot_controller" args="1" name="robot_controller_1" output="screen" launch-prefix="xterm -e"/>    
-    <node pkg="robot_navigation" ns="tb3_2" type="robot_controller" args="2" name="robot_controller_2" output="screen" launch-prefix="xterm -e"/>    
+<node pkg="robot_navigation" type="centralized_pool_node" name="centralized_pool_node" output = "screen"/>
+    <node pkg="robot_navigation" type ="door_status_node" name="door_status_node" output="screen" launch-prefix="xterm -e"/> 
+    <node pkg="robot_navigation" ns="tb3_0" type="robot_controller_node" args="0" name="robot_controller_0" output="screen" launch-prefix="xterm -e"/>    
+    <node pkg="robot_navigation" ns="tb3_1" type="robot_controller_node" args="1" name="robot_controller_1" output="screen" launch-prefix="xterm -e"/>    
+    <node pkg="robot_navigation" ns="tb3_2" type="robot_controller_node" args="2" name="robot_controller_2" output="screen" launch-prefix="xterm -e"/>    
 </launch>

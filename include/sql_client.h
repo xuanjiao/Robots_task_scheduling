@@ -22,23 +22,24 @@ using namespace std;
 
 class SQLClient{
   public:
-    SQLClient(string user_name, string pass):user_name(user_name),pass(pass){
-      ConnectToDatabase();
+  SQLClient(){}
+  SQLClient(string user_name, string pass){
+    ConnectToDatabase(user_name,pass);
+  }
+
+  void ConnectToDatabase(string user_name, string pass){
+    _sqlMtx.lock();
+    _driver = get_driver_instance();
+    _con = _driver->connect(URI,user_name,pass);
+    if(_con->isValid()){
+      ROS_INFO_STREAM("Connected to "<< DATABASE_NAME);
+      _con->setSchema(DATABASE_NAME);
+    }else{
+      ROS_INFO_STREAM("Connected to "<< DATABASE_NAME<<" failed");
     }
-      
-    void ConnectToDatabase(){
-      _sqlMtx.lock();
-      driver = get_driver_instance();
-      con = driver->connect(URI,user_name,pass);
-      if(con->isValid()){
-        ROS_INFO_STREAM("Connected to "<< DATABASE_NAME);
-        con->setSchema(DATABASE_NAME);
-      }else{
-        ROS_INFO_STREAM("Connected to "<< DATABASE_NAME<<" failed");
-      }
-      stmt = con->createStatement();
-      _sqlMtx.unlock();
-    }
+    stmt = _con->createStatement();
+    _sqlMtx.unlock();
+  }
 
     // truncate table
     void TruncateTable(string name){
@@ -110,139 +111,43 @@ class SQLClient{
       _sqlMtx.unlock();
       return v;
     }
-    
-        // get task info to calculate cost
-    vector<SmallExecuteTask>
-    QueryRunableExecuteTasks(){
-      _sqlMtx.lock();
-      sql::ResultSet* res;
-      vector<SmallExecuteTask> v;
-      string now = Util::time_str(ros::Time::now());
-      res = stmt->executeQuery(
-       "SELECT tasks.dependency, tasks.priority, tasks.target_id, tasks.task_id, tasks.task_type, tasks.start_time, \
-        tg.position_x, tg.position_y FROM targets tg \
-        INNER JOIN tasks ON tasks.target_id = tg.target_id \
-        AND tasks.cur_status IN ('Created','ToReRun') \
-        AND tasks.task_type = 'ExecuteTask' \
-        AND tasks.start_time > '" + now +"'"
-      );
-      if(res->rowsCount()!=0){
-        while(res->next()){
-          SmallExecuteTask t;
-          t.priority = res->getInt("priority");
-          t.targetId = res->getInt("target_id");
-          t.taskId = res->getInt("task_id");
-          t.taskType = res->getString("task_type");
-          t.dependency = res->getInt("dependency");
-
-          t.goal.header.frame_id = "map";
-          t.goal.header.stamp = Util::str_ros_time(res->getString("start_time"));
-          t.goal.pose.position.x = res->getDouble("position_x");
-          t.goal.pose.position.y = res->getDouble("position_y");
-          t.goal.pose.orientation.w = 1.0;
-          v.push_back(t);
-        } 
-      }
-
-      delete res;
-      _sqlMtx.unlock();
-      return v;
-    }
-
-    // get task info to calculate cost
-    vector<SmallExecuteTask>
-    QueryRunableGatherEnviromentInfoTasks(){
-      _sqlMtx.lock();
-      sql::ResultSet* res;
-      vector<SmallExecuteTask> v;
-      string now = Util::time_str(ros::Time::now());
-      res = stmt->executeQuery(
-       "SELECT tasks.dependency, tasks.priority, o.open_pos_st, tasks.target_id, tasks.task_id, tasks.task_type, tasks.start_time, \
-        tg.position_x, tg.position_y FROM targets tg \
-        INNER JOIN tasks ON tasks.target_id = tg.target_id \
-        INNER JOIN open_possibilities o WHERE tg.target_id = o.door_id \
-        AND DAYOFWEEK(tasks.start_time) = o.day_of_week \
-        AND TIME(tasks.start_time) BETWEEN o.start_time AND o.end_time \
-        AND tasks.cur_status IN ('Created' ,'ToReRun') \
-        AND tasks.task_type = 'GatherEnviromentInfo' \
-        AND tasks.start_time > '" + now +"'"
-        
-      );
-      if(res->rowsCount()!=0){
-        while(res->next()){
-          SmallExecuteTask t;
-          t.priority = res->getInt("priority");
-          t.openPossibility = res->getDouble("open_pos_st");
-          t.targetId = res->getInt("target_id");
-          t.taskId = res->getInt("task_id");
-          t.taskType = res->getString("task_type");
-          t.dependency = res->getInt("dependency");
-
-          t.goal.header.frame_id = "map";
-          t.goal.header.stamp = Util::str_ros_time(res->getString("start_time"));
-          t.goal.pose.position.x = res->getDouble("position_x");
-          t.goal.pose.position.y = res->getDouble("position_y");
-          t.goal.pose.orientation.w = 1.0;
-          v.push_back(t);
-        } 
-      }
-
-      delete res;
-      _sqlMtx.unlock();
-      return v;
-    }
-
-
-    // Create new enter room tasks
-    int InsertMultipleGatherInfoTasks(int num, ros::Time start, ros::Duration interval){
-      _sqlMtx.lock();
-      sql::ResultSet* res;
-      vector<int> doors  = QueryDoorId();
-      int id,cnt;
-      for(int i = 0; i < num; i++){
-        id = doors[rand()%doors.size() + 1];  
-        stmt->execute(
-            "INSERT INTO tasks(task_type, start_time, target_id, priority) VALUES('GatherEnviromentInfo','" + Util::time_str(start + interval *i) + "','" + to_string(id) + "'," + to_string(1) +")"
-        );
-        cnt += stmt->getUpdateCount();
-      }
-      delete res;
-      _sqlMtx.unlock();
-      return cnt;
-    }
-
-        // Create new enter room tasks
-    vector<int> QueryDoorId(){
-      _sqlMtx.lock();
-      sql::ResultSet* res;
-      vector<int> doors;
-      res = stmt->executeQuery("SELECT target_id  FROM targets WHERE target_type = 'Door'");
-      while(res->next()){
-        doors.push_back(res->getInt("target_id")); // find available door id
-      }
-      delete res;
-      _sqlMtx.unlock();
-      return doors;
-    }
-
-  double QueryDoorOpenPossibility(int doorId){
-    double o = 0;
+  
+      // get task info to calculate cost
+  vector<SmallExecuteTask>
+  QueryRunableExecuteTasks(){
     _sqlMtx.lock();
     sql::ResultSet* res;
-    string time = Util::time_str(ros::Time::now());
+    vector<SmallExecuteTask> v;
+    string now = Util::time_str(ros::Time::now());
     res = stmt->executeQuery(
-      "SELECT * FROM open_possibilities WHERE door_id = "+ to_string(doorId) + " AND day_of_week = DAYOFWEEK('" + time +  "') and time('" + time +
-      "') between start_time and end_time ");
-    if(res->rowsCount() == 0){
-      ROS_INFO("Target %d not exist",doorId);
-      return -1;
+      "SELECT tasks.dependency, tasks.priority, tasks.target_id, tasks.task_id, tasks.task_type, tasks.start_time, \
+      tg.position_x, tg.position_y FROM targets tg \
+      INNER JOIN tasks ON tasks.target_id = tg.target_id \
+      AND tasks.cur_status IN ('Created','ToReRun') \
+      AND tasks.task_type = 'ExecuteTask' \
+      AND tasks.start_time > '" + now +"'"
+    );
+    if(res->rowsCount()!=0){
+      while(res->next()){
+        SmallExecuteTask t;
+        t.priority = res->getInt("priority");
+        t.targetId = res->getInt("target_id");
+        t.taskId = res->getInt("task_id");
+        t.taskType = res->getString("task_type");
+        t.dependency = res->getInt("dependency");
+
+        t.goal.header.frame_id = "map";
+        t.goal.header.stamp = Util::str_ros_time(res->getString("start_time"));
+        t.goal.pose.position.x = res->getDouble("position_x");
+        t.goal.pose.position.y = res->getDouble("position_y");
+        t.goal.pose.orientation.w = 1.0;
+        v.push_back(t);
+      } 
     }
-    while(res->next()){
-      o = res->getDouble("open_pos_st");
-    }
+
     delete res;
     _sqlMtx.unlock();
-    return o;
+    return v;
   }
 
   vector<Door> QueryDoorInfo(){
@@ -282,47 +187,14 @@ class SQLClient{
     return doors;
   }
 
-  // double QueryTargetOpenpossibility(int targetId){
-  //     sql::ResultSet* res;
-  //     double o;
-  //     res = stmt->executeQuery("SELECT * FROM targets WHERE target_id = " + to_string(targetId));
-  //     if(res->rowsCount() == 0){
-  //       ROS_INFO("Target %d not exist",targetId);
-  //       return -1;
-  //     }
-  //     while(res->next()){
-  //       o = res->getDouble("open_pos_st");
-  //     }
-  //     delete res;
-  //     return o;
-  // }
-
-   
-
-    
-    // Create new task and return its task id
-    int InsertATaskAssignId(SmallExecuteTask& t){
-      _sqlMtx.lock();
-        sql::ResultSet* res;        
-        stmt->execute(
-          "INSERT INTO tasks(dependency,task_type, priority, target_id, start_time) VALUES('"
-          +to_string(t.dependency) +"','" + t.taskType +"','" + to_string(t.priority) +"','" + to_string(t.targetId) + "','" + Util::time_str(t.goal.header.stamp)+"')"
-         
-          );
-        res = stmt->executeQuery("SELECT last_insert_id() as id");
-        res->next();
-        t.taskId = res->getInt("id");
-        delete res;
-        _sqlMtx.unlock();
-        return t.taskId;
-    }
-
-    int InsertATaskAssignId(SmallTask& t){
-      _sqlMtx.lock();
+  
+  // Create new task and return its task id
+  int InsertATaskAssignId(SmallExecuteTask& t){
+    _sqlMtx.lock();
       sql::ResultSet* res;        
       stmt->execute(
-        "INSERT INTO tasks(task_type, priority, target_id, start_time) VALUES('"
-        + t.taskType +"','" + to_string(t.priority) +"','" + to_string(t.targetId) + "','" + Util::time_str(t.goal.header.stamp)+"')"
+        "INSERT INTO tasks(dependency,task_type, priority, target_id, start_time) VALUES('"
+        +to_string(t.dependency) +"','" + t.taskType +"','" + to_string(t.priority) +"','" + to_string(t.targetId) + "','" + Util::time_str(t.goal.header.stamp)+"')"
         
         );
       res = stmt->executeQuery("SELECT last_insert_id() as id");
@@ -331,41 +203,57 @@ class SQLClient{
       delete res;
       _sqlMtx.unlock();
       return t.taskId;
-    }
+  }
 
-    int InsertATargetAssignId(geometry_msgs::PoseStamped target, string targetType){
-      _sqlMtx.lock();
-      int id = 0;
-      sql::ResultSet* res;        
-      string x = to_string(target.pose.position.x);
-      string y = to_string(target.pose.position.y);
+  int InsertATaskAssignId(SmallTask& t){
+    _sqlMtx.lock();
+    sql::ResultSet* res;        
+    stmt->execute(
+      "INSERT INTO tasks(task_type, priority, target_id, start_time) VALUES('"
+      + t.taskType +"','" + to_string(t.priority) +"','" + to_string(t.targetId) + "','" + Util::time_str(t.goal.header.stamp)+"')"
       
-      ROS_INFO_STREAM("Check target exist ");
-      res = stmt->executeQuery(
-        "SELECT * FROM targets WHERE position_x = " + x + " AND position_y =" + y
       );
-      if(res->rowsCount() == 0){
-          ROS_INFO_STREAM("Adding new target (" << x << "," <<y << ")");
-          stmt->execute(
-            "INSERT INTO targets(target_type, position_x, position_y) \
-              VALUES('"+ targetType + "'," + x + "," + y + ")" 
-          );
-          res = stmt->executeQuery("SELECT last_insert_id() as target_id");
-          res->next();
-          if(res->rowsCount() == 0){
-            ROS_INFO_STREAM("Failed to insert target");
-            id = 0;
-          }else{
-            id = res->getInt("target_id");
-          }
-      }else{
-        ROS_INFO_STREAM("This target is already in targets table");
-        res->next();
-        id = res->getInt("target_id");
-      }
+    res = stmt->executeQuery("SELECT last_insert_id() as id");
+    res->next();
+    t.taskId = res->getInt("id");
+    delete res;
     _sqlMtx.unlock();
-        return id;
+    return t.taskId;
+  }
+
+  int InsertATargetAssignId(geometry_msgs::PoseStamped target, string targetType){
+    _sqlMtx.lock();
+    int id = 0;
+    sql::ResultSet* res;        
+    string x = to_string(target.pose.position.x);
+    string y = to_string(target.pose.position.y);
+    
+    ROS_INFO_STREAM("Check target exist ");
+    res = stmt->executeQuery(
+      "SELECT * FROM targets WHERE position_x = " + x + " AND position_y =" + y
+    );
+    if(res->rowsCount() == 0){
+        ROS_INFO_STREAM("Adding new target (" << x << "," <<y << ")");
+        stmt->execute(
+          "INSERT INTO targets(target_type, position_x, position_y) \
+            VALUES('"+ targetType + "'," + x + "," + y + ")" 
+        );
+        res = stmt->executeQuery("SELECT last_insert_id() as target_id");
+        res->next();
+        if(res->rowsCount() == 0){
+          ROS_INFO_STREAM("Failed to insert target");
+          id = 0;
+        }else{
+          id = res->getInt("target_id");
+        }
+    }else{
+      ROS_INFO_STREAM("This target is already in targets table");
+      res->next();
+      id = res->getInt("target_id");
     }
+  _sqlMtx.unlock();
+      return id;
+  }
 
     // Create charging task
     // vector<pair<int,geometry_msgs::Pose>>
@@ -388,99 +276,97 @@ class SQLClient{
       return map;
     } 
 
-    // Change time and Priority of a returned task
-    int UpdateFailedExecuteTask(const vector<int>& taskIds){
-      _sqlMtx.lock();
-      stringstream ss;
-      ss<<"(";
-      for(size_t i = 0 ; i< taskIds.size()-1; i++){
-        ss << taskIds[i]<<", ";
-      }
-      ss<<taskIds[taskIds.size()-1]<<")";
+  // Change time and Priority of a returned task
+  int UpdateFailedExecuteTask(const vector<int>& taskIds){
+    _sqlMtx.lock();
+    stringstream ss;
+    ss<<"(";
+    for(size_t i = 0 ; i< taskIds.size()-1; i++){
+      ss << taskIds[i]<<", ";
+    }
+    ss<<taskIds[taskIds.size()-1]<<")";
 
-      int ret = stmt->executeUpdate("UPDATE tasks \
-        SET priority 	= CASE priority  WHEN 5 THEN 5 ELSE priority + 1 END, \
-          start_time 	= CASE priority  WHEN 5 THEN start_time ELSE TIMESTAMPADD(SECOND,60,start_time) END, \
-          cur_status 	= CASE priority  WHEN 5 THEN 'Canceled' ELSE 'ToReRun' END \
-        WHERE task_id IN " +ss.str());
-      _sqlMtx.unlock();
-      return ret;
+    int ret = stmt->executeUpdate("UPDATE tasks \
+      SET priority 	= CASE priority  WHEN 5 THEN 5 ELSE priority + 1 END, \
+        start_time 	= CASE priority  WHEN 5 THEN start_time ELSE TIMESTAMPADD(SECOND,60,start_time) END, \
+        cur_status 	= CASE priority  WHEN 5 THEN 'Canceled' ELSE 'ToReRun' END \
+      WHERE task_id IN " +ss.str());
+    _sqlMtx.unlock();
+    return ret;
+  }
+
+  // Insert a record in door status list
+  int InsertDoorStatusRecord(int door_id, ros::Time measure_time,bool door_status){
+    _sqlMtx.lock();
+    string mst = Util::time_str(measure_time);
+    // ROS_INFO_STREAM(" insert "<<to_string(door_id)<<" "<<measure_time<<" "<<door_status);
+    int ret = stmt->execute("REPLACE INTO measurements(door_id,door_status,date_time) VALUES('" + to_string(door_id) + "', " +to_string(door_status)+", '"+ mst+"')");
+    ret = stmt->getUpdateCount();
+    _sqlMtx.unlock();
+    return ret;
+  }
+
+  // Find all records from this time and day of weeks, and calculate new open possibilities
+  int UpdateOpenPossibilities(int door_id, ros::Time measure_time){
+    _sqlMtx.lock();
+
+    sql::ResultSet* res;
+    string dw,st,et,mst = Util::time_str(measure_time);
+    
+    // select start time, end time, day of week from open possibility table
+    res = stmt->executeQuery(
+      "SELECT start_time, end_time, day_of_week FROM open_possibilities WHERE door_id = '" + to_string( door_id)+
+      "' AND DAYOFWEEK('" + mst + "') = day_of_week AND TIME('" + mst + "') BETWEEN start_time AND end_time"
+    );
+
+    if(res->rowsCount()==0){
+      ROS_INFO("Unknow day time");
+      return -1;
     }
 
-    // Insert a record in door status list
-    int InsertDoorStatusRecord(int door_id, ros::Time measure_time,bool door_status){
-      _sqlMtx.lock();
-      string mst = Util::time_str(measure_time);
-      // ROS_INFO_STREAM(" insert "<<to_string(door_id)<<" "<<measure_time<<" "<<door_status);
-      int ret = stmt->execute("REPLACE INTO measurements(door_id,door_status,date_time) VALUES('" + to_string(door_id) + "', " +to_string(door_status)+", '"+ mst+"')");
-      ret = stmt->getUpdateCount();
-      _sqlMtx.unlock();
-      return ret;
-    }
+    res->next();
+    st = res->getString("start_time");
+    et = res->getString("end_time");
+    dw = res->getString("day_of_week");
 
-    // Find all records from this time and day of weeks, and calculate new open possibilities
-    int UpdateOpenPossibilities(int door_id, ros::Time measure_time){
-      _sqlMtx.lock();
+    ROS_INFO_STREAM("Start time "<<st<<" End time "<<et<<" Day of week "<<dw);
 
-      sql::ResultSet* res;
-      string dw,st,et,mst = Util::time_str(measure_time);
-      
-      // select start time, end time, day of week from open possibility table
-      res = stmt->executeQuery(
-        "SELECT start_time, end_time, day_of_week FROM open_possibilities WHERE door_id = '" + to_string( door_id)+
-        "' AND DAYOFWEEK('" + mst + "') = day_of_week AND TIME('" + mst + "') BETWEEN start_time AND end_time"
-      );
+    // update open possibility table
+    int ret =  stmt->executeUpdate(
+      "UPDATE open_possibilities o \
+        SET  o.open_pos_st = (SELECT SUM(door_status) / COUNT(door_status)  FROM  measurements ds \
+            WHERE ds.door_id = '" + to_string(door_id) + "' AND DAYOFWEEK(ds.date_time) = '" + dw + 
+            "' AND TIME(ds.date_time) BETWEEN '" + st + "' AND '"+ et +
+        "') WHERE o.door_id = '" + to_string(door_id) + "' AND o.day_of_week = '" + dw + "' AND o.start_time =' " + st + "' AND o.end_time = '"+ et +"'"       
+    );
+    _sqlMtx.unlock();
 
-      if(res->rowsCount()==0){
-        ROS_INFO("Unknow day time");
-        return -1;
-      }
-
-      res->next();
-      st = res->getString("start_time");
-      et = res->getString("end_time");
-      dw = res->getString("day_of_week");
-
-      ROS_INFO_STREAM("Start time "<<st<<" End time "<<et<<" Day of week "<<dw);
-
-      // update open possibility table
-      int ret =  stmt->executeUpdate(
-        "UPDATE open_possibilities o \
-          SET  o.open_pos_st = (SELECT SUM(door_status) / COUNT(door_status)  FROM  measurements ds \
-              WHERE ds.door_id = '" + to_string(door_id) + "' AND DAYOFWEEK(ds.date_time) = '" + dw + 
-              "' AND TIME(ds.date_time) BETWEEN '" + st + "' AND '"+ et +
-          "') WHERE o.door_id = '" + to_string(door_id) + "' AND o.day_of_week = '" + dw + "' AND o.start_time =' " + st + "' AND o.end_time = '"+ et +"'"       
-      );
-      _sqlMtx.unlock();
-
-      delete res;
-      return ret;
-    }
+    delete res;
+    return ret;
+  }
 
     // Change task status in tasks table
-    int UpdateTaskStatus(int taskId,string status){
-      _sqlMtx.lock();
-      int ret =  stmt->executeUpdate("UPDATE tasks set cur_status = '"+ status + "' WHERE task_id = " + to_string(taskId));
-      _sqlMtx.unlock();
-      return ret;    
-    }
+  int UpdateTaskStatus(int taskId,string status){
+    _sqlMtx.lock();
+    int ret =  stmt->executeUpdate("UPDATE tasks set cur_status = '"+ status + "' WHERE task_id = " + to_string(taskId));
+    _sqlMtx.unlock();
+    return ret;    
+  }
 
-    int UpdateTaskRobotId(int taskId, int robotId){
-      _sqlMtx.lock();
-      int ret =  stmt->executeUpdate("UPDATE tasks set robot_id = '"+to_string(robotId) + "' WHERE task_id = " + to_string(taskId));
-      _sqlMtx.unlock();
-      return ret;
-    }
+  int UpdateTaskRobotId(int taskId, int robotId){
+    _sqlMtx.lock();
+    int ret =  stmt->executeUpdate("UPDATE tasks set robot_id = '"+to_string(robotId) + "' WHERE task_id = " + to_string(taskId));
+    _sqlMtx.unlock();
+    return ret;
+  }
 
     ~SQLClient(){
        delete stmt;
     }
     
    private:
-    string user_name;
-    string pass;
-    sql::Driver* driver;
-    sql::Connection* con;
+    sql::Driver* _driver;
+    sql::Connection* _con;
     sql::Statement* stmt;
     boost::mutex _sqlMtx;
 };

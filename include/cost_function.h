@@ -37,14 +37,14 @@ class CostCalculator{
         
     }
 
-    void CalculateLargeTasksCost(ros::Time now,LargeTask& t, geometry_msgs::Pose robotPose){
+    void CalculateLargeTasksCost(ros::Time now,LargeExecuteTask& t, geometry_msgs::Pose robotPose){
         CalculateComplexTrajectoryBatteryConsumption(robotPose,t);
         t.waitingTime = t.smallTasks.begin()->second.goal.header.stamp - now; 
         t.cost =  TWB.W_BATTERY/ t.smallTasks.size() * t.battery 
                     + TWB.W_TIME  * t.waitingTime.toSec() 
                     + TWB.W_POSSIBILITY * t.openPossibility 
                     + TWB.W_PRIORITY * t.priority;
-        ROS_INFO("%d        %.3f   %.3f   %.3f  %d  %3f",t.largeTaskId,t.battery,t.waitingTime.toSec(), t.openPossibility,t.priority,t.cost);
+        ROS_INFO("%d        %.3f   %.3f   %.3f  %d  %3f",t.taskId,t.battery,t.waitingTime.toSec(), t.openPossibility,t.priority,t.cost);
 
     }
 
@@ -56,7 +56,7 @@ class CostCalculator{
     }
 
 
-    void CalculateComplexTrajectoryBatteryConsumption(geometry_msgs::Pose robotPose,LargeTask& lt){
+    void CalculateComplexTrajectoryBatteryConsumption(geometry_msgs::Pose robotPose,LargeExecuteTask& lt){
         double battery = 0.0;
         geometry_msgs::Pose start;
         std::map<int,SmallExecuteTask>::iterator it = lt.smallTasks.begin();
