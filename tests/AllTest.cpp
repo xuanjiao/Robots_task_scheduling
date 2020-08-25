@@ -23,7 +23,7 @@ int main(int argc, char** argv){
     std::thread t([]{while(ros::ok()) ros::spin();});
 
     // ::testing::GTEST_FLAG(filter) = "SqlTest.insert_task";
-     ::testing::GTEST_FLAG(filter) = "SqlTest.UpdateTaskStatus";
+    //  ::testing::GTEST_FLAG(filter) = "SqlTest.UpdateTaskStatus";
 
     auto res = RUN_ALL_TESTS();
     

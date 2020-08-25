@@ -1,5 +1,6 @@
 #pragma once
 #include "../include/sql_client.h"
+#include "charging_station.h"
 #include "util.h"
 #include <gtest/gtest.h>
 
@@ -65,11 +66,13 @@ TEST_F(SqlTest,InserDoorStatusRecord){
 
 }
 
-// TEST_F(SqlTest,QueryAvailableChargingStations){
-//     SQLClient sql_client("root","nes");
-//     auto v = sc->QueryAvailableChargingStations();
-//     ASSERT_EQ(v.size(),3);
-// }
+TEST_F(SqlTest,QueryChargingStationInfo){
+    SQLClient sql_client("root","nes");
+    auto v = sc->QueryChargingStationInfo();
+    ASSERT_EQ(v.size(),3);
+    ASSERT_EQ(v[0].remainingTime,0);
+    ASSERT_EQ(v[0].batteryLevel,100);
+}
 
 
 

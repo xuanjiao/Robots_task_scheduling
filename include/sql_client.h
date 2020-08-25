@@ -12,6 +12,7 @@
 #include <cppconn/statement.h>
 #include "task_type.h"
 #include "door.h"
+#include "charging_station.h"
 #include "util.h"
 #include <boost/thread/mutex.hpp>
 
@@ -185,6 +186,31 @@ class SQLClient{
     
   _sqlMtx.unlock();
     return doors;
+  }
+
+  vector<ChargingStation> QueryChargingStationInfo(){
+    _sqlMtx.lock();
+    sql::ResultSet* res;
+    vector<ChargingStation> css;
+    res = stmt->executeQuery( 
+      "SELECT station_id, robot_battery_level, TIME_TO_SEC(remaining_time) AS t \
+     FROM charging_stations");
+    if(res->rowsCount() == 0){
+      ROS_INFO_STREAM("No Charging Station Info");
+      return css;
+    }
+   
+    while(res->next()){
+      ChargingStation cs;
+      cs.id = res->getInt("station_id"); 
+      cs.batteryLevel = res->getInt("robot_battery_level");
+      cs.remainingTime = res->getInt64("t");
+      css.push_back(cs);
+    }
+    delete res;
+    
+  _sqlMtx.unlock();
+    return css;
   }
 
   

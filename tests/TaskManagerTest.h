@@ -3,7 +3,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include "../include/task_manager.h"
 #include "../include/sql_client.h"
-#include "../include/general_task.h"
+#include "../include/task_type.h"
 
 using namespace std;
 
@@ -49,7 +49,7 @@ TEST_F(TaskManagerTest,createLargeTask){
     tasks.push_back(t1);
     tasks.push_back(t2);
     tasks.push_back(t3);
-    auto lts = tm->MakeLargeTasks(tasks);
+    auto lts = LargeExecuteTask::MakeLargeTasks(tasks);
     ASSERT_EQ(lts.size(),2);
     ASSERT_EQ(lts[0].smallTasks.size(),2);
     ASSERT_EQ(lts[1].smallTasks.size(),1);
