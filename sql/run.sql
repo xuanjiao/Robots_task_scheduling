@@ -9,6 +9,8 @@ grant all on sensor_db.* to 'door_simulator'@'localhost';
 grant all on sensor_db.* to 'task_generator'@'localhost';
 grant all on sensor_db.* to 'charging_station'@'localhost';
 
+SET GLOBAL event_scheduler = ON;
+
 use sensor_db;
 
 drop table if exists open_possibilities;
@@ -47,9 +49,20 @@ DROP TABLE IF EXISTS  charging_stations;
 CREATE TABLE charging_stations(
 	station_id INT REFERENCES targets(target_id),
     robot_battery_level INT DEFAULT 100,
+    charging_rate INT DEFAULT 5,
     remaining_time TIME DEFAULT 0,
     PRIMARY KEY (station_id)
 );
+
+DROP EVENT IF EXISTS charging;    -- dynamic charging stations table
+CREATE EVENT charging
+ON SCHEDULE EVERY 1 SECOND
+STARTS CURRENT_TIMESTAMP ENDS CURRENT_TIMESTAMP + INTERVAL 1 HOUR
+DO 
+		UPDATE charging_stations 
+        SET robot_battery_level = IF(robot_battery_level + charging_rate>=100,100,robot_battery_level + charging_rate),
+			remaining_time = (100 - robot_battery_level)/charging_rate -- Accorging to charging rate, calculate robot_battery_level and charging time 
+		WHERE robot_battery_level <100;
 
 DROP TABLE IF EXISTS tasks;
 CREATE TABLE tasks (
@@ -163,6 +176,9 @@ BEGIN
 END;
 ;;
 DELIMITER ;
+
+
+
 
 																																																																							
 SELECT * FROM measurements;

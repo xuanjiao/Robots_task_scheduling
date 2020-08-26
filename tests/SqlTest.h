@@ -68,10 +68,22 @@ TEST_F(SqlTest,InserDoorStatusRecord){
 
 TEST_F(SqlTest,QueryChargingStationInfo){
     SQLClient sql_client("root","nes");
-    auto v = sc->QueryChargingStationInfo();
+    auto cs = sc->QueryChargingStationInfo(17);
+    ASSERT_EQ(cs.remainingTime,0);
+    ASSERT_EQ(cs.batteryLevel,100);
+    vector<ChargingStation> v = sc->QueryChargingStationInfo();
     ASSERT_EQ(v.size(),3);
     ASSERT_EQ(v[0].remainingTime,0);
     ASSERT_EQ(v[0].batteryLevel,100);
+
+}
+
+TEST_F(SqlTest,UpdateChargingStationInfo){
+    ChargingStation cs;
+    cs.stationId = 17;
+    cs.batteryLevel = 10;
+    int ret = sc->UpdateChargingStationInfo(cs);
+    ASSERT_EQ(ret,1);
 }
 
 

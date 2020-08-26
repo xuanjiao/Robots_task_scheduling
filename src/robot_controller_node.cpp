@@ -2,7 +2,7 @@
 #include "robot_navigation/sensor_data.h"
 // #include "robot_navigation/make_task.h"
 #include "robot_navigation/GetATask.h"
-#include "robot_navigation/GoToTargetAction.h"
+#include "robot_navigation/RunTaskAction.h"
 #include <cmath>
 #include <sstream>
 #include <move_base_msgs/MoveBaseAction.h>
@@ -28,7 +28,7 @@ public:
     _battery(100),
     _movLock(_mtx),
     _mbc("move_base", true),
-    _gas(_nh,"GoToTargetAction",boost::bind(&RobotController::ExecuteCallback,this,_1),false)
+    _gas(_nh,"run_task_action",boost::bind(&RobotController::ExecuteCallback,this,_1),false)
     {
         Init();
         RequestTask();
@@ -120,7 +120,7 @@ public:
     }
 
     // called in a separate thread whenever a new goal is received
-    void ExecuteCallback(const robot_navigation::GoToTargetGoalConstPtr &task){
+    void ExecuteCallback(const robot_navigation::RunTaskGoalConstPtr &task){
         ROS_INFO_STREAM("Get a task from pool\n"<<*task);
         _rs.isCompleted = false;
         _rs.taskIds = task->taskIds;
@@ -301,10 +301,10 @@ private:
     // client
     ros::ServiceClient _tc;
     actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> _mbc;
-    actionlib::SimpleActionServer<robot_navigation::GoToTargetAction> _gas;
+    actionlib::SimpleActionServer<robot_navigation::RunTaskAction> _gas;
     
-    robot_navigation::GoToTargetFeedback _fb;
-    robot_navigation::GoToTargetResult _rs;
+    robot_navigation::RunTaskFeedback _fb;
+    robot_navigation::RunTaskResult _rs;
 
     geometry_msgs::PoseStamped _cp;
     
@@ -318,7 +318,6 @@ private:
 };
 
 int main(int argc, char **argv){
-	ROS_INFO("Main function start");
     ros::init(argc,argv,"robot_controller"); // Initializes Node Name
     if(argc != 2){
         ROS_INFO("Total %d arguments. Require 1 arg: robot id ",argc);

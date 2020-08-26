@@ -188,14 +188,40 @@ class SQLClient{
     return doors;
   }
 
+  ChargingStation QueryChargingStationInfo(int stationId){
+    _sqlMtx.lock();
+    sql::ResultSet* res;
+    ChargingStation cs;
+    res = stmt->executeQuery( 
+      "SELECT t.position_x, t.position_y, cs.station_id, cs.robot_battery_level, TIME_TO_SEC(cs.remaining_time) AS t \
+      FROM charging_stations cs \
+      INNER JOIN targets t ON t.target_id = cs.station_id \
+      WHERE cs.station_id = "+to_string(stationId));
+    if(res->rowsCount() == 0){
+      ROS_INFO_STREAM("No Charging Station Info");
+      return cs;
+    }
+   
+    res->next();
+    cs.stationId = res->getInt("station_id"); 
+    cs.batteryLevel = res->getInt("robot_battery_level");
+    cs.remainingTime = res->getInt64("t");
+    cs.pose.position.x = res->getDouble("position_x");
+    cs.pose.position.y = res->getDouble("position_y");
+    delete res;
+    _sqlMtx.unlock();
+    return cs;
+  }
+
   vector<ChargingStation> QueryChargingStationInfo(){
     _sqlMtx.lock();
     sql::ResultSet* res;
     vector<ChargingStation> css;
     res = stmt->executeQuery( 
       "SELECT t.position_x, t.position_y, cs.station_id, cs.robot_battery_level, TIME_TO_SEC(cs.remaining_time) AS t \
-      INNER JOIN targets t ON t.target_id = cs.station_id \
-      FROM charging_stations cs");
+      FROM charging_stations cs \
+      INNER JOIN targets t ON t.target_id = cs.station_id"
+    );
     if(res->rowsCount() == 0){
       ROS_INFO_STREAM("No Charging Station Info");
       return css;
@@ -284,26 +310,6 @@ class SQLClient{
       return id;
   }
 
-    // Create charging task
-    // vector<pair<int,geometry_msgs::Pose>>
-    map<int,geometry_msgs::Pose>
-    QueryAvailableChargingStations(){
-      _sqlMtx.lock();
-      // vector<pair<int,geometry_msgs::Pose>> v;
-      map<int,geometry_msgs::Pose> map;
-      sql::ResultSet* res;
-      res = stmt->executeQuery("SELECT * FROM targets tg INNER JOIN charging_stations cs ON tg.target_id = cs.station_id WHERE target_type = 'ChargingStation' AND is_free = 1");
-      while(res->next()){
-        geometry_msgs::Pose pose;
-        pose.position.x = res->getDouble("position_x");
-        pose.position.y = res->getDouble("position_y");
-        pose.orientation.w = 1.0;
-        map.insert(make_pair(res->getInt("target_id"),pose));
-      }
-      delete res;
-    _sqlMtx.unlock();
-      return map;
-    } 
 
   // Change time and Priority of a returned task
   int UpdateFailedExecuteTask(const vector<int>& taskIds){
@@ -385,6 +391,17 @@ class SQLClient{
   int UpdateTaskRobotId(int taskId, int robotId){
     _sqlMtx.lock();
     int ret =  stmt->executeUpdate("UPDATE tasks set robot_id = '"+to_string(robotId) + "' WHERE task_id = " + to_string(taskId));
+    _sqlMtx.unlock();
+    return ret;
+  }
+
+  int UpdateChargingStationInfo(const ChargingStation& cs){
+    _sqlMtx.lock();
+    int ret = stmt->executeUpdate(
+      "UPDATE charging_stations \
+      SET robot_battery_level = " + to_string(cs.batteryLevel) + 
+      " WHERE station_id = "+ to_string(cs.stationId)
+    );
     _sqlMtx.unlock();
     return ret;
   }

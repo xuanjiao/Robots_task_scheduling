@@ -1,7 +1,7 @@
 #include "ros/ros.h"
 // #include "robot_navigation/make_task.h"
 #include "robot_navigation/GetATask.h"
-#include "robot_navigation/GoToTargetAction.h"
+#include "robot_navigation/RunTaskAction.h"
 #include <geometry_msgs/PoseStamped.h>
 #include <actionlib/client/simple_action_client.h>
 #include <nav_msgs/GetPlan.h>
@@ -16,17 +16,17 @@
 #define CHECK_DB_PERIOD 10
 
 
-typedef actionlib::SimpleActionClient<robot_navigation::GoToTargetAction> GoToTargetActionClient;                                                                                                                                                                                  ;
+typedef actionlib::SimpleActionClient<robot_navigation::RunTaskAction> RunTaskActionClient;                                                                                                                                                                                  ;
 
 class CentralizedPool{
 
 public:
  CentralizedPool(SQLClient& sc,ros::NodeHandle &nh,TaskManager &tm):_sc(sc),_nh(nh),_tm(tm)
-        // _gac("/tb3_0/GoToTargetAction",true) //  spins up a thread to service this action's subscriptions. 
+        // _gac("/tb3_0/RunTaskAction",true) //  spins up a thread to service this action's subscriptions. 
     {
-        _cv.push_back(new GoToTargetActionClient("/tb3_0/GoToTargetAction",true));
-        _cv.push_back(new GoToTargetActionClient("/tb3_1/GoToTargetAction",true));
-        _cv.push_back(new GoToTargetActionClient("/tb3_2/GoToTargetAction",true));
+        _cv.push_back(new RunTaskActionClient("/tb3_0/run_task_action",true));
+        _cv.push_back(new RunTaskActionClient("/tb3_1/run_task_action",true));
+        _cv.push_back(new RunTaskActionClient("/tb3_2/run_task_action",true));
         init();
     }
     ~CentralizedPool(){
@@ -64,7 +64,7 @@ public:
     }
 
      // call back when receive a door status from robot 
-    void WhenReceiveInfoFromRobot(const robot_navigation::GoToTargetFeedbackConstPtr &feedback){
+    void WhenReceiveInfoFromRobot(const robot_navigation::RunTaskFeedbackConstPtr &feedback){
         ROS_INFO("/nFEEDBACK from Robot %d : Time %s isOpen %d",feedback->robotId,Util::time_str(feedback->measureTime).c_str(),feedback->doorStatus);
         
         int r = _sc.InsertDoorStatusRecord(feedback->doorId,feedback->measureTime,feedback->doorStatus); 
@@ -75,7 +75,7 @@ public:
 
     // Call when receive a complet event from robot
     void WhenRobotFinishGoal(const actionlib::SimpleClientGoalState& state,
-           const robot_navigation::GoToTargetResult::ConstPtr &result){
+           const robot_navigation::RunTaskResult::ConstPtr &result){
         ROS_INFO("/nRESULT from robot %d: %s %s ",result->robotId,result->taskType.c_str() ,state.toString().c_str());
         if(state == actionlib::SimpleClientGoalState::SUCCEEDED){
            _tm.HandleSucceededTask(result->taskIds);
@@ -88,7 +88,7 @@ public:
     // Send robot new task 
     void SendRobotSmallTask(SmallTask &bt,int robotId){
         ROS_INFO_STREAM("Send task to robot"<<robotId<<" "<<bt.getTaskInfo());
-        robot_navigation::GoToTargetGoal g;
+        robot_navigation::RunTaskGoal g;
         g.goals.push_back(bt.goal);
         g.taskIds.push_back(bt.taskId);
         g.targetIds.push_back(bt.targetId);
@@ -96,7 +96,7 @@ public:
         _acMtx.lock();
         _cv[robotId]->sendGoal(g,
                 boost::bind(&CentralizedPool::WhenRobotFinishGoal,this,_1,_2),
-                actionlib::SimpleActionClient<robot_navigation::GoToTargetAction>::SimpleActiveCallback(),
+                actionlib::SimpleActionClient<robot_navigation::RunTaskAction>::SimpleActiveCallback(),
                 // boost::bind(&CentralizedPool::WhenActionActive,this),
                 boost::bind(&CentralizedPool::WhenReceiveInfoFromRobot,this,_1)
         );
@@ -106,7 +106,7 @@ public:
     }
 
     void SendRobotLargeTask(LargeExecuteTask& lt,int robotId){
-        robot_navigation::GoToTargetGoal g;
+        robot_navigation::RunTaskGoal g;
         int taskId;
         ROS_INFO_STREAM("Send to robot "<<robotId<<" "<<lt.getTaskInfo());
         g.taskType = lt.taskType;
@@ -123,7 +123,7 @@ public:
         _acMtx.lock();
         _cv[robotId]->sendGoal(g,
                 boost::bind(&CentralizedPool::WhenRobotFinishGoal,this,_1,_2),
-                actionlib::SimpleActionClient<robot_navigation::GoToTargetAction>::SimpleActiveCallback(),
+                actionlib::SimpleActionClient<robot_navigation::RunTaskAction>::SimpleActiveCallback(),
                 // boost::bind(&CentralizedPool::WhenActionActive,this),
                 boost::bind(&CentralizedPool::WhenReceiveInfoFromRobot,this,_1)
         );
@@ -134,7 +134,7 @@ public:
 private:
     ros::ServiceServer _ts;
     boost::mutex _acMtx;
-    std::vector<GoToTargetActionClient*> _cv;
+    std::vector<RunTaskActionClient*> _cv;
     SQLClient &_sc;
     ros::NodeHandle &_nh;
     TaskManager &_tm;
