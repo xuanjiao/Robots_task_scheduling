@@ -47,10 +47,9 @@ public:
         ROS_INFO("REQUEST from Robot %d (%f,%f) battery %f",req.robotId,req.pose.position.x,req.pose.position.y,req.batteryLevel);
         
         ROS_INFO_STREAM("Current time: "<<Util::time_str(ros::Time::now()));
-        if(req.batteryLevel < 20){ // charging
-            // SmallExecuteTask bt = _tm.CreateChargingTask(req.pose);
-            // _sc.InsertATaskAssignId(bt); // insert task into database
-            // SendRobotSmallTask(bt); // send goal to robot
+        if(req.batteryLevel < 20){ // need charging
+            SmallTask bt = _tm.CreateBestChargingTask(req.pose);
+            SendRobotSmallTask(bt,req.robotId); // send goal to robot
         }else{
             LargeExecuteTask lt = _tm.SelectExecutetask(req.pose);
             if(lt.smallTasks.size()>0){

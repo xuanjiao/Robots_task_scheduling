@@ -193,8 +193,9 @@ class SQLClient{
     sql::ResultSet* res;
     vector<ChargingStation> css;
     res = stmt->executeQuery( 
-      "SELECT station_id, robot_battery_level, TIME_TO_SEC(remaining_time) AS t \
-     FROM charging_stations");
+      "SELECT t.position_x, t.position_y, cs.station_id, cs.robot_battery_level, TIME_TO_SEC(cs.remaining_time) AS t \
+      INNER JOIN targets t ON t.target_id = cs.station_id \
+      FROM charging_stations cs");
     if(res->rowsCount() == 0){
       ROS_INFO_STREAM("No Charging Station Info");
       return css;
@@ -202,9 +203,11 @@ class SQLClient{
    
     while(res->next()){
       ChargingStation cs;
-      cs.id = res->getInt("station_id"); 
+      cs.stationId = res->getInt("station_id"); 
       cs.batteryLevel = res->getInt("robot_battery_level");
       cs.remainingTime = res->getInt64("t");
+      cs.pose.position.x = res->getDouble("position_x");
+      cs.pose.position.y = res->getDouble("position_y");
       css.push_back(cs);
     }
     delete res;

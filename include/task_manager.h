@@ -79,6 +79,31 @@ public:
         return st;
     }
 
+    SmallTask CreateBestChargingTask(geometry_msgs::Pose robotPose){
+        SmallTask st;
+        ros::Time now = ros::Time::now();
+        auto css = _sc.QueryChargingStationInfo();
+        if(css.empty()){
+            ROS_INFO("No door data in database");
+            exit(1);
+        }
+        ROS_INFO_STREAM("Id battery level remaining time Cost");
+        ROS_INFO("-----------------------------------------------------------------------------");
+        for(ChargingStation& cs : css){
+                _cc.CalculateChargingStationCost(cs,robotPose);     
+        }
+        ChargingStation::SorChargingStationsWithCost(css);
+
+        ROS_INFO("Best charging station is %d",css.back().stationId);
+        st.targetId = css.back().stationId;
+        st.goal.pose = css.back().pose;
+        st.goal.header.stamp = now + ros::Duration(10);
+        st.goal.header.frame_id = "map";
+        st.taskType = "Charging";
+        st.priority = 5;
+        st.taskId =  _sc.InsertATaskAssignId(st);
+        return st;
+    }
 
     void HandleFailedTask(string taskType,const vector<int>& taskIds){
         if(taskType == "GatherEnviromentInfo"){

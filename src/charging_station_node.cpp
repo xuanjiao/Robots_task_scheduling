@@ -3,9 +3,11 @@
 
 class ChargingStationSimulator{
 public:
+    ChargingStationSimulator(){
 
+    }
     ChargingStationSimulator(SQLClient& sc):_sc(sc){}
-    SQLClient& _sc;
+    SQLClient _sc;
 };
 
 int main(){
