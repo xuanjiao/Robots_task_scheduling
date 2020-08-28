@@ -13,24 +13,7 @@ SET GLOBAL event_scheduler = ON;
 
 use sensor_db;
 
-drop table if exists open_possibilities;
-CREATE TABLE open_possibilities (
-    door_id INT REFERENCES targets(target_id),
-    day_of_week INT,
-    start_time TIME,
-    end_time TIME,
-    open_pos DOUBLE(4 , 1 ),
-    open_pos_st DOUBLE(4 , 1 ),
-    CONSTRAINT Door_Time UNIQUE (day_of_week , start_time , end_time , door_id)
-);
 
-drop table if exists measurements;
-CREATE TABLE measurements (
-    door_id INT REFERENCES targets(target_id),
-    door_status BOOLEAN,
-    date_time DATETIME,
-    CONSTRAINT Door_Date_Time UNIQUE (date_time , door_id)
-);
 
 drop table if exists targets;
 CREATE TABLE targets (
@@ -44,50 +27,6 @@ CREATE TABLE targets (
     CONSTRAINT Pose UNIQUE(position_x,position_y),
     PRIMARY KEY (target_id)
 );
-
-DROP TABLE IF EXISTS  charging_stations;
-CREATE TABLE charging_stations(
-	station_id INT REFERENCES targets(target_id),
-    robot_battery_level INT DEFAULT 100,
-    charging_rate INT DEFAULT 5,
-    remaining_time TIME DEFAULT 0,
-    PRIMARY KEY (station_id)
-);
-
-DROP EVENT IF EXISTS charging;    -- dynamic charging stations table
-CREATE EVENT charging
-ON SCHEDULE EVERY 1 SECOND
-STARTS CURRENT_TIMESTAMP ENDS CURRENT_TIMESTAMP + INTERVAL 1 HOUR
-DO 
-		UPDATE charging_stations 
-        SET robot_battery_level = IF(robot_battery_level + charging_rate>=100,100,robot_battery_level + charging_rate),
-			remaining_time = (100 - robot_battery_level)/charging_rate -- Accorging to charging rate, calculate robot_battery_level and charging time 
-		WHERE robot_battery_level <100;
-
-DROP TABLE IF EXISTS tasks;
-CREATE TABLE tasks (
-    task_id INT AUTO_INCREMENT,
-    task_type ENUM('GatherEnviromentInfo', 'Charging','ExecuteTask'),
-    start_time DATETIME,
-    target_id INT REFERENCES targets(target_id),
-    robot_id INT,
-    priority INT,
-    cur_status ENUM('Created', 'WaitingToRun', 'Running', 'RanToCompletion', 'Canceled','Error','ToReRun') DEFAULT 'Created',
-    dependency INT,
-    result varchar(255),
-    PRIMARY KEY (task_id)																																																																								
-);
-
-DROP TABLE IF EXISTS door_infos;
-CREATE TABLE door_infos(
-	door_id INT REFERENCES targets(target_id),
-    dependency INT REFERENCES targets(target_id),
-    last_update DATETIME DEFAULT '2020-06-01 9:00:00',
-    is_used BOOLEAN DEFAULT false,
-    PRIMARY KEY (door_id)	
-);	
-
-
 
 -- insert value to targets table
 INSERT INTO targets 
@@ -109,33 +48,61 @@ VALUES
 (15,'Door',3.2,1.5),
 (16,'Door',-4.0,1.5),
 (17,'ChargingStation',0.0,5.0),
-(18,'ChargingStation',-7.0,5.0),
-(19,'ChargingStation',-21.0,5.0),
+(18,'ChargingStation',-21.0,5.0),
 (20,'Point',-7.0,7.5),
 (21,'Point',-4.0,10.0),
 (22,'Point',3.0,4.0),
 (23,'Point',7.0,4.0);
 
+DROP TABLE IF EXISTS door_infos;
+CREATE TABLE door_infos(
+	door_id INT REFERENCES targets(target_id),
+    dependency INT REFERENCES targets(target_id),
+    last_update DATETIME DEFAULT '2020-06-01 9:00:00',
+    is_used BOOLEAN DEFAULT false,
+    PRIMARY KEY (door_id)	
+);	
+
 -- Create door dependencies
 INSERT INTO door_infos(door_id,dependency)
 VALUES
-(1,0),
-(2,1),
-(3,1),
-(4,1),
-(5,1),
-(6,1),
-(7,0),
-(8,7),
-(9,0),
-(10,0),
-(11,10),
-(12,10),
-(13,10),
-(14,0),
-(15,0),
-(16,0);
+(1,0), (2,1), (3,1), (4,1), (5,1), (6,1), (7,0), (8,7), (9,0), (10,0), (11,10), (12,10), (13,10), (14,0), (15,0), (16,0);
 
+drop table if exists measurements;
+CREATE TABLE measurements (
+    door_id INT REFERENCES targets(target_id),
+    door_status BOOLEAN,
+    date_time DATETIME,
+    CONSTRAINT Door_Date_Time UNIQUE (date_time , door_id)
+);
+
+drop table if exists open_possibilities;
+CREATE TABLE open_possibilities (
+    door_id INT REFERENCES targets(target_id),
+    day_of_week INT,
+    start_time TIME,
+    end_time TIME,
+    open_pos DOUBLE(4 , 1 ),
+    open_pos_st DOUBLE(4 , 1 ),
+    CONSTRAINT Door_Time UNIQUE (day_of_week , start_time , end_time , door_id)
+);
+
+-- fill in status list and possibility table
+CALL createPossibilityTable(16);
+
+DROP TABLE IF EXISTS tasks;
+CREATE TABLE tasks (
+    task_id INT AUTO_INCREMENT,
+    task_type ENUM('GatherEnviromentInfo', 'Charging','ExecuteTask'),
+    start_time DATETIME,
+    target_id INT REFERENCES targets(target_id),
+    robot_id INT,
+    priority INT,
+    cur_status ENUM('Created', 'WaitingToRun', 'Running', 'RanToCompletion', 'Canceled','Error','ToReRun') DEFAULT 'Created',
+    dependency INT,
+    result varchar(255),
+    PRIMARY KEY (task_id)																																																																								
+);
 
 -- Create some enter room task
 INSERT INTO tasks
@@ -143,15 +110,33 @@ VALUES
 -- task_id, task_type, start_time, target_id, robot_id, priority, cur_status, dependency, result
 (1, 'ExecuteTask', '2020-06-01 9:00:20', 20, NULL, 3, 'Created', 0, NULL),
 (2, 'ExecuteTask', '2020-06-01 9:00:30', 21, NULL, 3, 'Created', 1, NULL),
-(3, 'ExecuteTask', '2020-06-01 9:02:30', 22, NULL, 2, 'Created', 0, NULL),
-(4, 'ExecuteTask', '2020-06-01 9:03:00', 23, NULL, 2, 'Created', 3, NULL);
+(3, 'ExecuteTask', '2020-06-01 9:01:30', 22, NULL, 2, 'Created', 0, NULL),
+(4, 'ExecuteTask', '2020-06-01 9:02:00', 23, NULL, 2, 'Created', 3, NULL);
+
+
+DROP TABLE IF EXISTS  charging_stations;
+CREATE TABLE charging_stations(
+	station_id INT REFERENCES targets(target_id),
+    robot_battery_level INT DEFAULT 100,
+    charging_rate INT DEFAULT 5,
+    remaining_time TIME DEFAULT 0,
+    PRIMARY KEY (station_id)
+);
 
 -- insert charging station to table
 INSERT INTO charging_stations(station_id)
 SELECT target_id FROM targets WHERE target_type = 'ChargingStation';
- 
--- fill in status list and possibility table
-call createPossibilityTable(16);
+
+DROP EVENT IF EXISTS charging;    -- dynamic charging stations table
+CREATE EVENT charging
+ON SCHEDULE EVERY 1 SECOND
+STARTS CURRENT_TIMESTAMP ENDS CURRENT_TIMESTAMP + INTERVAL 1 HOUR
+DO 
+		UPDATE charging_stations 
+        SET robot_battery_level = IF(robot_battery_level + charging_rate>=100,100,robot_battery_level + charging_rate),
+			remaining_time = (100 - robot_battery_level)/charging_rate -- Accorging to charging rate, calculate robot_battery_level and charging time 
+		WHERE robot_battery_level <100;
+
 
 DROP TRIGGER IF EXISTS last_update_trigger;
 DELIMITER ;;

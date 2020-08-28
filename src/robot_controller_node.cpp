@@ -3,6 +3,7 @@
 // #include "robot_navigation/make_task.h"
 #include "robot_navigation/GetATask.h"
 #include "robot_navigation/RunTaskAction.h"
+#include "robot_navigation/ChargingAction.h"
 #include <cmath>
 #include <sstream>
 #include <move_base_msgs/MoveBaseAction.h>
@@ -15,6 +16,7 @@
 #include "util.h"
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/condition_variable.hpp>
+#include "task_type.h"
 
 #define SENSOR_RANGE 1
 #define MAX_TASK_DURATION 10
@@ -28,7 +30,7 @@ public:
     _battery(100),
     _movLock(_mtx),
     _mbc("move_base", true),
-    _gas(_nh,"run_task_action",boost::bind(&RobotController::ExecuteCallback,this,_1),false)
+    rts(_nh,"run_task_action",boost::bind(&RobotController::ExecuteCallback,this,_1),false)
     {
         Init();
         RequestTask();
@@ -58,7 +60,7 @@ public:
             ROS_INFO("Waiting for the /GetATask service to come up");
         }
 
-        _gas.start();  // start receive goal from server
+        rts.start();  // start receive goal from server
         ROS_INFO_STREAM("Robot "<<_robotId << " finish initializing");
     }
 
@@ -124,17 +126,22 @@ public:
         ROS_INFO_STREAM("Get a task from pool\n"<<*task);
         _rs.isCompleted = false;
         _rs.taskIds = task->taskIds;
-        _rs.targetIds = task->targetIds;
+        // _rs.targetIds = task->targetIds;
         _rs.taskType = task->taskType;
         
         for(size_t i = 0; i < task->taskIds.size(); i++){
-            _tasks.push_back(make_pair(task->taskIds[i],task->goals[i]));
+            SmallTask st;
+            st.goal = task->goals[i];
+            st.taskId = task->taskIds[i];
+            st.taskType = task->taskType[i];
+            st.targetId = task->targetIds[i];
+            _sts.push_back(st);
         }
         // Wait until task time
         ros::Time now = ros::Time::now();
         if(task->goals[0].header.stamp < now ){
             ROS_INFO_STREAM("Task "<< task->taskIds[0] << " is expired");
-            _gas.setAborted(_rs);
+            rts.setAborted(_rs);
             RequestTask(); // Get a new task
             return;
         }else if (task->goals[0].header.stamp > now - ros::Duration(1)) {
@@ -143,14 +150,14 @@ public:
         
         // Start task
         if (task->taskType == "Charging" ){
-            StartChargingTask(task->goals[0]);
+            StartChargingTask();
         }else if (task->taskType == "GatherEnviromentInfo" ){
-            StartGatherInviromentTask(task->goals[0]);
+            StartGatherInviromentTask();
         }else if (task->taskType == "ExecuteTask" ){
             StartSmallExecuteTask();
         }else{
             ROS_INFO_STREAM("Unknown task");
-            _gas.setAborted(_rs);
+            rts.setAborted(_rs);
             return;
         }
 
@@ -159,37 +166,59 @@ public:
         
         // Set task succeeded
         if(_rs.isCompleted == true){
-            _gas.setSucceeded(_rs);   
+            rts.setSucceeded(_rs);   
         }else{
-            _gas.setAborted(_rs);
+            rts.setAborted(_rs);
         }
-        ROS_INFO_STREAM("report task result "<<_rs);       
+        ROS_INFO_STREAM("report task result "<<_rs); 
+        _sts.clear(); // Delete task record
         RequestTask(); // Get a new task
     }
 
-    void StartChargingTask(geometry_msgs::PoseStamped cs){
+    void StartChargingTask(){
         ROS_INFO_STREAM(" Start charging task");
         move_base_msgs::MoveBaseGoal goal;
-        goal.target_pose = cs;
+        goal.target_pose = _sts.back().goal;
         _mbc.sendGoal(goal,
-                boost::bind(&RobotController::WhenChargingTaskComplete,this, _1, _2),
-                actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction>::SimpleActiveCallback(),
+                boost::bind(&RobotController::WhenArriveChargingStation,this, _1, _2),
+                boost::bind(&RobotController::StartMoving,this),
                 boost::bind(&RobotController::MoveBasePositionFeedback,this, _1)
         ); 
     }
 
-    void WhenChargingTaskComplete(const actionlib::SimpleClientGoalState& state,
+    void WhenArriveChargingStation(const actionlib::SimpleClientGoalState& s1,
            const move_base_msgs::MoveBaseResult::ConstPtr& result ){
-             ROS_INFO_STREAM("charging 5s....");
-            ros::Duration(5).sleep(); // charging for 5sec
-            _battery = 100;
+            int stationId = _sts.front().targetId;
+            if(s1!= actionlib::SimpleClientGoalState::SUCCEEDED){
+                ROS_INFO("Move to charging station failed");
+                _rs.isCompleted = false;
+                return;
+            }else{
+                // Send request to charging station node
+                actionlib::SimpleActionClient<robot_navigation::ChargingAction> _cc("charging_action_"+ to_string(stationId),true);
+                ROS_INFO("Start charging at charging station %d",stationId);
+                robot_navigation::ChargingGoal g;
+                g.battery = _battery;
+                g.robotId = _robotId;
+                actionlib::SimpleClientGoalState s2 = _cc.sendGoalAndWait(g,ros::Duration(100));
+                if(s2 == actionlib::SimpleClientGoalState::SUCCEEDED){
+                    ROS_INFO("Charging Succeeded");
+                    _rs.isCompleted = true;
+                    _battery = 100;
+                }else
+                {
+                    ROS_INFO("Charging failed");
+                    _rs.isCompleted = false;
+                }
+            }
+
             _movCv.notify_all();
     }
  
-    void StartGatherInviromentTask(geometry_msgs::PoseStamped door){
+    void StartGatherInviromentTask(){
         ROS_INFO_STREAM(" Start gather enviroment");
         move_base_msgs::MoveBaseGoal goal;
-        goal.target_pose = door;
+        goal.target_pose = _sts.front().goal;
         _mbc.sendGoal(goal,
                 boost::bind(&RobotController::WhenGatherInviromentTaskComplete,this, _1, _2),
                 boost::bind(&RobotController::StartMoving,this),
@@ -210,9 +239,9 @@ public:
     }
 
     void StartSmallExecuteTask(){
-        ROS_INFO(" Start execute task %d",_tasks.front().first);
+        ROS_INFO(" Start execute task %d",_sts.front().taskId);
         move_base_msgs::MoveBaseGoal goal;
-        goal.target_pose = _tasks.front().second; // get first task in queue
+        goal.target_pose = _sts.front().goal; // get first task in queue
         _mbc.sendGoal(goal,
                 boost::bind(&RobotController::WhenSmallExecuteTaskCompleted,this, _1, _2),
                 boost::bind(&RobotController::StartMoving,this),
@@ -232,17 +261,17 @@ public:
            const move_base_msgs::MoveBaseResult::ConstPtr& result ){
           
         if(state == actionlib::SimpleClientGoalState::SUCCEEDED ){ // If a small task succedd, delete it
-            ROS_INFO("Execute task %d succeeded",_tasks.front().first);
-            _tasks.pop_front();
-            if(_tasks.empty()){  // If there are no small task remain, large task succedd.
+            ROS_INFO("Execute task %d succeeded",_sts.front().taskId);
+            _sts.pop_front();
+            if(_sts.empty()){  // If there are no small task remain, large task succedd.
                 _rs.isCompleted = true;
                 _movCv.notify_all();
             }else{ // start next small task
-                GoToSleep(_tasks.front().second.header.stamp - ros::Duration(1));
+                GoToSleep(_sts.front().goal.header.stamp - ros::Duration(1));
                 StartSmallExecuteTask();
             }
         }else {
-            ROS_INFO("Execute task %d failed",_tasks.front().first);
+            ROS_INFO("Execute task %d failed",_sts.front().taskId);
             _movCv.notify_all();
         }
     }
@@ -259,7 +288,7 @@ public:
             _fb.measureTime = message->stamp;
             _fb.doorStatus = message->doorStatus;
             _fb.robotId = _robotId;
-            _gas.publishFeedback(_fb);
+            rts.publishFeedback(_fb);
         }
     }
 
@@ -301,20 +330,17 @@ private:
     // client
     ros::ServiceClient _tc;
     actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> _mbc;
-    actionlib::SimpleActionServer<robot_navigation::RunTaskAction> _gas;
+    actionlib::SimpleActionServer<robot_navigation::RunTaskAction> rts;
     
+
     robot_navigation::RunTaskFeedback _fb;
     robot_navigation::RunTaskResult _rs;
 
     geometry_msgs::PoseStamped _cp;
     
-    std::deque<std::pair<int,geometry_msgs::PoseStamped>> _tasks;
+    std::deque<SmallTask> _sts;
+
     ros::Timer _timer;
-
-    // int _taskId;
-    // int _targetId;
-    // string _taskType; 
-
 };
 
 int main(int argc, char **argv){

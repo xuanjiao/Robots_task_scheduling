@@ -14,7 +14,7 @@
 #include <queue>
 
 #define CHECK_DB_PERIOD 10
-
+#define CHARGING_THRESHOLD 95 
 
 typedef actionlib::SimpleActionClient<robot_navigation::RunTaskAction> RunTaskActionClient;                                                                                                                                                                                  ;
 
@@ -47,7 +47,7 @@ public:
         ROS_INFO("REQUEST from Robot %d (%f,%f) battery %f",req.robotId,req.pose.position.x,req.pose.position.y,req.batteryLevel);
         
         ROS_INFO_STREAM("Current time: "<<Util::time_str(ros::Time::now()));
-        if(req.batteryLevel < 20){ // need charging
+        if(req.batteryLevel < CHARGING_THRESHOLD){ // need charging
             SmallTask bt = _tm.CreateBestChargingTask(req.pose);
             SendRobotSmallTask(bt,req.robotId); // send goal to robot
         }else{
@@ -65,11 +65,11 @@ public:
 
      // call back when receive a door status from robot 
     void WhenReceiveInfoFromRobot(const robot_navigation::RunTaskFeedbackConstPtr &feedback){
-        ROS_INFO("/nFEEDBACK from Robot %d : Time %s isOpen %d",feedback->robotId,Util::time_str(feedback->measureTime).c_str(),feedback->doorStatus);
+        ROS_INFO("/n FEEDBACK from Robot %d : Time %s isOpen %d",feedback->robotId,Util::time_str(feedback->measureTime).c_str(),feedback->doorStatus);
         
         int r = _sc.InsertDoorStatusRecord(feedback->doorId,feedback->measureTime,feedback->doorStatus); 
         int u = _sc.UpdateOpenPossibilities(feedback->doorId,feedback->measureTime);
-        ROS_INFO("   Insert %d record, update %d rows in possibility table",r,u);
+        ROS_INFO("/n Insert %d record, update %d rows in possibility table",r,u);
         
     }
 

@@ -21,17 +21,17 @@ public:
 
     void initActionServer(){
         // _as.(_nh,serviceName,boost::bind(&ChargingStation::ExecuteCallback,this,_1),false));
-
+        ROS_INFO("Charging station %d start",_id); 
     }
 
     void ExecuteCallback(const robot_navigation::ChargingGoalConstPtr &robot){
         robot_navigation::ChargingResult rs;
         ChargingStation cs1,cs2,cs3;
         ROS_INFO("Station %d: Start charging for robot %d (%d)...",_id,robot->robotId,robot->battery);
-        
-        int ret = _sc.UpdateChargingStationInfo(cs1);
-        
+        cs1.batteryLevel = robot->battery;
+        cs1.stationId = _id;
 
+        int ret = _sc.UpdateChargingStationInfo(cs1);
         if(ret != 0 ){
             ROS_INFO("Update station %d succedded",_id);
             cs2 = _sc.QueryChargingStationInfo(_id);
