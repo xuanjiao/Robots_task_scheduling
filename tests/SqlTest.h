@@ -119,12 +119,12 @@ TEST_F(SqlTest,TaskUpdateStatus){
     ASSERT_EQ(ret,1);
 }
 
-TEST_F(SqlTest,TaskUpdateResult){
+TEST_F(SqlTest,TaskUpdateDescription){
     SmallExecuteTask t;
     t.targetId = 5;
     t.taskType = "GatherEnviromentInfo";
     t.taskId = sc->InsertATaskAssignId(t); 
-    int ret = sc->UpdateTaskResult(t.taskId,"Succeeded");
+    int ret = sc->UpdateTaskDescription(t.taskId,"Succeeded");
 
     ASSERT_EQ(ret,1);
 }

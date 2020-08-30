@@ -208,6 +208,8 @@ class SQLClient{
     cs.remainingTime = res->getInt64("t");
     cs.pose.position.x = res->getDouble("position_x");
     cs.pose.position.y = res->getDouble("position_y");
+    cs.pose.orientation.w = 1.0;
+
     delete res;
     _sqlMtx.unlock();
     return cs;
@@ -234,6 +236,7 @@ class SQLClient{
       cs.remainingTime = res->getInt64("t");
       cs.pose.position.x = res->getDouble("position_x");
       cs.pose.position.y = res->getDouble("position_y");
+      cs.pose.orientation.w = 1.0;
       css.push_back(cs);
     }
     delete res;
@@ -387,9 +390,10 @@ class SQLClient{
     _sqlMtx.unlock();
     return ret;    
   }
-  int UpdateTaskResult(int taskId, string result){
+  
+  int UpdateTaskDescription(int taskId, string description){
     _sqlMtx.lock();
-    int ret =  stmt->executeUpdate("UPDATE tasks set result = '"+ result + "' WHERE task_id = " + to_string(taskId));
+    int ret =  stmt->executeUpdate("UPDATE tasks set description = '"+ description + "' WHERE task_id = " + to_string(taskId));
     _sqlMtx.unlock();
     return ret;
   }

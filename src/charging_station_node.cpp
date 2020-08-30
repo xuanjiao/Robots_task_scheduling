@@ -21,6 +21,7 @@ public:
 
     void initActionServer(){
         ROS_INFO("Charging station %d start",_id); 
+        _as.start();
     }
 
     void ExecuteCallback(const robot_navigation::ChargingGoalConstPtr &robot){

@@ -2,6 +2,7 @@
 #include <iostream>
 #include <stdlib.h>
 #include <sstream>
+#include <vector>
 #include <geometry_msgs/PoseStamped.h>
 #include "util.h"
 
@@ -12,8 +13,22 @@ public:
     int taskId = 0;
     string taskType = "";
     int priority = 0;
-
     virtual string getTaskInfo() = 0;
+};
+
+class TaskRecord{
+public:
+    int taskId = 0;
+    bool isOpen = false;
+    int door_id;
+};
+
+class TaskResult{
+public:
+    vector<int> taskIds;
+    bool isCompleted = false;
+    string taskType;
+    string description;
 };
 
 class SmallTask: public AbstractTask{

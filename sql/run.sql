@@ -110,11 +110,13 @@ CREATE TABLE tasks (
     target_id INT REFERENCES targets(target_id),
     robot_id INT,
     priority INT,
-    cur_status ENUM('Created', 'WaitingToRun', 'Running', 'RanToCompletion', 'Canceled','Error','ToReRun') DEFAULT 'Created',
+    cur_status varchar(255) DEFAULT 'Created',
     dependency INT,
-    result varchar(255),
+    description varchar(255),
     PRIMARY KEY (task_id)																																																																								
 );
+
+-- ENUM('Created', 'WaitingToRun', 'Running', 'RanToCompletion', 'Canceled','Error','ToReRun') 
 
 -- Create some enter room task
 INSERT INTO tasks

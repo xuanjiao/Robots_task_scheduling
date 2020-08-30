@@ -105,22 +105,26 @@ public:
         return st;
     }
 
-    void HandleFailedTask(string taskType,const vector<int>& taskIds){
-        if(taskType == "GatherEnviromentInfo"){
-            _sc.UpdateTaskStatus(taskIds[0],"Error");
-        }else if (taskType == "Charging"){
-            _sc.UpdateTaskStatus(taskIds[0],"Canceled");
-        }else if(taskType == "ExecuteTask"){
-            // Change task status from Running to ToReRun, increase priority 3 and increase 60200s start time 
-            _sc.UpdateFailedExecuteTask(taskIds);
-        }else{
-            ROS_INFO("Get a unknown task");
-        }        
-    }
 
-    void HandleSucceededTask(const vector<int>& taskIds){
-        for(auto it = taskIds.begin(); it != taskIds.end(); it++)
-            ROS_INFO("Task Succedd. Update %d task status",_sc.UpdateTaskStatus(*it,"RanToCompletion"));
+    void HandleTaskResult(TaskResult& result){
+        if(result.isCompleted){
+            for(auto it = result.taskIds.begin(); it != result.taskIds.end(); it++){
+                _sc.UpdateTaskStatus(*it,"RanToCompletion");
+                _sc.UpdateTaskDescription(*it,result.description);
+                // ROS_INFO("Task Succedd. Update %d task status");
+            }
+        }else{
+            if(result.taskType == "GatherEnviromentInfo"){
+                _sc.UpdateTaskStatus(result.taskIds[0],"Error");
+            }else if (result.taskType == "Charging"){
+                _sc.UpdateTaskStatus(result.taskIds[0],"Canceled");
+            }else if(result.taskType == "ExecuteTask"){
+                // Change task status from Running to ToReRun, increase priority 3 and increase 60200s start time 
+                _sc.UpdateFailedExecuteTask(result.taskIds);
+            }else{
+                ROS_INFO("Get a unknown task");
+            } 
+        }
     }
 
     void AfterSendingTask(int taskId, int robotId){

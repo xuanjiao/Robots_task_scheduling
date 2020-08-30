@@ -69,6 +69,7 @@ public:
         ROS_INFO_STREAM("Timeout. Check move base action status = "<<state.toString());
         if( state != actionlib::SimpleClientGoalState::ACTIVE){
           _rs.isCompleted = false;
+          _rs.description = "Move base state: " + _mbc.getState().toString();
           _mbc.cancelGoal();
           _movCv.notify_all();
           ROS_INFO("Cancel goal");
