@@ -87,7 +87,7 @@ public:
             ROS_INFO("No door data in database");
             exit(1);
         }
-        ROS_INFO_STREAM("Id battery level remaining time Cost");
+        ROS_INFO_STREAM("Id remaining time battery level  Cost");
         ROS_INFO("-----------------------------------------------------------------------------");
         for(ChargingStation& cs : css){
                 _cc.CalculateChargingStationCost(cs,robotPose);     

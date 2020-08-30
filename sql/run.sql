@@ -119,13 +119,15 @@ CREATE TABLE tasks (
 -- ENUM('Created', 'WaitingToRun', 'Running', 'RanToCompletion', 'Canceled','Error','ToReRun') 
 
 -- Create some enter room task
--- INSERT INTO tasks
--- VALUES
+INSERT INTO tasks
+VALUES
 -- -- task_id, task_type, start_time, target_id, robot_id, priority, cur_status, dependency, result
--- (1, 'ExecuteTask', '2020-06-01 9:00:20', 20, NULL, 3, 'Created', 0, NULL),
--- (2, 'ExecuteTask', '2020-06-01 9:00:30', 21, NULL, 3, 'Created', 1, NULL),
--- (3, 'ExecuteTask', '2020-06-01 9:01:00', 22, NULL, 2, 'Created', 0, NULL),
--- (4, 'ExecuteTask', '2020-06-01 9:01:30', 23, NULL, 2, 'Created', 3, NULL);
+(1, 'ExecuteTask', '2020-06-01 9:00:20', 20, NULL, 3, 'Created', 0, NULL),
+(2, 'ExecuteTask', '2020-06-01 9:00:30', 1, NULL, 3, 'Created', 0, NULL),
+(3, 'ExecuteTask', '2020-06-01 9:00:40', 5, NULL, 3, 'Created', 0, NULL),
+(4, 'ExecuteTask', '2020-06-01 9:00:30', 21, NULL, 3, 'Created', 1, NULL),
+(5, 'ExecuteTask', '2020-06-01 9:01:00', 22, NULL, 2, 'Created', 0, NULL),
+(6, 'ExecuteTask', '2020-06-01 9:01:30', 23, NULL, 2, 'Created', 3, NULL);
 -- 
 
 -- Create task table --------
