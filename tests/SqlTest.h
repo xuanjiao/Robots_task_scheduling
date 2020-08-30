@@ -72,7 +72,7 @@ TEST_F(SqlTest,QueryChargingStationInfo){
     ASSERT_EQ(cs.remainingTime,0);
     ASSERT_EQ(cs.batteryLevel,100);
     vector<ChargingStation> v = sc->QueryChargingStationInfo();
-    ASSERT_EQ(v.size(),3);
+    ASSERT_EQ(v.size(),2);
     ASSERT_EQ(v[0].remainingTime,0);
     ASSERT_EQ(v[0].batteryLevel,100);
 
@@ -115,6 +115,17 @@ TEST_F(SqlTest,TaskUpdateStatus){
     t.taskType = "GatherEnviromentInfo";
     t.taskId = sc->InsertATaskAssignId(t); 
     int ret = sc->UpdateTaskStatus(t.taskId,"Running");
+
+    ASSERT_EQ(ret,1);
+}
+
+TEST_F(SqlTest,TaskUpdateResult){
+    SmallExecuteTask t;
+    t.targetId = 5;
+    t.taskType = "GatherEnviromentInfo";
+    t.taskId = sc->InsertATaskAssignId(t); 
+    int ret = sc->UpdateTaskResult(t.taskId,"Succeeded");
+
     ASSERT_EQ(ret,1);
 }
 

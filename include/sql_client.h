@@ -387,6 +387,12 @@ class SQLClient{
     _sqlMtx.unlock();
     return ret;    
   }
+  int UpdateTaskResult(int taskId, string result){
+    _sqlMtx.lock();
+    int ret =  stmt->executeUpdate("UPDATE tasks set result = '"+ result + "' WHERE task_id = " + to_string(taskId));
+    _sqlMtx.unlock();
+    return ret;
+  }
 
   int UpdateTaskRobotId(int taskId, int robotId){
     _sqlMtx.lock();

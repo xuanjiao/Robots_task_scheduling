@@ -54,6 +54,9 @@ VALUES
 (22,'Point',3.0,4.0),
 (23,'Point',7.0,4.0);
 
+
+-- Create door info table -------
+
 DROP TABLE IF EXISTS door_infos;
 CREATE TABLE door_infos(
 	door_id INT REFERENCES targets(target_id),
@@ -63,10 +66,15 @@ CREATE TABLE door_infos(
     PRIMARY KEY (door_id)	
 );	
 
--- Create door dependencies
+
 INSERT INTO door_infos(door_id,dependency)
 VALUES
 (1,0), (2,1), (3,1), (4,1), (5,1), (6,1), (7,0), (8,7), (9,0), (10,0), (11,10), (12,10), (13,10), (14,0), (15,0), (16,0);
+
+-- Create door info table finished-------
+
+
+-- Create measurement and possibility table --------
 
 drop table if exists measurements;
 CREATE TABLE measurements (
@@ -87,8 +95,12 @@ CREATE TABLE open_possibilities (
     CONSTRAINT Door_Time UNIQUE (day_of_week , start_time , end_time , door_id)
 );
 
--- fill in status list and possibility table
+
 CALL createPossibilityTable(16);
+
+-- Create measurement and possibility table finished --------
+
+-- Create task table --------
 
 DROP TABLE IF EXISTS tasks;
 CREATE TABLE tasks (
@@ -110,9 +122,13 @@ VALUES
 -- task_id, task_type, start_time, target_id, robot_id, priority, cur_status, dependency, result
 (1, 'ExecuteTask', '2020-06-01 9:00:20', 20, NULL, 3, 'Created', 0, NULL),
 (2, 'ExecuteTask', '2020-06-01 9:00:30', 21, NULL, 3, 'Created', 1, NULL),
-(3, 'ExecuteTask', '2020-06-01 9:01:30', 22, NULL, 2, 'Created', 0, NULL),
-(4, 'ExecuteTask', '2020-06-01 9:02:00', 23, NULL, 2, 'Created', 3, NULL);
+(3, 'ExecuteTask', '2020-06-01 9:01:00', 22, NULL, 2, 'Created', 0, NULL),
+(4, 'ExecuteTask', '2020-06-01 9:01:30', 23, NULL, 2, 'Created', 3, NULL);
 
+
+-- Create task table --------
+
+-- Create charging station table --------
 
 DROP TABLE IF EXISTS  charging_stations;
 CREATE TABLE charging_stations(
@@ -123,9 +139,14 @@ CREATE TABLE charging_stations(
     PRIMARY KEY (station_id)
 );
 
--- insert charging station to table
 INSERT INTO charging_stations(station_id)
 SELECT target_id FROM targets WHERE target_type = 'ChargingStation';
+
+-- Create charging station table finished--------
+
+
+
+-- Create charging trigger, update info by time --------
 
 DROP EVENT IF EXISTS charging;    -- dynamic charging stations table
 CREATE EVENT charging
@@ -137,6 +158,9 @@ DO
 			remaining_time = (100 - robot_battery_level)/charging_rate -- Accorging to charging rate, calculate robot_battery_level and charging time 
 		WHERE robot_battery_level <100;
 
+-- Create charging trigger finished --------
+
+-- Create last update trigger, update last_update column --------
 
 DROP TRIGGER IF EXISTS last_update_trigger;
 DELIMITER ;;
@@ -150,6 +174,10 @@ END;
 ;;
 DELIMITER ;
 
+-- Create last update trigger ---
+
+-- Create door_used trigger --
+
 DROP TRIGGER IF EXISTS door_used;
 DELIMITER ;;
 CREATE TRIGGER door_used
@@ -162,10 +190,9 @@ END;
 ;;
 DELIMITER ;
 
+-- Create door_used finished --		
 
-
-
-																																																																							
+-- Print all tables --
 SELECT * FROM measurements;
 SELECT * FROM open_possibilities;
 SELECT * FROM targets;

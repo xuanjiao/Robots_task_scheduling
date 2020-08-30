@@ -126,7 +126,6 @@ public:
         ROS_INFO_STREAM("Get a task from pool\n"<<*task);
         _rs.isCompleted = false;
         _rs.taskIds = task->taskIds;
-        // _rs.targetIds = task->targetIds;
         _rs.taskType = task->taskType;
         
         for(size_t i = 0; i < task->taskIds.size(); i++){
@@ -141,6 +140,8 @@ public:
         ros::Time now = ros::Time::now();
         if(task->goals[0].header.stamp < now ){
             ROS_INFO_STREAM("Task "<< task->taskIds[0] << " is expired");
+            _rs.isCompleted = false;
+            _rs.description = "Task " + to_string(task->taskIds[0]) + " is expired";
             rts.setAborted(_rs);
             RequestTask(); // Get a new task
             return;
@@ -157,6 +158,8 @@ public:
             StartSmallExecuteTask();
         }else{
             ROS_INFO_STREAM("Unknown task");
+            _rs.isCompleted = false;
+            _rs.description = "Task type unknown";
             rts.setAborted(_rs);
             return;
         }
@@ -192,6 +195,7 @@ public:
             if(s1!= actionlib::SimpleClientGoalState::SUCCEEDED){
                 ROS_INFO("Move to charging station failed");
                 _rs.isCompleted = false;
+                _rs.description = "Moving failed";
                 return;
             }else{
                 // Send request to charging station node
@@ -204,11 +208,13 @@ public:
                 if(s2 == actionlib::SimpleClientGoalState::SUCCEEDED){
                     ROS_INFO("Charging Succeeded");
                     _rs.isCompleted = true;
+                    _rs.description = "Succeeded";
                     _battery = 100;
                 }else
                 {
                     ROS_INFO("Charging failed");
                     _rs.isCompleted = false;
+                    _rs.description = "Send charging goal failed";
                 }
             }
 
@@ -232,8 +238,11 @@ public:
         if(state == actionlib::SimpleClientGoalState::SUCCEEDED ){
             ROS_INFO_STREAM("GatherInviromentTask succeeded");
             _rs.isCompleted = true;
+            _rs.description = "Succeeded";
         }else {
             ROS_INFO_STREAM("GatherInviromentTask failed");
+            _rs.isCompleted = false;
+            _rs.description = "Moving failed";
         }
         _movCv.notify_all();
     }
@@ -265,6 +274,7 @@ public:
             _sts.pop_front();
             if(_sts.empty()){  // If there are no small task remain, large task succedd.
                 _rs.isCompleted = true;
+                 _rs.description = "Succeeded";
                 _movCv.notify_all();
             }else{ // start next small task
                 GoToSleep(_sts.front().goal.header.stamp - ros::Duration(1));
@@ -272,6 +282,8 @@ public:
             }
         }else {
             ROS_INFO("Execute task %d failed",_sts.front().taskId);
+            _rs.description = "task " + to_string(_sts.front().taskId) + " failed";
+            _rs.isCompleted = false;
             _movCv.notify_all();
         }
     }

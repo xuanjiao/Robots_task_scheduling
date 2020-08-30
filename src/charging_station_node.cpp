@@ -20,7 +20,6 @@ public:
     }
 
     void initActionServer(){
-        // _as.(_nh,serviceName,boost::bind(&ChargingStation::ExecuteCallback,this,_1),false));
         ROS_INFO("Charging station %d start",_id); 
     }
 

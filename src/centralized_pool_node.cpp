@@ -14,7 +14,7 @@
 #include <queue>
 
 #define CHECK_DB_PERIOD 10
-#define CHARGING_THRESHOLD 95 
+#define CHARGING_THRESHOLD 97 
 
 typedef actionlib::SimpleActionClient<robot_navigation::RunTaskAction> RunTaskActionClient;                                                                                                                                                                                  ;
 
@@ -65,11 +65,11 @@ public:
 
      // call back when receive a door status from robot 
     void WhenReceiveInfoFromRobot(const robot_navigation::RunTaskFeedbackConstPtr &feedback){
-        ROS_INFO("/n FEEDBACK from Robot %d : Time %s isOpen %d",feedback->robotId,Util::time_str(feedback->measureTime).c_str(),feedback->doorStatus);
+        ROS_INFO("\n FEEDBACK from Robot %d : Time %s isOpen %d",feedback->robotId,Util::time_str(feedback->measureTime).c_str(),feedback->doorStatus);
         
         int r = _sc.InsertDoorStatusRecord(feedback->doorId,feedback->measureTime,feedback->doorStatus); 
         int u = _sc.UpdateOpenPossibilities(feedback->doorId,feedback->measureTime);
-        ROS_INFO("/n Insert %d record, update %d rows in possibility table",r,u);
+        ROS_INFO("\n Insert %d record, update %d rows in possibility table",r,u);
         
     }
 
