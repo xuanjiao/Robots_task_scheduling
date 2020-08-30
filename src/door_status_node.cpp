@@ -20,7 +20,7 @@ class Advertiser{
         sql_client.ConnectToDatabase("door_simulator","pass");
         sql_client.PrintTable("targets");
         // load_room_position();
-        pub = nh.advertise<robot_navigation::sensor_data>("sensor_data",100);
+        pub = nh.advertise<robot_navigation::sensor_data>("sensor_data",50);
     }
 
     void queryPublushDoorStatus(){

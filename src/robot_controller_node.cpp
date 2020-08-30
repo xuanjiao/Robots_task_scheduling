@@ -18,7 +18,7 @@
 #include <boost/thread/condition_variable.hpp>
 #include "task_type.h"
 
-#define SENSOR_RANGE 1
+#define SENSOR_RANGE 0.5
 #define MAX_TASK_DURATION 10
 using namespace std;
 
@@ -313,6 +313,17 @@ public:
             _fb.robotId = _robotId;
             rts.publishFeedback(_fb);
         }
+
+        if(_fb.doorId == 1 &&  _fb.doorStatus == 0){
+            if(_cp.pose.position.y > 5.3 && 
+                _cp.pose.position.y < 6.3 )
+                ){
+                ROS_INFO_STREAM("Robot Stop at door 1");
+                _mbc.cancelGoal();
+                _rs.description = "Door 1 closed";
+                _movCv.notify_all();
+            }
+        }
     }
 
         
@@ -327,10 +338,13 @@ public:
             if(_battery == 0){
                 ROS_INFO_STREAM("Robot battery ran out. Stop");
                 _mbc.cancelGoal();
+                _rs.description = "Robot battery ran out";
                 _movCv.notify_all();
             }else{
                 _battery=  _battery - 0.01 * distance - 0.001 * angle;
             }
+
+ 
      }
              
 private:

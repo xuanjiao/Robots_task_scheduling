@@ -116,8 +116,10 @@ public:
         }else{
             if(result.taskType == "GatherEnviromentInfo"){
                 _sc.UpdateTaskStatus(result.taskIds[0],"Error");
+                _sc.UpdateTaskDescription(result.taskIds[0],result.description);
             }else if (result.taskType == "Charging"){
                 _sc.UpdateTaskStatus(result.taskIds[0],"Canceled");
+                 _sc.UpdateTaskDescription(result.taskIds[0],result.description);
             }else if(result.taskType == "ExecuteTask"){
                 // Change task status from Running to ToReRun, increase priority 3 and increase 60200s start time 
                 _sc.UpdateFailedExecuteTask(result.taskIds);
