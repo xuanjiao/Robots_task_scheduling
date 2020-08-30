@@ -200,12 +200,22 @@ public:
                 return;
             }else{
                 // Send request to charging station node
-                actionlib::SimpleActionClient<robot_navigation::ChargingAction> _cc("charging_action_"+ to_string(stationId),true);
-                ROS_INFO("Start charging at charging station %d",stationId);
+                string service = "/charging_action_"+ to_string(stationId);
+                actionlib::SimpleActionClient<robot_navigation::ChargingAction> _cc(_nh,service);
+                bool started = false; 
+                while(!started){
+                    started = _cc.waitForServer(ros::Duration(10.0));
+                    ROS_INFO_STREAM("Timeout. Failed to connect to server "<< service);
+                }
+                ROS_INFO_STREAM("connect to server "<<  service);
+                ROS_INFO_STREAM("Start charging at station "<< stationId);
                 robot_navigation::ChargingGoal g;
                 g.battery = _battery;
                 g.robotId = _robotId;
-                actionlib::SimpleClientGoalState s2 = _cc.sendGoalAndWait(g,ros::Duration(100));
+                actionlib::SimpleClientGoalState s2(actionlib::SimpleClientGoalState::LOST);
+
+
+                s2 = _cc.sendGoalAndWait(g,ros::Duration(10,0),ros::Duration(10,0));
                 if(s2 == actionlib::SimpleClientGoalState::SUCCEEDED){
                     ROS_INFO("Charging Succeeded");
                     _rs.isCompleted = true;
@@ -215,7 +225,7 @@ public:
                 {
                     ROS_INFO("Charging failed");
                     _rs.isCompleted = false;
-                    _rs.description = "Send charging goal failed";
+                    _rs.description = "Charging action failed";
                 }
             }
 

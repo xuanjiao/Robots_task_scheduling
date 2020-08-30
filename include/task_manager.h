@@ -109,9 +109,9 @@ public:
     void HandleTaskResult(TaskResult& result){
         if(result.isCompleted){
             for(auto it = result.taskIds.begin(); it != result.taskIds.end(); it++){
-                _sc.UpdateTaskStatus(*it,"RanToCompletion");
-                _sc.UpdateTaskDescription(*it,result.description);
-                // ROS_INFO("Task Succedd. Update %d task status");
+                int ret1 = _sc.UpdateTaskStatus(*it,"RanToCompletion");
+                int ret2 = _sc.UpdateTaskDescription(*it,result.description);
+                ROS_INFO("Task Succedd. Update task status %d description %d",ret1,ret2);
             }
         }else{
             if(result.taskType == "GatherEnviromentInfo"){

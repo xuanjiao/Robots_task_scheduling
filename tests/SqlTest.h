@@ -71,16 +71,17 @@ TEST_F(SqlTest,QueryChargingStationInfo){
     auto cs = sc->QueryChargingStationInfo(17);
     ASSERT_EQ(cs.remainingTime,0);
     ASSERT_EQ(cs.batteryLevel,100);
+    ros::Duration(1).sleep();
     vector<ChargingStation> v = sc->QueryChargingStationInfo();
     ASSERT_EQ(v.size(),2);
-    ASSERT_EQ(v[0].remainingTime,0);
-    ASSERT_EQ(v[0].batteryLevel,100);
+    ASSERT_GT(v[0].remainingTime,0);
+    ASSERT_LT(v[0].batteryLevel,100);
 
 }
 
 TEST_F(SqlTest,UpdateChargingStationInfo){
     ChargingStation cs;
-    cs.stationId = 17;
+    cs.stationId = 18;
     cs.batteryLevel = 10;
     int ret = sc->UpdateChargingStationInfo(cs);
     ASSERT_EQ(ret,1);

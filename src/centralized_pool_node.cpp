@@ -14,7 +14,7 @@
 #include <queue>
 
 #define CHECK_DB_PERIOD 10
-#define CHARGING_THRESHOLD 98 
+#define CHARGING_THRESHOLD 97
 
 typedef actionlib::SimpleActionClient<robot_navigation::RunTaskAction> RunTaskActionClient;                                                                                                                                                                                  ;
 
@@ -47,7 +47,7 @@ public:
         ROS_INFO("REQUEST from Robot %d (%f,%f) battery %f",req.robotId,req.pose.position.x,req.pose.position.y,req.batteryLevel);
         
         ROS_INFO_STREAM("Current time: "<<Util::time_str(ros::Time::now()));
-        if(req.batteryLevel < CHARGING_THRESHOLD){ // need charging
+        if(req.batteryLevel <= CHARGING_THRESHOLD){ // need charging
             SmallTask bt = _tm.CreateBestChargingTask(req.pose);
             SendRobotSmallTask(bt,req.robotId); // send goal to robot
         }else{
@@ -80,8 +80,13 @@ public:
         TaskResult rs;
         rs.isCompleted = (state == actionlib::SimpleClientGoalState::SUCCEEDED)?true:false;
         rs.description = result->description;
-        std::copy(result->taskIds.begin(),result->taskIds.end(),rs.taskIds.begin());
+        ROS_INFO("Copy task ids");
+        rs.taskIds = result->taskIds;
+        // std::copy(result->taskIds.begin(),result->taskIds.end(),rs.taskIds.begin());
+        ROS_INFO("Copy task ids finished");
         rs.taskType = result->taskType;
+        ROS_INFO_STREAM("task result "<<rs.isCompleted<<rs.taskType<<rs.description);
+
         _tm.HandleTaskResult(rs);
     }
 

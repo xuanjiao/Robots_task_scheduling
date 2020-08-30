@@ -119,14 +119,14 @@ CREATE TABLE tasks (
 -- ENUM('Created', 'WaitingToRun', 'Running', 'RanToCompletion', 'Canceled','Error','ToReRun') 
 
 -- Create some enter room task
-INSERT INTO tasks
-VALUES
--- task_id, task_type, start_time, target_id, robot_id, priority, cur_status, dependency, result
-(1, 'ExecuteTask', '2020-06-01 9:00:20', 20, NULL, 3, 'Created', 0, NULL),
-(2, 'ExecuteTask', '2020-06-01 9:00:30', 21, NULL, 3, 'Created', 1, NULL),
-(3, 'ExecuteTask', '2020-06-01 9:01:00', 22, NULL, 2, 'Created', 0, NULL),
-(4, 'ExecuteTask', '2020-06-01 9:01:30', 23, NULL, 2, 'Created', 3, NULL);
-
+-- INSERT INTO tasks
+-- VALUES
+-- -- task_id, task_type, start_time, target_id, robot_id, priority, cur_status, dependency, result
+-- (1, 'ExecuteTask', '2020-06-01 9:00:20', 20, NULL, 3, 'Created', 0, NULL),
+-- (2, 'ExecuteTask', '2020-06-01 9:00:30', 21, NULL, 3, 'Created', 1, NULL),
+-- (3, 'ExecuteTask', '2020-06-01 9:01:00', 22, NULL, 2, 'Created', 0, NULL),
+-- (4, 'ExecuteTask', '2020-06-01 9:01:30', 23, NULL, 2, 'Created', 3, NULL);
+-- 
 
 -- Create task table --------
 
@@ -136,7 +136,7 @@ DROP TABLE IF EXISTS  charging_stations;
 CREATE TABLE charging_stations(
 	station_id INT REFERENCES targets(target_id),
     robot_battery_level INT DEFAULT 100,
-    charging_rate INT DEFAULT 5,
+    charging_rate INT DEFAULT 2,
     remaining_time TIME DEFAULT 0,
     PRIMARY KEY (station_id)
 );

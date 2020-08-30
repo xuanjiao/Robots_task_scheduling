@@ -59,12 +59,13 @@ TEST_F(TaskManagerTest,createLargeTask){
     ASSERT_EQ(lts[1].smallTasks[3].goal.pose.position.x,t3.goal.pose.position.x);
 }
 
-TEST_F(TaskManagerTest,HandleFailedExecuteTask){
-    std::vector<int> taskIds;
-    taskIds.push_back(1);
-    taskIds.push_back(2);
-    taskIds.push_back(3);
-    tm->HandleFailedTask("ExecuteTask",taskIds);
+TEST_F(TaskManagerTest,HandleTaskResult){
+    TaskResult r;
+    r.isCompleted = false;
+    r.taskIds.push_back(1);
+    r.description = "test";
+    r.taskType = "ExecuteTask";
+    tm->HandleTaskResult(r);
 }
 
 // TEST_F(TaskManagerTest,calculateBattery){

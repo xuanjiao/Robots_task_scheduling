@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 #include "SqlTest.h"
 #include "TaskManagerTest.h"
+#include "service_test.h"
 #include <thread>
 class Example :public ::testing::Test{
     public: 

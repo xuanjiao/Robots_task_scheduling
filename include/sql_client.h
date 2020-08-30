@@ -327,7 +327,8 @@ class SQLClient{
     int ret = stmt->executeUpdate("UPDATE tasks \
       SET priority 	= CASE priority  WHEN 5 THEN 5 ELSE priority + 1 END, \
         start_time 	= CASE priority  WHEN 5 THEN start_time ELSE TIMESTAMPADD(SECOND,60,start_time) END, \
-        cur_status 	= CASE priority  WHEN 5 THEN 'Canceled' ELSE 'ToReRun' END \
+        cur_status 	= CASE priority  WHEN 5 THEN 'Canceled' ELSE 'ToReRun' END, \
+        description = CASE priority  WHEN 5 THEN 'Drop task' ELSE 'Task failed. Run again' END \
       WHERE task_id IN " +ss.str());
     _sqlMtx.unlock();
     return ret;

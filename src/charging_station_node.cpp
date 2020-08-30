@@ -13,7 +13,7 @@ public:
     ChargingStationController(int stationId):
     _id(stationId),
     _sc("charging_station","pass"),
-    _as(_nh,"charging_action_"+ to_string(stationId),
+    _as(_nh,"/charging_action_"+ to_string(stationId),
         boost::bind(&ChargingStationController::ExecuteCallback,this,_1),false)
     {
         initActionServer();
@@ -35,9 +35,10 @@ public:
         if(ret != 0 ){
             ROS_INFO("Update station %d succedded",_id);
             cs2 = _sc.QueryChargingStationInfo(_id);
-            ros::Duration sleep(cs2.remainingTime);
+            ros::Duration sleep(cs2.remainingTime + 2);
             sleep.sleep();
             cs3 = _sc.QueryChargingStationInfo(_id);
+            ROS_INFO_STREAM("Charging for "<< cs2.remainingTime <<" second finished. Current level: "<<cs3.batteryLevel);
             if(cs3.batteryLevel == 100){
                 _as.setSucceeded(rs);
             }else{
