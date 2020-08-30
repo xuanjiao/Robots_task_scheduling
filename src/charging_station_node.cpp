@@ -34,8 +34,9 @@ public:
         int ret = _sc.UpdateChargingStationInfo(cs1);
         if(ret != 0 ){
             ROS_INFO("Update station %d succedded",_id);
+            ros::Duration(1).sleep();
             cs2 = _sc.QueryChargingStationInfo(_id);
-            ros::Duration sleep(cs2.remainingTime + 2);
+            ros::Duration sleep(cs2.remainingTime + 1);
             sleep.sleep();
             cs3 = _sc.QueryChargingStationInfo(_id);
             ROS_INFO_STREAM("Charging for "<< cs2.remainingTime <<" second finished. Current level: "<<cs3.batteryLevel);
