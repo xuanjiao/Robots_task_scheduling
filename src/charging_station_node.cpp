@@ -39,7 +39,7 @@ public:
             ros::Duration sleep(cs2.remainingTime + 1);
             sleep.sleep();
             cs3 = _sc.QueryChargingStationInfo(_id);
-            ROS_INFO_STREAM("Charging for "<< cs2.remainingTime <<" second finished. Current level: "<<cs3.batteryLevel);
+            ROS_INFO("Charging for %.2f second finished. Current level %.2f: ",cs2.remainingTime, cs3.batteryLevel);
             if(cs3.batteryLevel == 100){
                 _as.setSucceeded(rs);
             }else{

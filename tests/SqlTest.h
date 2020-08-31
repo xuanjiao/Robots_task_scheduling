@@ -67,26 +67,18 @@ TEST_F(SqlTest,InserDoorStatusRecord){
 }
 
 TEST_F(SqlTest,QueryChargingStationInfo){
-    SQLClient sql_client("root","nes");
-    auto cs = sc->QueryChargingStationInfo(17);
-    ASSERT_EQ(cs.remainingTime,0);
-    ASSERT_EQ(cs.batteryLevel,100);
-
-
+       // ros::Duration(2).sleep();
+    auto cs2 = sc->QueryChargingStationInfo(17);
+    ASSERT_LE(cs2.remainingTime,100);
+    ASSERT_LE(cs2.batteryLevel,100);
 }
 
 TEST_F(SqlTest,UpdateChargingStationInfo){
     ChargingStation cs;
     cs.stationId = 18;
-    cs.batteryLevel = 10;
+    cs.batteryLevel = 65.2;
     int ret = sc->UpdateChargingStationInfo(cs);
     ASSERT_EQ(ret,1);
-    ros::Duration(2).sleep();
-    auto cs2 = sc->QueryChargingStationInfo(18);
-    ASSERT_LT(cs2.remainingTime,90);
-    ASSERT_GT(cs2.remainingTime,10);
-    ASSERT_LT(cs2.batteryLevel,100);
-    ASSERT_GT(cs2.batteryLevel,10);
 }
 
 

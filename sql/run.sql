@@ -19,8 +19,8 @@ drop table if exists targets;
 CREATE TABLE targets (
     target_id INT AUTO_INCREMENT,
     target_type varchar(255) NULL,
-    position_x DOUBLE DEFAULT 0,
-    position_y DOUBLE DEFAULT 0,
+    position_x DOUBLE (6,2)DEFAULT 0,
+    position_y DOUBLE (6,2)DEFAULT 0,
     -- orientation_z DOUBLE DEFAULT 0,
     -- orientation_w DOUBLE DEFAULT 0,
     -- CONSTRAINT Pose UNIQUE(position_x,position_y,orientation_z,orientation_w),
@@ -90,8 +90,8 @@ CREATE TABLE open_possibilities (
     day_of_week INT,
     start_time TIME,
     end_time TIME,
-    open_pos DOUBLE(4 , 1 ),
-    open_pos_st DOUBLE(4 , 1 ),
+    open_pos DOUBLE(6,2),
+    open_pos_st DOUBLE(6,2),
     CONSTRAINT Door_Time UNIQUE (day_of_week , start_time , end_time , door_id)
 );
 
@@ -137,9 +137,9 @@ VALUES
 DROP TABLE IF EXISTS  charging_stations;
 CREATE TABLE charging_stations(
 	station_id INT REFERENCES targets(target_id),
-    robot_battery_level INT DEFAULT 100,
-    charging_rate INT DEFAULT 2,
-    remaining_time TIME DEFAULT 0,
+    robot_battery_level DOUBLE(6,2) DEFAULT 100,
+    charging_rate DOUBLE(6,2) DEFAULT 2,
+    remaining_time DOUBLE(6,2) DEFAULT 0,
     PRIMARY KEY (station_id)
 );
 
@@ -159,7 +159,7 @@ STARTS CURRENT_TIMESTAMP ENDS CURRENT_TIMESTAMP + INTERVAL 1 HOUR
 DO 
 		UPDATE charging_stations 
         SET robot_battery_level = IF(robot_battery_level + charging_rate>=100,100,robot_battery_level + charging_rate),
-			remaining_time = (100 - robot_battery_level)/charging_rate -- Accorging to charging rate, calculate robot_battery_level and charging time 
+			remaining_time =(100 - robot_battery_level)/charging_rate -- Accorging to charging rate, calculate robot_battery_level and charging time 
 		WHERE robot_battery_level <100;
 
 -- Create charging trigger finished --------

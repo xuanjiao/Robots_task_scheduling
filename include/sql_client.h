@@ -193,7 +193,7 @@ class SQLClient{
     sql::ResultSet* res;
     ChargingStation cs;
     res = stmt->executeQuery( 
-      "SELECT t.position_x, t.position_y, cs.station_id, cs.robot_battery_level, TIME_TO_SEC(cs.remaining_time) AS t \
+      "SELECT t.position_x, t.position_y, cs.station_id, cs.robot_battery_level, cs.remaining_time \
       FROM charging_stations cs \
       INNER JOIN targets t ON t.target_id = cs.station_id \
       WHERE cs.station_id = "+to_string(stationId));
@@ -204,8 +204,8 @@ class SQLClient{
    
     res->next();
     cs.stationId = res->getInt("station_id"); 
-    cs.batteryLevel = res->getInt("robot_battery_level");
-    cs.remainingTime = res->getInt64("t");
+    cs.batteryLevel = res->getDouble("robot_battery_level");
+    cs.remainingTime = res->getDouble("remaining_time");
     cs.pose.position.x = res->getDouble("position_x");
     cs.pose.position.y = res->getDouble("position_y");
     cs.pose.orientation.w = 1.0;
@@ -410,8 +410,8 @@ class SQLClient{
     _sqlMtx.lock();
     int ret = stmt->executeUpdate(
       "UPDATE charging_stations \
-      SET robot_battery_level = " + to_string(cs.batteryLevel) + 
-      " WHERE station_id = "+ to_string(cs.stationId)
+      SET robot_battery_level = '" + to_string(cs.batteryLevel) + 
+      "' WHERE station_id = "+ to_string(cs.stationId)
     );
     _sqlMtx.unlock();
     return ret;

@@ -36,7 +36,7 @@ class CostCalculator{
     void CalculateChargingStationCost(ChargingStation& cs, geometry_msgs::Pose robotPose){
         double battery =  CalculateSimpleBatteryConsumption(robotPose,cs.pose);
         cs.cost = CWB.W_REMAINING_TIME * cs.remainingTime + CWB.W_BATTERY * battery;
-        ROS_INFO("%d %ld      %.3f       %.3f", cs.stationId,cs.remainingTime, battery,cs.cost);
+        ROS_INFO("%d %.1f      %.3f       %.3f", cs.stationId,cs.remainingTime, battery,cs.cost);
     }
 
     void CalculateLargeTasksCost(ros::Time now,LargeExecuteTask& t, geometry_msgs::Pose robotPose){

@@ -7,8 +7,8 @@ class ChargingStation{
 public:
     int stationId;
     geometry_msgs::Pose pose;
-    long remainingTime;
-    int batteryLevel;
+    double remainingTime;
+    double batteryLevel;
     double cost;
 
     static void SorChargingStationsWithCost(vector<ChargingStation>& v){
