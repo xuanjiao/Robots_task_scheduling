@@ -16,11 +16,12 @@ public:
     virtual string getTaskInfo() = 0;
 };
 
-class TaskRecord{
+class TaskFeedback{
 public:
     int taskId = 0;
-    bool isOpen = false;
-    int door_id;
+    bool doorStatus = false;
+    int doorId;
+    ros::Time measureTime;
 };
 
 class TaskResult{

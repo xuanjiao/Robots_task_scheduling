@@ -1,5 +1,4 @@
 #include "ros/ros.h"
-// #include "robot_navigation/make_task.h"
 #include "robot_navigation/GetATask.h"
 #include "robot_navigation/RunTaskAction.h"
 #include <geometry_msgs/PoseStamped.h>
@@ -9,9 +8,7 @@
 #include "util.h"
 #include "sql_client.h"
 #include "task_manager.h"
-#include <tuple>
 #include <string>
-#include <queue>
 
 #define CHECK_DB_PERIOD 10
 #define CHARGING_THRESHOLD 97
@@ -21,7 +18,7 @@ typedef actionlib::SimpleActionClient<robot_navigation::RunTaskAction> RunTaskAc
 class CentralizedPool{
 
 public:
- CentralizedPool(SQLClient& sc,ros::NodeHandle &nh,TaskManager &tm):_sc(sc),_nh(nh),_tm(tm)
+ CentralizedPool(SQLClient& sc,ros::NodeHandle &nh,TaskManager &tm):_nh(nh),_tm(tm)
         // _gac("/tb3_0/RunTaskAction",true) //  spins up a thread to service this action's subscriptions. 
     {
         _cv.push_back(new RunTaskActionClient("/tb3_0/run_task_action",true));
@@ -66,11 +63,11 @@ public:
      // call back when receive a door status from robot 
     void WhenReceiveInfoFromRobot(const robot_navigation::RunTaskFeedbackConstPtr &feedback){
         ROS_INFO("FEEDBACK from Robot %d : Time %s isOpen %d",feedback->robotId,Util::time_str(feedback->measureTime).c_str(),feedback->doorStatus);
-        
-        int r = _sc.InsertDoorStatusRecord(feedback->doorId,feedback->measureTime,feedback->doorStatus); 
-        int u = _sc.UpdateOpenPossibilities(feedback->doorId,feedback->measureTime);
-        ROS_INFO("Insert %d record, update %d rows in possibility table",r,u);
-        
+        TaskFeedback fb;
+        fb.doorId = feedback->doorId;
+        fb.doorStatus = feedback->doorStatus;
+        fb.measureTime = feedback->measureTime;
+        _tm.HandleTaskFeedback(fb);
     }
 
     // Call when receive a complet event from robot
@@ -80,13 +77,9 @@ public:
         TaskResult rs;
         rs.isCompleted = (state == actionlib::SimpleClientGoalState::SUCCEEDED)?true:false;
         rs.description = result->description;
-        ROS_INFO("Copy task ids");
         rs.taskIds = result->taskIds;
-        // std::copy(result->taskIds.begin(),result->taskIds.end(),rs.taskIds.begin());
-        ROS_INFO("Copy task ids finished");
         rs.taskType = result->taskType;
-        ROS_INFO_STREAM("task result "<<rs.isCompleted<<rs.taskType<<rs.description);
-
+        // ROS_INFO_STREAM("task result "<<rs.isCompleted<<rs.taskType<<rs.description);
         _tm.HandleTaskResult(rs);
     }
 
@@ -140,7 +133,6 @@ private:
     ros::ServiceServer _ts;
     boost::mutex _acMtx;
     std::vector<RunTaskActionClient*> _cv;
-    SQLClient &_sc;
     ros::NodeHandle &_nh;
     TaskManager &_tm;
 };

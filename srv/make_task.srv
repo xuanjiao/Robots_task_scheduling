@@ -1,5 +1,0 @@
-geometry_msgs/Pose pose # current position
-int32 battery_level     
-robot_navigation/task_info last_task
----
-robot_navigation/task_info best_task

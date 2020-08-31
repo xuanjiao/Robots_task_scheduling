@@ -105,6 +105,11 @@ public:
         return st;
     }
 
+    void HandleTaskFeedback(TaskFeedback& fb){
+        int r = _sc.InsertDoorStatusRecord(fb.doorId,fb.measureTime,fb.doorStatus); 
+        int u = _sc.UpdateOpenPossibilities(fb.doorId,fb.measureTime);
+        ROS_INFO("Insert %d record, update %d rows in possibility table",r,u);
+    }
 
     void HandleTaskResult(TaskResult& result){
         if(result.isCompleted){
