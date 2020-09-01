@@ -38,7 +38,7 @@ public:
             ROS_INFO("-----------------------------------------------------------------------------");
             for(LargeExecuteTask& t:lts){
                 _cc.CalculateLargeTasksCost(now,t,robotPose);
-                ROS_INFO_STREAM("Calculate execute task cost finish");
+                // ROS_INFO_STREAM("Calculate execute task cost finish");
             } 
             LargeExecuteTask::FilterTask(lts); // remove task exceed cost limit
         }

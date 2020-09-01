@@ -28,6 +28,11 @@ class SQLClient{
     ConnectToDatabase(user_name,pass);
   }
 
+  ~SQLClient(){
+      delete stmt;
+      delete _con;
+  }
+
   void ConnectToDatabase(string user_name, string pass){
     _sqlMtx.lock();
     _driver = get_driver_instance();
@@ -42,77 +47,77 @@ class SQLClient{
     _sqlMtx.unlock();
   }
 
-    // truncate table
-    void TruncateTable(string name){
-      _sqlMtx.lock();
-      stmt->execute("TRUNCATE "+name);
-      _sqlMtx.unlock();
-    }
+  // truncate table
+  void TruncateTable(string name){
+    _sqlMtx.lock();
+    stmt->execute("TRUNCATE "+name);
+    _sqlMtx.unlock();
+  }
 
     // Print table include columns and data
-    void PrintTable(string table_name){
-      _sqlMtx.lock();
-      sql::ResultSet *res;
-      stringstream ss;
-      list<sql::SQLString> column_names;
-      try{         
-          ss << "\nPrint table " << table_name << ":\n-----------------------------------------------------------------------\n";
-            res = stmt->executeQuery("SHOW COLUMNS FROM " + table_name);
-            while (res->next()){
-              column_names.push_back(res->getString("Field"));   
-              ss << res->getString("Field")<< " ";
-            }
-            ss << "\n---------------------------------------------------------------------\n";
-            res = stmt->executeQuery("SELECT * FROM " + table_name);
-            if(res->rowsCount()!=0){
-              while(res->next()){
-                for(sql::SQLString c : column_names){
-                    ss << res->getString(c)<<"  ";
-                }
-                ss<< "\n";
+  void PrintTable(string table_name){
+    _sqlMtx.lock();
+    sql::ResultSet *res;
+    stringstream ss;
+    list<sql::SQLString> column_names;
+    try{         
+        ss << "\nPrint table " << table_name << ":\n-----------------------------------------------------------------------\n";
+          res = stmt->executeQuery("SHOW COLUMNS FROM " + table_name);
+          while (res->next()){
+            column_names.push_back(res->getString("Field"));   
+            ss << res->getString("Field")<< " ";
+          }
+          ss << "\n---------------------------------------------------------------------\n";
+          res = stmt->executeQuery("SELECT * FROM " + table_name);
+          if(res->rowsCount()!=0){
+            while(res->next()){
+              for(sql::SQLString c : column_names){
+                  ss << res->getString(c)<<"  ";
               }
+              ss<< "\n";
             }
-      }catch(const sql::SQLException &e){
-        ROS_INFO_STREAM(e.what());
-        exit(1);
-      }    
-      delete res;
-      ROS_INFO_STREAM(ss.str());
-      _sqlMtx.unlock();
+          }
+    }catch(const sql::SQLException &e){
+      ROS_INFO_STREAM(e.what());
+      exit(1);
+    }    
+    delete res;
+    ROS_INFO_STREAM(ss.str());
+    _sqlMtx.unlock();
+  }
+
+  vector<tuple<int,geometry_msgs::Pose,long double>>
+  QueryTargetPositionAndOpenPossibilities(string time){
+    _sqlMtx.lock();
+    sql::ResultSet* res;
+    vector<tuple<int,geometry_msgs::Pose,long double>> v;
+    try{
+      res = stmt->executeQuery("select t.target_id,t.position_x, t.position_y, o.open_pos \
+                                    from targets t \
+                                    inner join open_possibilities o \
+                  where t.target_id = o.door_id  and o.day_of_week = dayofweek('" + time +  "') and time('" + time +  "') between o.start_time and o.end_time; ");
+    }catch(sql::SQLException e){
+      ROS_INFO_STREAM( e.what() );
+    }
+    if(res->rowsCount()){
+      while(res->next()){
+        geometry_msgs::Pose pose;
+        pose.position.x = res->getDouble("position_x");
+        pose.position.y = res->getDouble("position_y");
+        pose.orientation.w = 1.0;
+        v.push_back(
+          tuple<int,geometry_msgs::Pose,long double>(
+            res->getInt("target_id"), pose, res->getDouble("open_pos")
+          )
+        );
+      }
     }
 
-    vector<tuple<int,geometry_msgs::Pose,long double>>
-    QueryTargetPositionAndOpenPossibilities(string time){
-      _sqlMtx.lock();
-      sql::ResultSet* res;
-      vector<tuple<int,geometry_msgs::Pose,long double>> v;
-      try{
-        res = stmt->executeQuery("select t.target_id,t.position_x, t.position_y, o.open_pos \
-                                      from targets t \
-                                      inner join open_possibilities o \
-                    where t.target_id = o.door_id  and o.day_of_week = dayofweek('" + time +  "') and time('" + time +  "') between o.start_time and o.end_time; ");
-      }catch(sql::SQLException e){
-        ROS_INFO_STREAM( e.what() );
-      }
-      if(res->rowsCount()){
-        while(res->next()){
-          geometry_msgs::Pose pose;
-          pose.position.x = res->getDouble("position_x");
-          pose.position.y = res->getDouble("position_y");
-          pose.orientation.w = 1.0;
-          v.push_back(
-            tuple<int,geometry_msgs::Pose,long double>(
-              res->getInt("target_id"), pose, res->getDouble("open_pos")
-            )
-          );
-        }
-      }
+    delete res;
+    _sqlMtx.unlock();
+    return v;
+  }
 
-      delete res;
-      _sqlMtx.unlock();
-      return v;
-    }
-  
       // get task info to calculate cost
   vector<SmallExecuteTask>
   QueryRunableExecuteTasks(){
@@ -121,9 +126,10 @@ class SQLClient{
     vector<SmallExecuteTask> v;
     string now = Util::time_str(ros::Time::now());
     res = stmt->executeQuery(
-      "SELECT tasks.dependency, tasks.priority, tasks.target_id, tasks.task_id, tasks.task_type, tasks.start_time, \
+      "SELECT tasks.dependency, tasks.priority, tasks.target_id, tasks.task_id, tasks.task_type, tasks.start_time, o.open_pos_st \
       tg.position_x, tg.position_y FROM targets tg \
       INNER JOIN tasks ON tasks.target_id = tg.target_id \
+      INNER JOIN open_possibility o ON o.door_id = tg.target_id \
       AND tasks.cur_status IN ('Created','ToReRun') \
       AND tasks.task_type = 'ExecuteTask' \
       AND tasks.start_time > '" + now +"'"
@@ -417,9 +423,6 @@ class SQLClient{
     return ret;
   }
 
-    ~SQLClient(){
-       delete stmt;
-    }
     
    private:
     sql::Driver* _driver;

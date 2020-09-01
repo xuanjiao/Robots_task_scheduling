@@ -59,7 +59,7 @@ public:
     double battery = 0.0;
     ros::Duration waitingTime;
     double cost = 0.0;
-    static const int COST_LIMIT = 50; 
+    static const int COST_LIMIT = 40; 
 
     string getTaskInfo(){
         stringstream ss;

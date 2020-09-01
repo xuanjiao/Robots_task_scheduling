@@ -8,13 +8,14 @@ CREATE PROCEDURE create_execute_tasks()
 BEGIN
  SET @task_type := 'ExecuteTask';
  SET @start_time := '2020-06-01 9:00:20';
- SET @task_num := 100;
+ SET @task_num := 20;
  SET @task_index := 0;
  WHILE @task_index < @task_num DO
 	-- Create task to a random point. priority 2, dependency 0
 	INSERT INTO tasks(task_type,start_time, target_id, priority,dependency)
 		VALUES(@task_type, @start_time,FLOOR(19 + RAND()*10),2,0);
 	SET @task_index := @task_index + 1;
+    SET @start_time := @start_time + INTERVAL FLOOR(5 * RAND()) MINUTE;
  END WHILE ;
  -- Make some task dependent on a task before
  UPDATE tasks SET dependency = task_id - 1 WHERE task_id MOD 10 = 2;

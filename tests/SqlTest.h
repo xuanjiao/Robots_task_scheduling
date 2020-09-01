@@ -9,7 +9,6 @@ class SqlTest :public ::testing::Test {
         SqlTest() {
             sc = new SQLClient("root","nes");
         }
-        ~SqlTest(){}
     SQLClient* sc;
 };
 
@@ -19,7 +18,6 @@ TEST_F(SqlTest,example){
 
 
 TEST_F(SqlTest,QueryDoorInfo){
-    SQLClient sql_client("root","nes");
     ros::Time now;
     now.sec = 1590994800;
     ros::Time::setNow(now);
@@ -29,13 +27,17 @@ TEST_F(SqlTest,QueryDoorInfo){
     ASSERT_EQ(doors[12].doorId,13);
     ASSERT_EQ(doors[12].pose.position.x,5.8);
     ASSERT_EQ(doors[12].pose.position.y,7.7);
-    ASSERT_EQ(doors[12].depOpenpossibility,0.2);
+    ASSERT_LT(doors[12].depOpenpossibility,0.0);
     // ASSERT_EQ(doors[12].isUsed,false);
 }
 
+TEST_F(SqlTest,QueryRunableExecuteTasks){
+    sc->QueryRunableExecuteTasks();
+    ASSERT_EQ(sc->size(),46);
+    
+}
 
 TEST_F(SqlTest,InsertATargetAssignId){
-    SQLClient sql_client("root","nes");
     geometry_msgs::PoseStamped goal;
     int id = sc->InsertATargetAssignId(goal,"Point");
     ASSERT_GT(id,0);

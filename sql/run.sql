@@ -79,6 +79,11 @@ VALUES
 
 -- Create door info table finished-------
 
+DROP TABLE IF EXISTS custom_points;
+CREATE TABLE IF EXISTS custom_points (
+	point_id INT,
+    door_id INT
+);
 
 -- Create measurement and possibility table --------
 
@@ -190,7 +195,7 @@ END;
 DELIMITER ;
 
 -- Create door_used finished --		
-
+call create_execute_tasks();
 -- Print all tables --
 SELECT * FROM measurements;
 SELECT * FROM open_possibilities;
