@@ -1,5 +1,5 @@
 -- Create some execute task
--- points 19-28  
+-- points 21-29
 DROP PROCEDURE IF EXISTS create_execute_tasks;
 
 delimiter ;;
@@ -13,9 +13,9 @@ BEGIN
  WHILE @task_index < @task_num DO
 	-- Create task to a random point. priority 2, dependency 0
 	INSERT INTO tasks(task_type,start_time, target_id, priority,dependency)
-		VALUES(@task_type, @start_time,FLOOR(19 + RAND()*10),2,0);
+		VALUES(@task_type, @start_time,FLOOR(21 + RAND()*10),2,0);
 	SET @task_index := @task_index + 1;
-    SET @start_time := @start_time + INTERVAL FLOOR(5 * RAND()) MINUTE;
+    SET @start_time := @start_time + INTERVAL FLOOR(300 * RAND()) SECOND;
  END WHILE ;
  -- Make some task dependent on a task before
  UPDATE tasks SET dependency = task_id - 1 WHERE task_id MOD 10 = 2;

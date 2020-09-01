@@ -93,7 +93,7 @@ class SQLClient{
     vector<tuple<int,geometry_msgs::Pose,long double>> v;
     try{
       res = stmt->executeQuery("select t.target_id,t.position_x, t.position_y, o.open_pos \
-                                    from targets t \
+                                    from positions t \
                                     inner join open_possibilities o \
                   where t.target_id = o.door_id  and o.day_of_week = dayofweek('" + time +  "') and time('" + time +  "') between o.start_time and o.end_time; ");
     }catch(sql::SQLException e){
@@ -126,10 +126,11 @@ class SQLClient{
     vector<SmallExecuteTask> v;
     string now = Util::time_str(ros::Time::now());
     res = stmt->executeQuery(
-      "SELECT tasks.dependency, tasks.priority, tasks.target_id, tasks.task_id, tasks.task_type, tasks.start_time, o.open_pos_st \
-      tg.position_x, tg.position_y FROM targets tg \
+      "SELECT tasks.dependency, tasks.priority, tasks.target_id, tasks.task_id, tasks.task_type, tasks.start_time, o.open_pos_st, \
+      tg.position_x, tg.position_y FROM positions tg \
       INNER JOIN tasks ON tasks.target_id = tg.target_id \
-      INNER JOIN open_possibility o ON o.door_id = tg.target_id \
+      INNER JOIN custom_points c ON c.point_id = tg.target_id \
+      INNER JOIN open_possibilities o ON o.door_id = c.door_id \
       AND tasks.cur_status IN ('Created','ToReRun') \
       AND tasks.task_type = 'ExecuteTask' \
       AND tasks.start_time > '" + now +"'"
@@ -164,7 +165,7 @@ class SQLClient{
     string time = Util::time_str(ros::Time::now());
     res = stmt->executeQuery(
       "SELECT i.door_id, i.dependency, i.last_update, i.is_used, t.position_x, t.position_y, o.open_pos_st FROM door_infos i \
-        INNER JOIN targets t ON t.target_id = i.door_id \
+        INNER JOIN positions t ON t.target_id = i.door_id \
         LEFT JOIN (SELECT * FROM open_possibilities \
         WHERE day_of_week = DAYOFWEEK('" + time +  "') and time('" + time +"') between start_time and end_time) o \
         ON i.dependency = o.door_id \
@@ -201,7 +202,7 @@ class SQLClient{
     res = stmt->executeQuery( 
       "SELECT t.position_x, t.position_y, cs.station_id, cs.robot_battery_level, cs.remaining_time \
       FROM charging_stations cs \
-      INNER JOIN targets t ON t.target_id = cs.station_id \
+      INNER JOIN positions t ON t.target_id = cs.station_id \
       WHERE cs.station_id = "+to_string(stationId));
     if(res->rowsCount() == 0){
       ROS_INFO_STREAM("No Charging Station Info");
@@ -228,7 +229,7 @@ class SQLClient{
     res = stmt->executeQuery( 
       "SELECT t.position_x, t.position_y, cs.station_id, cs.robot_battery_level, TIME_TO_SEC(cs.remaining_time) AS t \
       FROM charging_stations cs \
-      INNER JOIN targets t ON t.target_id = cs.station_id"
+      INNER JOIN positions t ON t.target_id = cs.station_id"
     );
     if(res->rowsCount() == 0){
       ROS_INFO_STREAM("No Charging Station Info");
@@ -294,12 +295,12 @@ class SQLClient{
     
     ROS_INFO_STREAM("Check target exist ");
     res = stmt->executeQuery(
-      "SELECT * FROM targets WHERE position_x = " + x + " AND position_y =" + y
+      "SELECT * FROM positions WHERE position_x = " + x + " AND position_y =" + y
     );
     if(res->rowsCount() == 0){
         ROS_INFO_STREAM("Adding new target (" << x << "," <<y << ")");
         stmt->execute(
-          "INSERT INTO targets(target_type, position_x, position_y) \
+          "INSERT INTO positions(target_type, position_x, position_y) \
             VALUES('"+ targetType + "'," + x + "," + y + ")" 
         );
         res = stmt->executeQuery("SELECT last_insert_id() as target_id");
@@ -311,7 +312,7 @@ class SQLClient{
           id = res->getInt("target_id");
         }
     }else{
-      ROS_INFO_STREAM("This target is already in targets table");
+      ROS_INFO_STREAM("This target is already in positions table");
       res->next();
       id = res->getInt("target_id");
     }

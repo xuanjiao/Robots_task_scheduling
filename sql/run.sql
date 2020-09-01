@@ -16,8 +16,8 @@ use sensor_db;
 
 
 
-drop table if exists targets;
-CREATE TABLE targets (
+drop table if exists positions;
+CREATE TABLE positions (
     target_id INT AUTO_INCREMENT,
     target_type varchar(255) NULL,
     position_x DOUBLE (6,2)DEFAULT 0,
@@ -29,8 +29,8 @@ CREATE TABLE targets (
     PRIMARY KEY (target_id)
 );
 
--- insert value to targets table
-INSERT INTO targets 
+-- insert value to positions table
+INSERT INTO positions 
 VALUES
 (1,'Door',-18.5,5.2),
 (2,'Door',-23.5,7.2),
@@ -50,23 +50,23 @@ VALUES
 (16,'Door',-4.0,1.5),
 (17,'ChargingStation',0.0,5.0),
 (18,'ChargingStation',-21.0,5.0),
-(19,'Point',-24.0,12.0),
-(21,'Point',-21.0,12.0),
-(22,'Point',-16.0,12.0),
-(23,'Point',-7.0,7.5),
-(24,'Point',-3.0,12),
-(25,'Point',3.0,12.0),
-(26,'Point',7.0,12.0),
-(27,'Point',9.0,4.0),
-(28,'Point',0.0,-4.0);
+(21,'Point',-24.0,12.0),
+(22,'Point',-21.0,12.0),
+(23,'Point',-16.0,12.0),
+(24,'Point',-7.0,7.5),
+(25,'Point',-3.0,12),
+(26,'Point',3.0,12.0),
+(27,'Point',7.0,12.0),
+(28,'Point',9.0,4.0),
+(29,'Point',0.0,-4.0);
 
 
 -- Create door info table -------
 
 DROP TABLE IF EXISTS door_infos;
 CREATE TABLE door_infos(
-	door_id INT REFERENCES targets(target_id),
-    dependency INT REFERENCES targets(target_id),
+	door_id INT REFERENCES positions(target_id),
+    dependency INT REFERENCES positions(target_id),
     last_update DATETIME DEFAULT '2020-06-01 9:00:00',
     is_used BOOLEAN DEFAULT false,
     PRIMARY KEY (door_id)	
@@ -80,16 +80,19 @@ VALUES
 -- Create door info table finished-------
 
 DROP TABLE IF EXISTS custom_points;
-CREATE TABLE IF EXISTS custom_points (
+CREATE TABLE IF NOT EXISTS custom_points (
 	point_id INT,
     door_id INT
 );
+INSERT INTO custom_points
+VALUES
+(21
 
 -- Create measurement and possibility table --------
 
 drop table if exists measurements;
 CREATE TABLE measurements (
-    door_id INT REFERENCES targets(target_id),
+    door_id INT REFERENCES positions(target_id),
     door_status BOOLEAN,
     date_time DATETIME,
     CONSTRAINT Door_Date_Time UNIQUE (date_time , door_id)
@@ -97,7 +100,7 @@ CREATE TABLE measurements (
 
 drop table if exists open_possibilities;
 CREATE TABLE open_possibilities (
-    door_id INT REFERENCES targets(target_id),
+    door_id INT REFERENCES positions(target_id),
     day_of_week INT,
     start_time TIME,
     end_time TIME,
@@ -118,7 +121,7 @@ CREATE TABLE tasks (
     task_id INT AUTO_INCREMENT,
     task_type ENUM('GatherEnviromentInfo', 'Charging','ExecuteTask'),
     start_time DATETIME,
-    target_id INT REFERENCES targets(target_id),
+    target_id INT REFERENCES positions(target_id),
     robot_id INT,
     priority INT,
     cur_status varchar(255) DEFAULT 'Created',
@@ -136,7 +139,7 @@ CREATE TABLE tasks (
 
 DROP TABLE IF EXISTS  charging_stations;
 CREATE TABLE charging_stations(
-	station_id INT REFERENCES targets(target_id),
+	station_id INT REFERENCES positions(target_id),
     robot_battery_level DOUBLE(6,2) DEFAULT 100,
     charging_rate DOUBLE(6,2) DEFAULT 2,
     remaining_time DOUBLE(6,2) DEFAULT 0,
@@ -144,7 +147,7 @@ CREATE TABLE charging_stations(
 );
 
 INSERT INTO charging_stations(station_id)
-SELECT target_id FROM targets WHERE target_type = 'ChargingStation';
+SELECT target_id FROM positions WHERE target_type = 'ChargingStation';
 
 -- Create charging station table finished--------
 
@@ -199,7 +202,8 @@ call create_execute_tasks();
 -- Print all tables --
 SELECT * FROM measurements;
 SELECT * FROM open_possibilities;
-SELECT * FROM targets;
+SELECT * FROM positions;
 SELECT * FROM charging_stations;
 SELECT * FROM door_infos;
 SELECT * FROM tasks;
+SELECT * FROM custom_points;
