@@ -10,6 +10,7 @@ grant all on sensor_db.* to 'task_generator'@'localhost';
 grant all on sensor_db.* to 'charging_station'@'localhost';
 
 SET GLOBAL event_scheduler = ON;
+SET SQL_SAFE_UPDATES = 0;
 
 use sensor_db;
 
@@ -49,10 +50,15 @@ VALUES
 (16,'Door',-4.0,1.5),
 (17,'ChargingStation',0.0,5.0),
 (18,'ChargingStation',-21.0,5.0),
-(20,'Point',-7.0,7.5),
-(21,'Point',-4.0,10.0),
-(22,'Point',3.0,4.0),
-(23,'Point',7.0,4.0);
+(19,'Point',-24.0,12.0),
+(21,'Point',-21.0,12.0),
+(22,'Point',-16.0,12.0),
+(23,'Point',-7.0,7.5),
+(24,'Point',-3.0,12),
+(25,'Point',3.0,12.0),
+(26,'Point',7.0,12.0),
+(27,'Point',9.0,4.0),
+(28,'Point',0.0,-4.0);
 
 
 -- Create door info table -------
@@ -118,17 +124,6 @@ CREATE TABLE tasks (
 
 -- ENUM('Created', 'WaitingToRun', 'Running', 'RanToCompletion', 'Canceled','Error','ToReRun') 
 
--- Create some enter room task
-INSERT INTO tasks
-VALUES
--- -- task_id, task_type, start_time, target_id, robot_id, priority, cur_status, dependency, result
-(1, 'ExecuteTask', '2020-06-01 9:00:20', 20, NULL, 3, 'Created', 0, NULL),
-(2, 'ExecuteTask', '2020-06-01 9:00:30', 1, NULL, 3, 'Created', 0, NULL),
-(3, 'ExecuteTask', '2020-06-01 9:00:40', 5, NULL, 3, 'Created', 0, NULL),
-(4, 'ExecuteTask', '2020-06-01 9:00:30', 21, NULL, 3, 'Created', 1, NULL),
-(5, 'ExecuteTask', '2020-06-01 9:01:00', 22, NULL, 2, 'Created', 0, NULL),
-(6, 'ExecuteTask', '2020-06-01 9:01:30', 23, NULL, 2, 'Created', 3, NULL);
--- 
 
 -- Create task table --------
 
@@ -155,7 +150,7 @@ SELECT target_id FROM targets WHERE target_type = 'ChargingStation';
 DROP EVENT IF EXISTS charging;    -- dynamic charging stations table
 CREATE EVENT charging
 ON SCHEDULE EVERY 1 SECOND
-STARTS CURRENT_TIMESTAMP ENDS CURRENT_TIMESTAMP + INTERVAL 1 HOUR
+STARTS CURRENT_TIMESTAMP ENDS CURRENT_TIMESTAMP + INTERVAL 3 HOUR
 DO 
 		UPDATE charging_stations 
         SET robot_battery_level = IF(robot_battery_level + charging_rate>=100,100,robot_battery_level + charging_rate),

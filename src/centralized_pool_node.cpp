@@ -11,7 +11,7 @@
 #include <string>
 
 #define CHECK_DB_PERIOD 10
-#define CHARGING_THRESHOLD 97
+#define CHARGING_THRESHOLD 90
 
 typedef actionlib::SimpleActionClient<robot_navigation::RunTaskAction> RunTaskActionClient;                                                                                                                                                                                  ;
 
