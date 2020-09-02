@@ -104,8 +104,17 @@ INSERT INTO custom_points
 VALUES
 (21,3),(22,4),(23,5),(24,7),(25,7),(26,10),(27,13),(28,14),(29,15),(30,0);
 
--- Create open possibility table  --------
-DROP TABLE IF EXISTS open_possibilities;
+-- Create measurement and possibility table --------
+
+drop table if exists measurements;
+CREATE TABLE measurements (
+    door_id INT REFERENCES doors(door_id),
+    door_status BOOLEAN,
+    date_time DATETIME,
+    CONSTRAINT Door_Date_Time UNIQUE (date_time , door_id)
+);
+
+drop table if exists open_possibilities;
 CREATE TABLE open_possibilities (
     door_id INT REFERENCES doors(door_id),
     day_of_week INT,
@@ -116,23 +125,10 @@ CREATE TABLE open_possibilities (
     CONSTRAINT Door_Time UNIQUE (day_of_week , start_time , end_time , door_id)
 );
 
+
 CALL createPossibilityTable(16);
 
--- Create possibility table finished --------
-
-
--- Create measurement table --------
-
-DROP TABLE IF EXISTS measurements;
-CREATE TABLE measurements (
-    door_id INT REFERENCES doors(door_id),
-    door_status BOOLEAN,
-    date_time DATETIME,
-    CONSTRAINT Door_Date_Time UNIQUE (date_time , door_id)
-);
-
-CALL createRawData();
--- Create measurement table finished --------
+-- Create measurement and possibility table finished --------
 
 -- Create task table --------
 
