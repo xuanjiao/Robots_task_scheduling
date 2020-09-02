@@ -1,8 +1,32 @@
 
-drop procedure if exists createRawData;
+DROP PROCEDURE IF EXISTS createRawData;
+DELIMITER ;;
+CREATE PROCEDURE createRawData()
+BEGIN
+	TRUNCATE TABLE sensor_db.measurements;
+	set @tm := '2020-06-01 9:00:01';
+    WHILE  @tm < '2020-06-02 20:00:00' DO
+    INSERT INTO sensor_db.measurements
+    
+		SELECT o.door_id,
+			IF(rand()< o.open_pos,1,0), 
+            @tm 
+		FROM open_possibilities o
+		WHERE TIME(@tm) BETWEEN o.start_time AND o.end_time AND DAYOFWEEK(@tm) = o.day_of_week;           
+		SET @tm := @tm + INTERVAL 20 MINUTE;
+    END WHILE;
+END ;;
+DELIMITER ;
+
+call createRawData();
+SELECT * FROM sensor_db.measurements;
+
+
+/*
+DROP PROCEDURE IF EXISTS createRawData;
 
 delimiter $$
-create procedure createRawData(
+create procedure createRawData()
     in id int,
 	in start_date_time datetime,
     in period time,
@@ -28,4 +52,4 @@ begin
 
     end $$
 delimiter ;
-
+*/

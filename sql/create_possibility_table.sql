@@ -33,7 +33,6 @@ DO
 		( @door,2,'16:00:00','16:59:59',@high,@high),
 		( @door,2,'17:00:00','23:59:59',@zero,@zero);
     ELSE
-    
 		INSERT IGNORE INTO open_possibilities(door_id,day_of_week,start_time,end_time, open_pos , open_pos_st)
 		VALUES
 		( @door,2,'00:00:00','7:59:59',@zero,@zero),
@@ -48,9 +47,6 @@ DO
 		( @door,2,'16:00:00','16:59:59',@possibility_2,@possibility_2),
 		( @door,2,'17:00:00','23:59:59',@zero,@zero);
 		
-	-- -- -- create raw data with datetime and door status, 
-	call createRawData(@door,'2020-06-01 8:00:01','00:20:00',25);
-    
     END IF;
 	SET @door = @door + 1;
 END WHILE;

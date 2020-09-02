@@ -128,7 +128,7 @@ class SQLClient{
       "SELECT tasks.task_id, tasks.dependency as dep_task, tasks.priority, tasks.task_type, tasks.start_time, c.point_id, c.door_id, \
       di.dependency as dep_door, pos.position_x, pos.position_y FROM custom_points c \
       INNER JOIN tasks ON tasks.target_id = c.point_id \
-      LEFT JOIN door_infos di ON di.door_id = c.door_id \
+      LEFT JOIN doors di ON di.door_id = c.door_id \
       INNER JOIN positions pos ON pos.target_id = c.door_id \
       AND tasks.cur_status IN ('Created','ToReRun') \
       AND tasks.task_type = 'ExecuteTask' \
@@ -166,7 +166,7 @@ class SQLClient{
     vector<Door> doors;
     string time = Util::time_str(ros::Time::now());
     res = stmt->executeQuery(
-      "SELECT i.door_id, i.dependency, i.last_update, i.is_used, t.position_x, t.position_y, o.open_pos_st FROM door_infos i \
+      "SELECT i.door_id, i.dependency, i.last_update, i.is_used, t.position_x, t.position_y, o.open_pos_st FROM doors i \
         INNER JOIN positions t ON t.target_id = i.door_id \
         LEFT JOIN (SELECT * FROM open_possibilities \
         WHERE day_of_week = DAYOFWEEK('" + time +  "') and time('" + time +"') between start_time and end_time) o \

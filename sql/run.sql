@@ -14,8 +14,6 @@ SET SQL_SAFE_UPDATES = 0;
 
 use sensor_db;
 
-
-
 drop table if exists positions;
 CREATE TABLE positions (
     target_id INT AUTO_INCREMENT,
@@ -63,8 +61,8 @@ VALUES
 
 -- Create door info table -------
 
-DROP TABLE IF EXISTS door_infos;
-CREATE TABLE door_infos(
+DROP TABLE IF EXISTS doors;
+CREATE TABLE doors(
 	door_id INT REFERENCES positions(target_id),
     dependency INT REFERENCES positions(target_id),
     last_update DATETIME DEFAULT '2020-06-01 9:00:00',
@@ -73,68 +71,11 @@ CREATE TABLE door_infos(
 );	
 
 
-INSERT INTO door_infos(door_id,dependency)
+INSERT INTO doors(door_id,dependency)
 VALUES
 (1,0), (2,1), (3,1), (4,1), (5,1), (6,1), (7,0), (8,7), (9,0), (10,0), (11,10), (12,10), (13,10), (14,0), (15,0), (16,0);
 
 -- Create door info table finished-------
-
-DROP TABLE IF EXISTS custom_points;
-CREATE TABLE IF NOT EXISTS custom_points (
-	point_id INT,
-    door_id INT DEFAULT 0,
-    PRIMARY KEY (point_id)
-);
-INSERT INTO custom_points
-VALUES
-(21,3),(22,4),(23,5),(24,7),(25,7),(26,10),(27,13),(28,14),(29,15),(30,0);
-
--- Create measurement and possibility table --------
-
-drop table if exists measurements;
-CREATE TABLE measurements (
-    door_id INT REFERENCES positions(target_id),
-    door_status BOOLEAN,
-    date_time DATETIME,
-    CONSTRAINT Door_Date_Time UNIQUE (date_time , door_id)
-);
-
-drop table if exists open_possibilities;
-CREATE TABLE open_possibilities (
-    door_id INT REFERENCES positions(target_id),
-    day_of_week INT,
-    start_time TIME,
-    end_time TIME,
-    open_pos DOUBLE(6,2),
-    open_pos_st DOUBLE(6,2),
-    CONSTRAINT Door_Time UNIQUE (day_of_week , start_time , end_time , door_id)
-);
-
-
-CALL createPossibilityTable(16);
-
--- Create measurement and possibility table finished --------
-
--- Create task table --------
-
-DROP TABLE IF EXISTS tasks;
-CREATE TABLE tasks (
-    task_id INT AUTO_INCREMENT,
-    task_type ENUM('GatherEnviromentInfo', 'Charging','ExecuteTask'),
-    start_time DATETIME,
-    target_id INT REFERENCES positions(target_id),
-    robot_id INT,
-    priority INT,
-    cur_status varchar(255) DEFAULT 'Created',
-    dependency INT,
-    description varchar(255),
-    PRIMARY KEY (task_id)																																																																								
-);
-
--- ENUM('Created', 'WaitingToRun', 'Running', 'RanToCompletion', 'Canceled','Error','ToReRun') 
-
-
--- Create task table --------
 
 -- Create charging station table --------
 
@@ -152,6 +93,67 @@ SELECT target_id FROM positions WHERE target_type = 'ChargingStation';
 
 -- Create charging station table finished--------
 
+
+DROP TABLE IF EXISTS custom_points;
+CREATE TABLE IF NOT EXISTS custom_points (
+	point_id INT REFERENCES positions(target_id),
+    door_id INT DEFAULT 0,
+    PRIMARY KEY (point_id)
+);
+INSERT INTO custom_points
+VALUES
+(21,3),(22,4),(23,5),(24,7),(25,7),(26,10),(27,13),(28,14),(29,15),(30,0);
+
+-- Create open possibility table  --------
+DROP TABLE IF EXISTS open_possibilities;
+CREATE TABLE open_possibilities (
+    door_id INT REFERENCES doors(door_id),
+    day_of_week INT,
+    start_time TIME,
+    end_time TIME,
+    open_pos DOUBLE(6,2),
+    open_pos_st DOUBLE(6,2),
+    CONSTRAINT Door_Time UNIQUE (day_of_week , start_time , end_time , door_id)
+);
+
+CALL createPossibilityTable(16);
+
+-- Create possibility table finished --------
+
+
+-- Create measurement table --------
+
+DROP TABLE IF EXISTS measurements;
+CREATE TABLE measurements (
+    door_id INT REFERENCES doors(door_id),
+    door_status BOOLEAN,
+    date_time DATETIME,
+    CONSTRAINT Door_Date_Time UNIQUE (date_time , door_id)
+);
+
+CALL createRawData();
+-- Create measurement table finished --------
+
+-- Create task table --------
+
+DROP TABLE IF EXISTS tasks;
+CREATE TABLE tasks (
+    task_id INT AUTO_INCREMENT,
+    task_type ENUM('GatherEnviromentInfo', 'Charging','ExecuteTask'),
+    start_time DATETIME,
+    target_id INT,
+    robot_id INT,
+    priority INT,
+    cur_status varchar(255) DEFAULT 'Created',
+    dependency INT,
+    description varchar(255),
+    PRIMARY KEY (task_id)																																																																								
+);
+
+-- ENUM('Created', 'WaitingToRun', 'Running', 'RanToCompletion', 'Canceled','Error','ToReRun') 
+
+
+-- Create task table finished --------
 
 
 -- Create charging trigger, update info by time --------
@@ -175,7 +177,7 @@ DELIMITER ;;
 CREATE TRIGGER last_update_trigger
 AFTER INSERT ON measurements FOR EACH ROW
 BEGIN
-	UPDATE door_infos
+	UPDATE doors
     SET last_update = NEW.date_time
     WHERE door_id = NEW.door_id;
 END;
@@ -191,7 +193,7 @@ DELIMITER ;;
 CREATE TRIGGER door_used
 AFTER UPDATE ON tasks FOR EACH ROW
 BEGIN
-	UPDATE door_infos
+	UPDATE doors
     SET is_used = IF(NEW.cur_status = 'Running',1,0)
     where NEW.target_id = door_id;
 END;
@@ -199,12 +201,14 @@ END;
 DELIMITER ;
 
 -- Create door_used finished --		
+
 call create_execute_tasks();
+
 -- Print all tables --
 SELECT * FROM measurements;
 SELECT * FROM open_possibilities;
 SELECT * FROM positions;
 SELECT * FROM charging_stations;
-SELECT * FROM door_infos;
+SELECT * FROM doors;
 SELECT * FROM tasks;
 SELECT * FROM custom_points;
