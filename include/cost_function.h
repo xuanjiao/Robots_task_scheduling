@@ -3,7 +3,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <nav_msgs/GetPlan.h>
 #include "ros/ros.h"
-#include "door.h"
+#include "objects.h"
 
 using namespace std;
 
@@ -41,7 +41,7 @@ class CostCalculator{
 
     void CalculateLargeTasksCost(ros::Time now,LargeExecuteTask& t, geometry_msgs::Pose robotPose){
         CalculateComplexTrajectoryBatteryConsumption(robotPose,t);
-        t.waitingTime = t.smallTasks.begin()->second.goal.header.stamp - now; 
+        t.waitingTime = t.smallTasks.begin()->second.point.goal.header.stamp - now; 
         t.cost =  TWB.W_BATTERY/ t.smallTasks.size() * t.battery 
                     + TWB.W_TIME  * t.waitingTime.toSec() 
                     + TWB.W_POSSIBILITY * t.openPossibility 
@@ -62,11 +62,11 @@ class CostCalculator{
         double battery = 0.0;
         geometry_msgs::Pose start;
         std::map<int,SmallExecuteTask>::iterator it = lt.smallTasks.begin();
-        battery += CalculateSimpleBatteryConsumption(robotPose,it->second.goal.pose);
-        start = it->second.goal.pose; // store last trajectory end point
+        battery += CalculateSimpleBatteryConsumption(robotPose,it->second.point.goal.pose);
+        start = it->second.point.goal.pose; // store last trajectory end point
         for( it++;it != lt.smallTasks.end();it++){
-          battery += CalculateSimpleBatteryConsumption(start,it->second.goal.pose);
-          start = it->second.goal.pose;
+          battery += CalculateSimpleBatteryConsumption(start,it->second.point.goal.pose);
+          start = it->second.point.goal.pose;
         }
         lt.battery = battery;
     }

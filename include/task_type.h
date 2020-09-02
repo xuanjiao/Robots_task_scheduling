@@ -5,6 +5,7 @@
 #include <vector>
 #include <geometry_msgs/PoseStamped.h>
 #include "util.h"
+#include "objects.h"
 
 using namespace std;
 
@@ -45,11 +46,16 @@ public:
 };
 
 
-class SmallExecuteTask: public SmallTask{
+class SmallExecuteTask: public AbstractTask{
 public:
+    Point point;
     int dependency = 0;
-    double openPossibility = 0.0;
-    double cost = 0.0;
+    string getTaskInfo(){
+        stringstream ss;
+        ss<< taskType <<" : "<<Util::time_str(point.goal.header.stamp)<<
+         " (" <<point.goal.pose.position.x<<","<<point.goal.pose.position.y<<")";
+        return ss.str();
+    }
 };
 
 class LargeExecuteTask: public AbstractTask{
@@ -65,7 +71,7 @@ public:
         stringstream ss;
         ss<<"\n"<<taskType;
         for(auto it = smallTasks.begin(); it !=smallTasks.end(); it++){
-           ss<<"\n["<<it->first<<"] "<< Util::time_str(it->second.goal.header.stamp)<<" "<< " (" <<it->second.goal.pose.position.x<<","<<it->second.goal.pose.position.y<<")";
+           ss<<"\n["<<it->first<<"] "<< Util::time_str(it->second.point.goal.header.stamp)<<" "<< " (" <<it->second.point.goal.pose.position.x<<","<<it->second.point.goal.pose.position.y<<")";
         }
         return ss.str();
     }
@@ -100,7 +106,7 @@ public:
                 LargeExecuteTask lt; // Create a large task
                 lt.smallTasks.insert(make_pair(it->taskId,*it));
                 lt.priority = it->priority;
-                lt.openPossibility = it->openPossibility;
+                // lt.openPossibility = it->point.openPossibility;
                 lt.taskId = lts.size();
                 lt.taskType = it->taskType;
                 lts.push_back(lt);
@@ -123,7 +129,6 @@ public:
                 }else{ 
                     lit->smallTasks.insert(make_pair(it->taskId,*it));
                     lit->priority = it->priority;
-                    lit->openPossibility = lit->openPossibility * it->openPossibility;
                     lit->taskId = lit - lts.begin();
                     ROS_INFO("Put task %d in large task %ld",it->taskId,lit - lts.begin());
                 }

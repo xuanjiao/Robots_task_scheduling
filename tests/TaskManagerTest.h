@@ -35,16 +35,18 @@ TEST_F(TaskManagerTest,createLargeTask){
     std::vector<SmallExecuteTask> tasks;
     SmallExecuteTask t1;
     t1.taskId = 1;
-    t1.goal.pose.position.x = 2;
-    t1.goal.pose.orientation.w = 2;
+    t1.point.goal.pose.position.x = -24;
+    t1.point.goal.pose.position.y = 12;
+    t1.point.goal.pose.orientation.w = 2;
+    t1.point.depDoorId = 3; 
     t1.dependency = 0;
     SmallExecuteTask t2;
     t2.taskId = 2;
-    t2.goal.pose.position.x = 4;
+    t2.point.goal.pose.position.x = 4;
     t2.dependency = 1;
     SmallExecuteTask t3;
     t3.taskId = 3;
-    t3.goal.pose.position.x = 8;
+    t3.point.goal.pose.position.x = 8;
     t3.dependency = 0;
     tasks.push_back(t1);
     tasks.push_back(t2);
@@ -54,9 +56,9 @@ TEST_F(TaskManagerTest,createLargeTask){
     ASSERT_EQ(lts[0].smallTasks.size(),2);
     ASSERT_EQ(lts[1].smallTasks.size(),1);
 
-    ASSERT_EQ(lts[0].smallTasks[1].goal.pose.position.x,t1.goal.pose.position.x);
-    ASSERT_EQ(lts[0].smallTasks[2].goal.pose.position.x,t2.goal.pose.position.x);
-    ASSERT_EQ(lts[1].smallTasks[3].goal.pose.position.x,t3.goal.pose.position.x);
+    ASSERT_EQ(lts[0].smallTasks[1].point.goal.pose.position.x,t1.point.goal.pose.position.x);
+    ASSERT_EQ(lts[0].smallTasks[2].point.goal.pose.position.x,t2.point.goal.pose.position.x);
+    ASSERT_EQ(lts[1].smallTasks[3].point.goal.pose.position.x,t3.point.goal.pose.position.x);
 }
 
 TEST_F(TaskManagerTest,HandleTaskResult){

@@ -5,6 +5,14 @@
 #include <sstream>
 using namespace std;
 
+class Point{
+public:
+    int pointId;
+    int doorId;
+    geometry_msgs::PoseStamped goal;
+    int depDoorId = 0;
+};
+
 class Door{ 
     public:
     int doorId;
@@ -31,4 +39,30 @@ class Door{
         });
     }
 
+};
+
+
+class ChargingStation{
+public:
+    int stationId;
+    geometry_msgs::Pose pose;
+    double remainingTime;
+    double batteryLevel;
+    double cost;
+
+    static void SorChargingStationsWithCost(vector<ChargingStation>& v){
+        sort(v.begin(),v.end(),
+        [](const ChargingStation& a, const ChargingStation& b)->bool
+        {
+            return a.cost > b.cost;
+        });
+    }
+
+    static void SortChargingStationsWithCost(vector<ChargingStation>& v){
+        sort(v.begin(),v.end(),
+        [](const ChargingStation& a, const ChargingStation& b)->bool
+        {
+            return a.cost > b.cost;
+        });
+    }
 };

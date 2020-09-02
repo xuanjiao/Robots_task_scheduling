@@ -11,8 +11,7 @@
 #include <cppconn/resultset.h>
 #include <cppconn/statement.h>
 #include "task_type.h"
-#include "door.h"
-#include "charging_station.h"
+#include "objects.h"
 #include "util.h"
 #include <boost/thread/mutex.hpp>
 
@@ -126,29 +125,34 @@ class SQLClient{
     vector<SmallExecuteTask> v;
     string now = Util::time_str(ros::Time::now());
     res = stmt->executeQuery(
-      "SELECT tasks.dependency, tasks.priority, tasks.target_id, tasks.task_id, tasks.task_type, tasks.start_time, o.open_pos_st, \
-      tg.position_x, tg.position_y FROM positions tg \
-      INNER JOIN tasks ON tasks.target_id = tg.target_id \
-      INNER JOIN custom_points c ON c.point_id = tg.target_id \
-      INNER JOIN open_possibilities o ON o.door_id = c.door_id \
+      "SELECT tasks.task_id, tasks.dependency as dep_task, tasks.priority, tasks.task_type, tasks.start_time, c.point_id, c.door_id,\
+      di.dependency as dep_door, o2.open_pos_st AS dep_door_op, pos.position_x, pos.position_y FROM custom_points c \
+      INNER JOIN tasks ON tasks.target_id = c.point_id \
+      INNER JOIN door_infos di ON di.door_id = c.door_id \
+	  INNER JOIN open_possibilities o1 ON o1.door_id = c.door_id AND DAYOFWEEK(tasks.start_time) = o1.day_of_week AND TIME(tasks.start_time) BETWEEN o1.start_time AND o1.end_time \
+      INNER JOIN positions pos ON pos.target_id = c.door_id \
+      LEFT JOIN open_possibilities o2 ON o2.door_id = di.dependency AND DAYOFWEEK(tasks.start_time) = o1.day_of_week AND TIME(tasks.start_time) BETWEEN o2.start_time AND o2.end_time \
       AND tasks.cur_status IN ('Created','ToReRun') \
       AND tasks.task_type = 'ExecuteTask' \
-      AND tasks.start_time > '" + now +"'"
+      AND tasks.start_time > '" + now +"'" +
+      "ORDER BY tasks.task_id"
     );
     if(res->rowsCount()!=0){
       while(res->next()){
         SmallExecuteTask t;
-        t.priority = res->getInt("priority");
-        t.targetId = res->getInt("target_id");
         t.taskId = res->getInt("task_id");
+        t.dependency = res->getInt("dep_task");
+        t.priority = res->getInt("priority");
         t.taskType = res->getString("task_type");
-        t.dependency = res->getInt("dependency");
-
-        t.goal.header.frame_id = "map";
-        t.goal.header.stamp = Util::str_ros_time(res->getString("start_time"));
-        t.goal.pose.position.x = res->getDouble("position_x");
-        t.goal.pose.position.y = res->getDouble("position_y");
-        t.goal.pose.orientation.w = 1.0;
+        t.point.pointId = res->getInt("point_id");
+        t.point.goal.header.stamp = Util::str_ros_time(res->getString("start_time"));
+        t.point.pointId = res->getInt("point_id");
+        t.point.doorId = res->getInt("door_id");
+        t.point.depDoorId = res->getInt("dep_door");
+        t.point.goal.header.frame_id = "map";
+        t.point.goal.pose.position.x = res->getDouble("position_x");
+        t.point.goal.pose.position.y = res->getDouble("position_y");
+        t.point.goal.pose.orientation.w = 1.0;
         v.push_back(t);
       } 
     }
@@ -259,7 +263,7 @@ class SQLClient{
       sql::ResultSet* res;        
       stmt->execute(
         "INSERT INTO tasks(dependency,task_type, priority, target_id, start_time) VALUES('"
-        +to_string(t.dependency) +"','" + t.taskType +"','" + to_string(t.priority) +"','" + to_string(t.targetId) + "','" + Util::time_str(t.goal.header.stamp)+"')"
+        +to_string(t.dependency) +"','" + t.taskType +"','" + to_string(t.priority) +"','" + to_string(t.point.pointId) + "','" + Util::time_str(t.point.goal.header.stamp)+"')"
         
         );
       res = stmt->executeQuery("SELECT last_insert_id() as id");

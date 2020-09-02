@@ -1,6 +1,6 @@
 #include "ros/ros.h"
 #include "sql_client.h"
-#include "charging_station.h"
+#include "objects.h"
 #include "robot_navigation/ChargingAction.h"
 #include <actionlib/server/simple_action_server.h>
 #include <vector>

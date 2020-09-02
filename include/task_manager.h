@@ -139,7 +139,26 @@ public:
         _sc.UpdateTaskRobotId(taskId,robotId);
     }
 
-
+    void CalculateLargetaskOpenpossibility(LargeExecuteTask& t){
+        vector<int> doors;
+        stringstream ss;
+        int id = 0;
+        ss << "Relative doors list: ";
+        for( auto sit =t.smallTasks.begin(); sit !=t.smallTasks.end(); sit++){          
+            id = sit->second.point.doorId;
+            if(id != 0){ // if not in corridor
+                doors.push_back(id);
+                ss << " "<<id;
+            }
+            id = sit->second.point.depDoorId;
+            if(id != 0){ // if not in corridor
+                doors.push_back(id);
+                ss << " "<<id;
+            }
+            id = 0;            
+        }
+        
+    }
     private:
 
     SQLClient& _sc;

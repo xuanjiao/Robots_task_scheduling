@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS custom_points (
 );
 INSERT INTO custom_points
 VALUES
-(21
+(21,3),(22,4),(23,5),(24,7),(25,7),(26,10),(27,13),(28,14),(29,15);
 
 -- Create measurement and possibility table --------
 

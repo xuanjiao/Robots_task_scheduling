@@ -111,9 +111,9 @@ public:
 
         for(auto it = lt.smallTasks.begin();it !=  lt.smallTasks.end(); it++ ){
             taskId = it->first;
-            g.goals.push_back(it->second.goal);
+            g.goals.push_back(it->second.point.goal);
             g.taskIds.push_back(taskId);
-            g.targetIds.push_back(it->second.targetId);
+            g.targetIds.push_back(it->second.point.pointId);
            
             _tm.AfterSendingTask(taskId,robotId); 
         }

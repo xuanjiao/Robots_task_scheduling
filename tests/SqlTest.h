@@ -1,6 +1,5 @@
 #pragma once
 #include "../include/sql_client.h"
-#include "charging_station.h"
 #include "util.h"
 #include <gtest/gtest.h>
 
@@ -46,14 +45,14 @@ TEST_F(SqlTest,InsertATaskAssignId){
     SmallExecuteTask t;
     t.taskType = "ExecuteTask";
     t.priority = 4;
-    t.goal.pose.position.x = 4.38;
-    t.goal.pose.position.y =  9.34;
-    t.goal.header.stamp = ros::Time::now()+ros::Duration(20);
-    t.goal.header.frame_id = "map";
-    t.targetId = sc->InsertATargetAssignId(t.goal,"Point");
-    int taskId = sc->InsertATaskAssignId(t);  
-    ASSERT_GT(t.targetId,0);
-    ASSERT_GT( taskId,0);
+    t.point.goal.pose.position.x = 4.38;
+    t.point.goal.pose.position.y =  9.34;
+    t.point.goal.header.stamp = ros::Time::now()+ros::Duration(20);
+    t.point.goal.header.frame_id = "map";
+    t.point.pointId = sc->InsertATargetAssignId(t.point.goal,"Point");
+    t.taskId = sc->InsertATaskAssignId(t);  
+    ASSERT_GT(t.point.pointId,0);
+    ASSERT_GT( t.taskId,0);
 }
 
 
@@ -96,7 +95,7 @@ TEST_F(SqlTest,UpdateChargingStationInfo){
 
 TEST_F(SqlTest,TaskInUseTrigger){
     SmallExecuteTask t;
-    t.targetId = 3;
+    t.point.pointId = 3;
     t.taskType = "GatherEnviromentInfo";
     t.taskId = sc->InsertATaskAssignId(t); 
     int ret = sc->UpdateTaskStatus(t.taskId,"Running");
@@ -107,7 +106,7 @@ TEST_F(SqlTest,TaskInUseTrigger){
 
 TEST_F(SqlTest,TaskUpdateStatus){
     SmallExecuteTask t;
-    t.targetId = 3;
+    t.point.pointId = 3;
     t.taskType = "GatherEnviromentInfo";
     t.taskId = sc->InsertATaskAssignId(t); 
     int ret = sc->UpdateTaskStatus(t.taskId,"Running");
@@ -117,7 +116,7 @@ TEST_F(SqlTest,TaskUpdateStatus){
 
 TEST_F(SqlTest,TaskUpdateDescription){
     SmallExecuteTask t;
-    t.targetId = 5;
+    t.point.pointId = 5;
     t.taskType = "GatherEnviromentInfo";
     t.taskId = sc->InsertATaskAssignId(t); 
     int ret = sc->UpdateTaskDescription(t.taskId,"Succeeded");

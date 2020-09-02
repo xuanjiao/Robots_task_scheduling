@@ -18,14 +18,14 @@ int main(int argc, char** argv){
             cout << "Please enter priority(2-4) , x , y , dependency"<<endl;
 
             cin >> t.priority;
-            cin >> t.goal.pose.position.x;
-            cin >> t.goal.pose.position.y;
+            cin >> t.point.goal.pose.position.x;
+            cin >> t.point.goal.pose.position.y;
             cin >> t.dependency;
-            t.goal.pose.orientation.z = 0.1;
-            t.goal.header.stamp = ros::Time::now()+ros::Duration(60);
-            t.goal.header.frame_id = "map";
+            t.point.goal.pose.orientation.z = 0.1;
+            t.point.goal.header.stamp = ros::Time::now()+ros::Duration(60);
+            t.point.goal.header.frame_id = "map";
     
-            t.targetId = sc.InsertATargetAssignId(t.goal,"Point");
+            t.point.pointId = sc.InsertATargetAssignId(t.point.goal,"Point");
             int taskId = sc.InsertATaskAssignId(t);  
             
             // ROS_INFO_STREAM("Created a task. \n"<<t.goal<<" target id = "<<t.targetId<< " task id ="<<taskId);
