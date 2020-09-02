@@ -82,11 +82,12 @@ VALUES
 DROP TABLE IF EXISTS custom_points;
 CREATE TABLE IF NOT EXISTS custom_points (
 	point_id INT,
-    door_id INT
+    door_id INT DEFAULT 0,
+    PRIMARY KEY (point_id)
 );
 INSERT INTO custom_points
 VALUES
-(21,3),(22,4),(23,5),(24,7),(25,7),(26,10),(27,13),(28,14),(29,15);
+(21,3),(22,4),(23,5),(24,7),(25,7),(26,10),(27,13),(28,14),(29,15),(30,0);
 
 -- Create measurement and possibility table --------
 

@@ -81,8 +81,15 @@ TEST_F(SqlTest,UpdateChargingStationInfo){
     ASSERT_EQ(ret,1);
 }
 
-
-
+TEST_F(SqlTest, QueryRelativeDoorOpenPossibility){
+    set<int> doors;
+    doors.insert(3);
+    doors.insert(4);
+    doors.insert(4);
+    doors.insert(5);
+    auto o = sc->QueryRelativeDoorOpenPossibility(doors,ros::Duration(100));
+    ASSERT_EQ(o.size(),3);
+}
 
 // // // TEST_F(SqlTest,create_database){
 // // //     std::map<int,geometry_msgs::Pose> map;

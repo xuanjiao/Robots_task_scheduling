@@ -8,6 +8,7 @@
 #include "cost_function.h"
 #include <vector>
 #include <queue>
+#include <sstream>
 #include <set>
 #include "sql_client.h"
 
@@ -37,16 +38,28 @@ public:
             ROS_INFO_STREAM("Large_task_id Battery WaitTime Open_possibility Priority   Cost");
             ROS_INFO("-----------------------------------------------------------------------------");
             for(LargeExecuteTask& t:lts){
+                CalculateLargetaskOpenpossibility(t);     
                 _cc.CalculateLargeTasksCost(now,t,robotPose);
                 // ROS_INFO_STREAM("Calculate execute task cost finish");
             } 
             LargeExecuteTask::FilterTask(lts); // remove task exceed cost limit
         }
+
+        stringstream ss;
+        
         if(lts.size() != 0){ // after filter, if there is no execute task, gather inviroment
+            ss << "After filter, there are tasks: ";
+            for(LargeExecuteTask& t:lts){
+                ss << t.taskId <<" ";
+            } 
+            
             LargeExecuteTask::SortTasksWithCost(lts);
             lt = lts.back();
-            ROS_INFO("Best execute task is %d",lt.taskId);
+            ss << ", the best is "<< lt.taskId;
+        }else{
+            ss << "After filter, there are no execute tasks.";
         }
+        ROS_INFO_STREAM(ss.str());
         return lt;
     }
 
@@ -90,7 +103,7 @@ public:
         ROS_INFO_STREAM("Id remaining time battery level  Cost");
         ROS_INFO("-----------------------------------------------------------------------------");
         for(ChargingStation& cs : css){
-                _cc.CalculateChargingStationCost(cs,robotPose);     
+            _cc.CalculateChargingStationCost(cs,robotPose);
         }
         ChargingStation::SorChargingStationsWithCost(css);
 
@@ -140,24 +153,29 @@ public:
     }
 
     void CalculateLargetaskOpenpossibility(LargeExecuteTask& t){
-        vector<int> doors;
+        set<int> doors;
         stringstream ss;
         int id = 0;
         ss << "Relative doors list: ";
         for( auto sit =t.smallTasks.begin(); sit !=t.smallTasks.end(); sit++){          
+            // find all doors and dependency doors 
             id = sit->second.point.doorId;
-            if(id != 0){ // if not in corridor
-                doors.push_back(id);
-                ss << " "<<id;
-            }
+            doors.insert(id);
+            ss << " "<<id;
             id = sit->second.point.depDoorId;
-            if(id != 0){ // if not in corridor
-                doors.push_back(id);
-                ss << " "<<id;
-            }
+            doors.insert(id);
+            ss << " "<<id;
             id = 0;            
         }
         
+        doors.erase(0); // ignore 0
+        vector<double> ops =  _sc.QueryRelativeDoorOpenPossibility(doors,t.waitingTime);
+        
+        t.openPossibility = 1;
+        for(auto op : ops){
+            t.openPossibility *= op;
+        }
+        ROS_INFO_STREAM("Task related door: "<<ss.str()<<" multiply open possibility "<<t.openPossibility);
     }
     private:
 

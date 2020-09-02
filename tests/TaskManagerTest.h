@@ -1,9 +1,9 @@
 #pragma once
 #include "ros/ros.h"
 #include <geometry_msgs/PoseStamped.h>
-#include "../include/task_manager.h"
-#include "../include/sql_client.h"
-#include "../include/task_type.h"
+#include "task_manager.h"
+#include "sql_client.h"
+#include "task_type.h"
 
 using namespace std;
 
@@ -70,6 +70,30 @@ TEST_F(TaskManagerTest,HandleTaskResult){
     tm->HandleTaskResult(r);
 }
 
+TEST_F(TaskManagerTest,CalculateLargetaskOpenpossibility){
+    LargeExecuteTask lt;
+    SmallExecuteTask s1,s2; // pont1 to point 2
+    s1.point.doorId = 3;
+    s1.point.depDoorId = 1;
+    s2.point.doorId = 4;
+    s2.point.depDoorId = 1;   
+    lt.smallTasks.insert(make_pair(1,s1));
+    lt.smallTasks.insert(make_pair(2,s2));
+    tm->CalculateLargetaskOpenpossibility(lt);
+    ASSERT_LT(lt.openPossibility - 0.128, 0.01); // 0.8 x 0.8 x 0.2
+
+    LargeExecuteTask lt2;  // point 1 to point 5
+    SmallExecuteTask s3,s4;
+    s3.point.doorId = 3;
+    s3.point.depDoorId = 1;
+    s4.point.doorId = 7;
+    s4.point.depDoorId = 0;   
+    lt.smallTasks.insert(make_pair(1,s3)); 
+    lt.smallTasks.insert(make_pair(2,s4));
+    tm->CalculateLargetaskOpenpossibility(lt);
+    ASSERT_LT(lt.openPossibility - 0.512, 0.01); // 0.8 x 0.8 x 0.8
+
+}
 // TEST_F(TaskManagerTest,calculateBattery){
 //     geometry_msgs::Pose p1,p2,p3;
 //     geometry_msgs::PoseStamped ps2,ps3;

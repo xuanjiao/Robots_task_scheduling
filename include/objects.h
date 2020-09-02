@@ -18,6 +18,7 @@ class Door{
     int doorId;
     geometry_msgs::Pose pose;
     double depOpenpossibility;
+    double openpossibility;
     ros::Time lastUpdate;
     bool isUsed;
     double cost;

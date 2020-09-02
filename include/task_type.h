@@ -65,7 +65,7 @@ public:
     double battery = 0.0;
     ros::Duration waitingTime;
     double cost = 0.0;
-    static const int COST_LIMIT = 40; 
+    static const int COST_LIMIT = 70; 
 
     string getTaskInfo(){
         stringstream ss;
@@ -88,7 +88,7 @@ public:
         ROS_INFO_STREAM("Filter Task cost < "<<to_string(COST_LIMIT));
         for(vector<LargeExecuteTask>::iterator it = v.begin(); it != v.end(); ){
             if(it->cost > COST_LIMIT){
-               ROS_INFO_STREAM("Delete large task "<<it->taskId);
+              // ROS_INFO_STREAM("Delete large task "<<it->taskId);
                it = v.erase(it);
             }else{
                 it++;

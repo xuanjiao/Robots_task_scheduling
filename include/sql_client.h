@@ -125,13 +125,11 @@ class SQLClient{
     vector<SmallExecuteTask> v;
     string now = Util::time_str(ros::Time::now());
     res = stmt->executeQuery(
-      "SELECT tasks.task_id, tasks.dependency as dep_task, tasks.priority, tasks.task_type, tasks.start_time, c.point_id, c.door_id,\
-      di.dependency as dep_door, o2.open_pos_st AS dep_door_op, pos.position_x, pos.position_y FROM custom_points c \
+      "SELECT tasks.task_id, tasks.dependency as dep_task, tasks.priority, tasks.task_type, tasks.start_time, c.point_id, c.door_id, \
+      di.dependency as dep_door, pos.position_x, pos.position_y FROM custom_points c \
       INNER JOIN tasks ON tasks.target_id = c.point_id \
-      INNER JOIN door_infos di ON di.door_id = c.door_id \
-	  INNER JOIN open_possibilities o1 ON o1.door_id = c.door_id AND DAYOFWEEK(tasks.start_time) = o1.day_of_week AND TIME(tasks.start_time) BETWEEN o1.start_time AND o1.end_time \
+      LEFT JOIN door_infos di ON di.door_id = c.door_id \
       INNER JOIN positions pos ON pos.target_id = c.door_id \
-      LEFT JOIN open_possibilities o2 ON o2.door_id = di.dependency AND DAYOFWEEK(tasks.start_time) = o1.day_of_week AND TIME(tasks.start_time) BETWEEN o2.start_time AND o2.end_time \
       AND tasks.cur_status IN ('Created','ToReRun') \
       AND tasks.task_type = 'ExecuteTask' \
       AND tasks.start_time > '" + now +"'" +
@@ -197,6 +195,40 @@ class SQLClient{
     
   _sqlMtx.unlock();
     return doors;
+  }
+
+  vector<double> QueryRelativeDoorOpenPossibility(set<int>& doors, ros::Duration waitingTime ){
+    vector<double> v;
+    _sqlMtx.lock();
+    sql::ResultSet* res;
+    string now = Util::time_str(ros::Time::now() + waitingTime);
+    stringstream ids;
+    for(auto it = doors.begin() ; ;){
+      ids << *it;
+      if(++it == doors.end()){ // if it is point to the last element
+        break;
+      }else{ // if it is not point to the last element
+        ids << ",";
+      }
+    }
+
+    res = stmt->executeQuery(
+      "SELECT open_pos_st FROM open_possibilities WHERE door_id IN (" + ids.str() + 
+      ") AND DAYOFWEEK('"+ now +"') = day_of_week AND TIME('" + now + "') BETWEEN start_time AND end_time"
+    );
+
+    if(res->rowsCount() == 0){
+      ROS_INFO_STREAM("No relative door Info");
+      return v;
+    }
+
+    while(res->next()){
+      v.push_back(res->getDouble("open_pos_st"));
+    }
+
+    delete res;
+    _sqlMtx.unlock();  
+    return v;
   }
 
   ChargingStation QueryChargingStationInfo(int stationId){
