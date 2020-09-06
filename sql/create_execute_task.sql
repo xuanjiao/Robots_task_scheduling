@@ -3,22 +3,14 @@
 DROP PROCEDURE IF EXISTS origin_db.create_execute_tasks;
 
 delimiter ;;
-
-CREATE PROCEDURE origin_db.create_execute_tasks( IN task_num INT, IN start_time DATETIME)
-BEGIN
- SET @task_type := 'ExecuteTask';
- SET @task_time := start_time;
- SET @task_index := 0;
- WHILE @task_index < task_num DO
-	-- Create task to a random point. priority 2, dependency 0
-	INSERT INTO origin_db.tasks(task_type,start_time , target_id, priority,dependency)
-		VALUES(@task_type, @task_time ,FLOOR(21 + RAND()*10),2,0);
-	SET @task_index := @task_index + 1;
-    SET @task_time  := @task_time  + INTERVAL FLOOR(100 * RAND()) SECOND;
- END WHILE ;
- -- Make some task dependent on a task before
- -- UPDATE tasks SET dependency = task_id - 1 WHERE task_id MOD 10 = 2;
-
+CREATE PROCEDURE origin_db.create_execute_tasks(IN task_num INT,IN t DATETIME)
+BEGIN 
+	SET @task_index := 1;
+	WHILE @task_index <= task_num DO
+		INSERT INTO origin_db.tasks(task_type, start_time, target_id,priority,dependency)
+        VALUES('ExecuteTask',t + INTERVAL 40 * @task_index SECOND,20 + @task_index,2,0);
+		SET @task_index = @task_index +1;
+    END WHILE;
 END ;;
 
 delimiter ;

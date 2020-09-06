@@ -11,7 +11,7 @@ CREATE TABLE back_up_db.open_possibilities_bu
 SELECT * FROM origin_db.open_possibilities;
 
 DROP TABLE IF EXISTS back_up_db.charging_stations_bu;
-CREATE TABLE back_up_db.charging_statioins_bu
+CREATE TABLE back_up_db.charging_stations_bu
 SELECT * FROM origin_db.charging_stations;
 
 DROP TABLE IF EXISTS back_up_db.doors_bu;
@@ -30,3 +30,4 @@ SELECT * FROM back_up_db.charging_statioins_bu;
 SELECT * FROM back_up_db.measurements_bu;
 SELECT * FROM back_up_db.doors_bu;
 SELECT * FROM back_up_db.open_possibilities_bu;
+SELECT * FROM back_up_db.tasks_bu;

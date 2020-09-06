@@ -119,7 +119,7 @@ CREATE TABLE open_possibilities (
 );
 
 
-CALL createPossibilityTable(16);
+CALL create_possibility_table(16);
 
 -- Create possibility table finished --------
 

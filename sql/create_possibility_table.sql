@@ -1,11 +1,11 @@
 
 
-DROP PROCEDURE IF EXISTS createPossibilityTable;
+DROP PROCEDURE IF EXISTS create_possibility_table;
 delimiter ;;
 
 
 
-CREATE PROCEDURE createPossibilityTable(IN door_num INT)
+CREATE PROCEDURE create_possibility_table(IN door_num INT)
 BEGIN
 -- DECLARE door INT DEFAULT 1;
 SET @door := 1;

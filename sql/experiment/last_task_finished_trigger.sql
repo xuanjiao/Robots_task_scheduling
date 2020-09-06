@@ -31,7 +31,7 @@ BEGIN
     
     -- get last task timestamp t, create next round of tests
 
-	CALL exp_db.create_execute_tasks(@task_per_exp,MAX(origin_db.tasks.start_time));
+	CALL origin_db.create_execute_tasks(@task_per_exp,MAX(origin_db.tasks.start_time));
     
     -- update weight table
     INSERT INTO origin_db.exe_weight

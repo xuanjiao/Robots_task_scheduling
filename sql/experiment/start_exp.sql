@@ -1,4 +1,7 @@
 
+-- Load backUp tables
+
+
 -- Create execute task experiment result table
 
 DROP TABLE IF EXISTS exp_db.exe_rs;
@@ -51,9 +54,9 @@ INSERT INTO origin_db.exe_weight
 SELECT wt_btr,wt_wait,wt_psb, wt_pri FROM exp_db.exe_rs WHERE exp_no = 1;
 
 -- Create first round of execute tasks
-
-SET @start_time = '2020-06-01 9:00:00';
-CALL origin_db.create_execute_tasks(@task_per_exp, @start_time +INTERVAL 30 SECOND);
+TRUNCATE origin_db.tasks;
+CALL origin_db.create_execute_tasks(@task_per_exp,'2020-06-01 9:00:00');
 
 SELECT * FROM exp_db.exe_rs;
 SELECT * FROM origin_db.exe_weight;
+SELECT * FROM origin_db.tasks;
