@@ -8,9 +8,9 @@
 using namespace std;
 
 struct TaskWeightBase{
-    double W_BATTERY       = 10;
-    double W_TIME          = 0.1;
-    double W_POSSIBILITY   = -10;
+    double W_BATTERY       = 1;
+    double W_TIME          = 10;
+    double W_POSSIBILITY   = -1;
     double W_PRIORITY      = -1;
 }TWB;
 

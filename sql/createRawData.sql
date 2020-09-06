@@ -3,10 +3,10 @@ DROP PROCEDURE IF EXISTS createRawData;
 DELIMITER ;;
 CREATE PROCEDURE createRawData()
 BEGIN
-	TRUNCATE TABLE sensor_db.measurements;
+	TRUNCATE TABLE measurements;
 	set @tm := '2020-06-01 9:00:01';
     WHILE  @tm < '2020-06-02 20:00:00' DO
-    INSERT INTO sensor_db.measurements
+    INSERT INTO measurements
     
 		SELECT o.door_id,
 			IF(rand()< o.open_pos,1,0), 
@@ -17,10 +17,6 @@ BEGIN
     END WHILE;
 END ;;
 DELIMITER ;
-
-call createRawData();
-SELECT * FROM sensor_db.measurements;
-
 
 /*
 DROP PROCEDURE IF EXISTS createRawData;

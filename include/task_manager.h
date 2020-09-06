@@ -42,22 +42,22 @@ public:
                 _cc.CalculateLargeTasksCost(now,t,robotPose);
                 // ROS_INFO_STREAM("Calculate execute task cost finish");
             } 
-            LargeExecuteTask::FilterTask(lts); // remove task exceed cost limit
+            // LargeExecuteTask::FilterTask(lts); // remove task exceed cost limit
         }
 
         stringstream ss;
         
         if(lts.size() != 0){ // after filter, if there is no execute task, gather inviroment
-            ss << "After filter, there are tasks: ";
-            for(LargeExecuteTask& t:lts){
-                ss << t.taskId <<" ";
-            } 
+          //  ss << "After filter, there are tasks: ";
+          //  for(LargeExecuteTask& t:lts){
+           //     ss << t.taskId <<" ";
+          //  } 
             
             LargeExecuteTask::SortTasksWithCost(lts);
             lt = lts.back();
-            ss << ", the best is "<< lt.taskId;
+            ss << "the best is "<< lt.taskId;
         }else{
-            ss << "After filter, there are no execute tasks.";
+           // ss << "After filter, there are no execute tasks.";
         }
         ROS_INFO_STREAM(ss.str());
         return lt;
@@ -175,7 +175,7 @@ public:
         for(auto op : ops){
             t.openPossibility *= op;
         }
-        ROS_INFO_STREAM("Task related door: "<<ss.str()<<" multiply open possibility "<<t.openPossibility);
+        // ROS_INFO_STREAM("Task related door: "<<ss.str()<<" multiply open possibility "<<t.openPossibility);
     }
     private:
 

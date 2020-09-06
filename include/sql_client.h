@@ -15,7 +15,7 @@
 #include "util.h"
 #include <boost/thread/mutex.hpp>
 
-#define   DATABASE_NAME                                   "sensor_db"
+#define   DATABASE_NAME                                   "origin_db"
 #define   URI                                             "tcp://127.0.0.1"
 
 using namespace std;

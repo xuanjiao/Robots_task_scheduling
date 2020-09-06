@@ -1,18 +1,18 @@
-create database if not exists sensor_db character set utf8 collate utf8_general_ci;
+create database if not exists origin_db character set utf8 collate utf8_general_ci;
 create user if not exists 'centralized_pool'@'localhost' identified by 'pass';
 create user if not exists 'door_simulator'@'localhost' identified by 'pass';
 create user if not exists 'task_generator'@'localhost' identified by 'pass';
 create user if not exists 'charging_station'@'localhost' identified by 'pass';
 
-grant all on sensor_db.* to 'centralized_pool'@'localhost';
-grant all on sensor_db.* to 'door_simulator'@'localhost';
-grant all on sensor_db.* to 'task_generator'@'localhost';
-grant all on sensor_db.* to 'charging_station'@'localhost';
+grant all on origin_db.* to 'centralized_pool'@'localhost';
+grant all on origin_db.* to 'door_simulator'@'localhost';
+grant all on origin_db.* to 'task_generator'@'localhost';
+grant all on origin_db.* to 'charging_station'@'localhost';
 
 SET GLOBAL event_scheduler = ON;
 SET SQL_SAFE_UPDATES = 0;
 
-use sensor_db;
+use origin_db;
 
 drop table if exists positions;
 CREATE TABLE positions (
@@ -47,7 +47,8 @@ VALUES
 (15,'Door',3.2,1.5),
 (16,'Door',-4.0,1.5),
 (17,'ChargingStation',0.0,5.0),
-(18,'ChargingStation',-21.0,5.0),
+(18,'ChargingStation',-7.0,5.0),
+(19,'ChargingStation',-21.0,5.0),
 (21,'Point',-24.0,12.0),
 (22,'Point',-21.0,12.0),
 (23,'Point',-16.0,12.0),
@@ -145,16 +146,38 @@ CREATE TABLE tasks (
     target_id INT,
     robot_id INT,
     priority INT,
-    cur_status varchar(255) DEFAULT 'Created',
+    cur_status ENUM('Created', 'WaitingToRun', 'Running', 'RanToCompletion', 'Canceled','Error','ToReRun') DEFAULT 'Created' ,
     dependency INT,
     description varchar(255),
     PRIMARY KEY (task_id)																																																																								
 );
 
--- ENUM('Created', 'WaitingToRun', 'Running', 'RanToCompletion', 'Canceled','Error','ToReRun') 
-
 
 -- Create task table finished --------
+
+
+-- Create weight table --
+DROP TABLE exe_weight;
+CREATE TABLE exe_weight(
+	wt_btr DOUBLE(6,2),
+    wt_wait DOUBLE(6,2),  -- waiting time
+    wt_psb DOUBLE(6,2),
+    wt_pri DOUBLE(6,2)
+);
+
+DROP TABLE door_weight;
+CREATE TABLE door_weight(
+	wt_btr DOUBLE(6,2),
+    wt_update DOUBLE(6,2), -- time since last update
+    wt_psb DOUBLE(6,2),
+    wt_used DOUBLE(6,2) -- is being used by another robot
+);
+
+DROP TABLE charging_station_weight;
+CREATE TABLE charging_station_weight(
+	wt_btr DOUBLE(6,2),  	-- battery level
+    wt_remain DOUBLE(6,2)	-- time until finish charging
+);
 
 
 -- Create charging trigger, update info by time --------
@@ -202,8 +225,6 @@ END;
 DELIMITER ;
 
 -- Create door_used finished --		
-
-call create_execute_tasks();
 
 -- Print all tables --
 SELECT * FROM measurements;

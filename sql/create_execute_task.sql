@@ -1,32 +1,31 @@
--- Create some execute task
+-- Create some execute task in back_up
 -- points 21-29
-DROP PROCEDURE IF EXISTS create_execute_tasks;
+DROP PROCEDURE IF EXISTS origin_db.create_execute_tasks;
 
 delimiter ;;
 
-CREATE PROCEDURE create_execute_tasks()
+CREATE PROCEDURE origin_db.create_execute_tasks( IN task_num INT, IN start_time DATETIME)
 BEGIN
  SET @task_type := 'ExecuteTask';
- SET @start_time := '2020-06-01 9:00:20';
- SET @task_num := 20;
+ SET @task_time := start_time;
  SET @task_index := 0;
- WHILE @task_index < @task_num DO
+ WHILE @task_index < task_num DO
 	-- Create task to a random point. priority 2, dependency 0
-	INSERT INTO tasks(task_type,start_time, target_id, priority,dependency)
-		VALUES(@task_type, @start_time,FLOOR(21 + RAND()*10),2,0);
+	INSERT INTO origin_db.tasks(task_type,start_time , target_id, priority,dependency)
+		VALUES(@task_type, @task_time ,FLOOR(21 + RAND()*10),2,0);
 	SET @task_index := @task_index + 1;
-    SET @start_time := @start_time + INTERVAL FLOOR(300 * RAND()) SECOND;
+    SET @task_time  := @task_time  + INTERVAL FLOOR(100 * RAND()) SECOND;
  END WHILE ;
  -- Make some task dependent on a task before
- UPDATE tasks SET dependency = task_id - 1 WHERE task_id MOD 10 = 2;
+ -- UPDATE tasks SET dependency = task_id - 1 WHERE task_id MOD 10 = 2;
 
 END ;;
 
 delimiter ;
 
-TRUNCATE tasks;
-CALL create_execute_tasks();
-SELECT * FROM tasks;
+-- TRUNCATE tasks;
+-- CALL create_execute_tasks();
+-- SELECT * FROM tasks;
 /*
 INSERT INTO tasks
 VALUES
