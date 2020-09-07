@@ -14,8 +14,8 @@ INNER JOIN (
 		SUM( IF (t.cur_status = 'Error' ,1,0)) AS err, 
 		SUM( IF (t.cur_status = 'Running' ,1,0)) AS running,
 		SUM( IF (t.cur_status = 'ToReRun' ,1,0)) AS to_rerun
-	FROM origin_db.tasks t WHERE t.task_type = 'ExecuteTask'
--- 	GROUP BY exp_no
+	FROM exp_db.execute_tasks t WHERE t.task_type = 'ExecuteTask'
+ 	GROUP BY exp_no
 	) tmp ON rs.exp_no = tmp.exp_no
 SET rs.total = tmp.total, 
 	rs.completed = tmp.completed,
@@ -26,3 +26,6 @@ SET rs.total = tmp.total,
 	rs.to_rerun = tmp.to_rerun;
 END ;;
 DELIMITER ;
+
+CALL exp_db.update_exp_result();
+SELECT * FROM exp_db.exe_rs;

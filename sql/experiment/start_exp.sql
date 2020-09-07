@@ -45,8 +45,8 @@ VALUES
 
 	
 -- set task per experiment
-SET @task_per_exp :=5;
-
+SET @task_per_exp :=15;
+SET @exp_no :=1;
 -- Clear weight table. Insert weght 
 TRUNCATE origin_db.exe_weight;
 
@@ -57,33 +57,31 @@ SELECT wt_btr,wt_wait,wt_psb, wt_pri FROM exp_db.exe_rs WHERE exp_no = 1;
 TRUNCATE origin_db.tasks;
 SET @LAST_TASK := 0;
 SET @LAST_TIME := '2020-06-01 9:00:00';
-CALL origin_db.create_execute_tasks(@task_per_exp * 10,@LAST_TIME,@LAST_TASK);
-SET @LAST_TASK := 5;
+CALL origin_db.create_execute_tasks(@task_per_exp,@LAST_TIME,@LAST_TASK);
 
--- Call this trigger when last task of current experiment finished
-DROP TRIGGER IF EXISTS origin_db.last_task_finsihed;
-DROP TRIGGER IF EXISTS origin_db.new_weight;
+DROP EVENT 	IF EXISTS	exp_finish;		
 
 delimiter ;;
-																																										
-CREATE TRIGGER origin_db.last_task_finsihed 
-AFTER UPDATE ON origin_db.tasks FOR EACH ROW
-BEGIN
-	
+																																					
+CREATE EVENT exp_finish
+ON SCHEDULE EVERY 10 MINUTE
+DO BEGIN
 	-- Split tasks to experiment 1,2,3 ... write experiment result in exec_task result 
-	IF NEW.cur_status IN ('RanToCompletion','Error', 'Canceled') AND  NEW.task_id = @LAST_TASK  THEN
-		CALL exp_db.update_exp_result();
     
-    -- get last task timestamp t, create next round of tests
-	-- CALL origin_db.create_execute_tasks(@task_per_exp,@LAST_TIME,@LAST_TASK);
-    
+
+    INSERT INTO exp_db.execute_tasks(task_type, start_time, target_id, robot_id , priority ,cur_status, dependency, description)
+	SELECT  task_type, start_time, target_id, robot_id , priority ,cur_status, dependency, description FROM origin_db.tasks WHERE task_type = 'ExecuteTask';
+    LIMIT 
+    DELETE FROM origin_db.tasks;
     -- update weight table
     DELETE FROM origin_db.exe_weight;
     INSERT INTO origin_db.exe_weight
-		SELECT wt_btr,wt_wait,wt_psb, wt_pri FROM exp_db.exe_rs  WHERE exp_no = (SELECT COUNT(total) +1 FROM exp_db.exe_rs);
-																	
-	END IF;
-    
+		SELECT wt_btr,wt_wait,wt_psb, wt_pri FROM exp_db.exe_rs  WHERE exp_no = @exp_no;
+	
+        -- get last task timestamp t, create next round of tests
+	 CALL origin_db.create_execute_tasks(@task_per_exp,@LAST_TIME,@LAST_TASK);
+     
+	SET @exp_no := @exp_no + 1;
 END;;
 
 /*
@@ -105,3 +103,5 @@ SELECT * FROM origin_db.exe_weight;
 SELECT * FROM origin_db.tasks;
 SELECT @LAST_TASK;
 SELECT @LAST_TIME;
+
+SHOW EVENTS;

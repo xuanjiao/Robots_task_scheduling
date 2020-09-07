@@ -1,3 +1,4 @@
+/* 
 DROP TABLE IF EXISTS exp_db.exe_rs;
 CREATE TABLE exp_db.exe_rs(
 	exp_no INT AUTO_INCREMENT,
@@ -5,7 +6,6 @@ CREATE TABLE exp_db.exe_rs(
 	wt_wait DOUBLE (5,2),
     wt_psb DOUBLE (5,2),
     wt_pri DOUBLE (5,2),
-
     total INT,
     completed INT ,
     not_run INT , 
@@ -37,6 +37,22 @@ VALUES
 (0.1,	10,		-10,	-0.1),
 (0.1,	0.1,	-10,	-10);
 
+
+DROP TABLE exp_db.execute_tasks;
+CREATE TABLE exp_db.execute_tasks(
+    task_id INT AUTO_INCREMENT,
+    task_type ENUM('GatherEnviromentInfo', 'Charging','ExecuteTask'),
+    start_time DATETIME,
+    target_id INT,
+    robot_id INT,
+    priority INT,
+    cur_status ENUM('Created', 'WaitingToRun', 'Running', 'RanToCompletion', 'Canceled','Error','ToReRun') DEFAULT 'Created' ,
+    dependency INT,
+    description varchar(255),
+    PRIMARY KEY (task_id)
+);
+*/
+
 -- set task per experiment
 SET @task_per_exp :=15;
 
@@ -47,11 +63,14 @@ SET @LAST_TASK := 0;
 SET @LAST_TIME := '2020-06-01 9:00:00';
 CALL origin_db.create_execute_tasks(@task_per_exp,@LAST_TIME,@LAST_TASK);
 
-SET @exp_no := 1;
+SET @exp_no := 9 ;
 INSERT INTO origin_db.exe_weight
 SELECT wt_btr,wt_wait,wt_psb, wt_pri FROM exp_db.exe_rs WHERE exp_no = @exp_no;
+
 
 SELECT *  FROM exp_db.exe_rs;
 SELECT * FROM origin_db.exe_weight;
 SELECT * FROM origin_db.tasks;
 SELECT @exp_no;
+
+
