@@ -12,6 +12,7 @@
 #include <cppconn/statement.h>
 #include "task_type.h"
 #include "objects.h"
+#include "cost_function.h"
 #include "util.h"
 #include <boost/thread/mutex.hpp>
 
@@ -84,6 +85,26 @@ class SQLClient{
     ROS_INFO_STREAM(ss.str());
     _sqlMtx.unlock();
   }
+
+  TaskWeight QueryTaskWeight(){
+    _sqlMtx.lock();
+    sql::ResultSet* res;
+    TaskWeight tw;
+    res = stmt->executeQuery(" SELECT * FROM exe_weight");
+    if(res->rowsCount() == 0){
+      ROS_INFO("No task weight infomation");
+    }else{
+      res->next();
+      tw.wt_btr = res->getDouble("wt_btr");
+      tw.wt_pri = res->getDouble("wt_pri");
+      tw.wt_psb = res->getDouble("wt_psb");
+      tw.wt_wait = res->getDouble("wt_wait");
+    }
+    delete res;
+    _sqlMtx.unlock();
+    return tw;
+  }
+
 
   vector<tuple<int,geometry_msgs::Pose,long double>>
   QueryTargetPositionAndOpenPossibilities(string time){
@@ -175,21 +196,20 @@ class SQLClient{
     );
 
     if(res->rowsCount() == 0){
-      ROS_INFO_STREAM("No Door Info");
-      return doors;
-    }
-   
-    while(res->next()){
-      Door d;
-      d.doorId = res->getInt("door_id"); // find available door id
-      d.lastUpdate = Util::str_ros_time(res->getString("last_update"));
-      if(res->getInt("dependency")!=0)
-        d.depOpenpossibility = res->getDouble("open_pos_st");
-        d.pose.position.x = res->getDouble("position_x");
-        d.pose.position.y = res->getDouble("position_y");
-        d.pose.orientation.w = 1.0;
-        d.isUsed = res->getBoolean("is_used");
-        doors.push_back(d);
+      ROS_INFO_STREAM("No Door Info");    
+    }else{
+        while(res->next()){
+        Door d;
+        d.doorId = res->getInt("door_id"); // find available door id
+        d.lastUpdate = Util::str_ros_time(res->getString("last_update"));
+        if(res->getInt("dependency")!=0)
+          d.depOpenpossibility = res->getDouble("open_pos_st");
+          d.pose.position.x = res->getDouble("position_x");
+          d.pose.position.y = res->getDouble("position_y");
+          d.pose.orientation.w = 1.0;
+          d.isUsed = res->getBoolean("is_used");
+          doors.push_back(d);
+      }
     }
     delete res;
     
@@ -219,12 +239,12 @@ class SQLClient{
 
     if(res->rowsCount() == 0){
       ROS_INFO_STREAM("No relative door Info");
-      return v;
+    }else{
+      while(res->next()){
+        v.push_back(res->getDouble("open_pos_st"));
+      }
     }
 
-    while(res->next()){
-      v.push_back(res->getDouble("open_pos_st"));
-    }
 
     delete res;
     _sqlMtx.unlock();  
@@ -242,17 +262,15 @@ class SQLClient{
       WHERE cs.station_id = "+to_string(stationId));
     if(res->rowsCount() == 0){
       ROS_INFO_STREAM("No Charging Station Info");
-      return cs;
+    }else{
+      res->next();
+      cs.stationId = res->getInt("station_id"); 
+      cs.batteryLevel = res->getDouble("robot_battery_level");
+      cs.remainingTime = res->getDouble("remaining_time");
+      cs.pose.position.x = res->getDouble("position_x");
+      cs.pose.position.y = res->getDouble("position_y");
+      cs.pose.orientation.w = 1.0;
     }
-   
-    res->next();
-    cs.stationId = res->getInt("station_id"); 
-    cs.batteryLevel = res->getDouble("robot_battery_level");
-    cs.remainingTime = res->getDouble("remaining_time");
-    cs.pose.position.x = res->getDouble("position_x");
-    cs.pose.position.y = res->getDouble("position_y");
-    cs.pose.orientation.w = 1.0;
-
     delete res;
     _sqlMtx.unlock();
     return cs;
@@ -269,21 +287,21 @@ class SQLClient{
     );
     if(res->rowsCount() == 0){
       ROS_INFO_STREAM("No Charging Station Info");
-      return css;
+     
+    }else{
+        while(res->next()){
+        ChargingStation cs;
+        cs.stationId = res->getInt("station_id"); 
+        cs.batteryLevel = res->getInt("robot_battery_level");
+        cs.remainingTime = res->getInt64("t");
+        cs.pose.position.x = res->getDouble("position_x");
+        cs.pose.position.y = res->getDouble("position_y");
+        cs.pose.orientation.w = 1.0;
+        css.push_back(cs);
+      }
     }
    
-    while(res->next()){
-      ChargingStation cs;
-      cs.stationId = res->getInt("station_id"); 
-      cs.batteryLevel = res->getInt("robot_battery_level");
-      cs.remainingTime = res->getInt64("t");
-      cs.pose.position.x = res->getDouble("position_x");
-      cs.pose.position.y = res->getDouble("position_y");
-      cs.pose.orientation.w = 1.0;
-      css.push_back(cs);
-    }
-    delete res;
-    
+    delete res; 
   _sqlMtx.unlock();
     return css;
   }
@@ -394,7 +412,7 @@ class SQLClient{
 
     sql::ResultSet* res;
     string dw,st,et,mst = Util::time_str(measure_time);
-    
+    int ret;
     // select start time, end time, day of week from open possibility table
     res = stmt->executeQuery(
       "SELECT start_time, end_time, day_of_week FROM open_possibilities WHERE door_id = '" + to_string( door_id)+
@@ -403,26 +421,25 @@ class SQLClient{
 
     if(res->rowsCount()==0){
       ROS_INFO("Unknow day time");
-      return -1;
+      ret = -1;
+    }else{
+      res->next();
+      st = res->getString("start_time");
+      et = res->getString("end_time");
+      dw = res->getString("day_of_week");
+
+      ROS_INFO_STREAM("Start time "<<st<<" End time "<<et<<" Day of week "<<dw);
+
+      // update open possibility table
+      ret =  stmt->executeUpdate(
+        "UPDATE open_possibilities o \
+          SET  o.open_pos_st = (SELECT SUM(door_status) / COUNT(door_status)  FROM  measurements ds \
+              WHERE ds.door_id = '" + to_string(door_id) + "' AND DAYOFWEEK(ds.date_time) = '" + dw + 
+              "' AND TIME(ds.date_time) BETWEEN '" + st + "' AND '"+ et +
+          "') WHERE o.door_id = '" + to_string(door_id) + "' AND o.day_of_week = '" + dw + "' AND o.start_time =' " + st + "' AND o.end_time = '"+ et +"'"       
+      );
     }
-
-    res->next();
-    st = res->getString("start_time");
-    et = res->getString("end_time");
-    dw = res->getString("day_of_week");
-
-    ROS_INFO_STREAM("Start time "<<st<<" End time "<<et<<" Day of week "<<dw);
-
-    // update open possibility table
-    int ret =  stmt->executeUpdate(
-      "UPDATE open_possibilities o \
-        SET  o.open_pos_st = (SELECT SUM(door_status) / COUNT(door_status)  FROM  measurements ds \
-            WHERE ds.door_id = '" + to_string(door_id) + "' AND DAYOFWEEK(ds.date_time) = '" + dw + 
-            "' AND TIME(ds.date_time) BETWEEN '" + st + "' AND '"+ et +
-        "') WHERE o.door_id = '" + to_string(door_id) + "' AND o.day_of_week = '" + dw + "' AND o.start_time =' " + st + "' AND o.end_time = '"+ et +"'"       
-    );
     _sqlMtx.unlock();
-
     delete res;
     return ret;
   }

@@ -7,45 +7,53 @@
 
 using namespace std;
 
-struct TaskWeightBase{
-    double W_BATTERY       = 1;
-    double W_TIME          = 10;
-    double W_POSSIBILITY   = -1;
-    double W_PRIORITY      = -1;
-}TWB;
+typedef struct TaskWeight{
+    double wt_btr;
+    double wt_wait;
+    double wt_psb;
+    double wt_pri;
+}TaskWeight;
 
-struct DoorWeightBase{
-    double W_TIME          = -1; // large time since last update-> lower cost
-    double W_BATTERY       = 10;
-    double W_POSSIBILITY   = -10;
-    double W_IS_USED       = 100;
-}DWB;
+typedef struct DoorWeight{
+    double wt_update          = -1; // large time since last update-> lower cost
+    double wt_btr       = 10;
+    double wt_psb       = -10;
+    double wt_used       = 100;
+}DoorWeight;
 
-struct ChargingWeightBase{
-    double W_REMAINING_TIME   = 1;
-    double W_BATTERY          = 1; // Battery cosumption
-}CWB;
+typedef struct ChargingWeight{
+    double wt_remain   = 1;
+    double wt_btr          = 1; // Battery cosumption
+}ChargingWeight;
 
 class CostCalculator{
     public:
+    TaskWeight _tw;
+    DoorWeight _dw;
+    ChargingWeight _cw;
 
     CostCalculator(ros::NodeHandle &nh):_nh(nh){
         _pc = _nh.serviceClient<nav_msgs::GetPlan>("/tb3_0/move_base/NavfnROS/make_plan"); 
     }
 
+    void LoadWeight(TaskWeight &tw){
+        _tw = tw;
+        ROS_INFO("Task weight %.1f %.1f %.1f %.1f",_tw.wt_btr,tw.wt_wait,tw.wt_psb,tw.wt_pri);
+    }
+
     void CalculateChargingStationCost(ChargingStation& cs, geometry_msgs::Pose robotPose){
         double battery =  CalculateSimpleBatteryConsumption(robotPose,cs.pose);
-        cs.cost = CWB.W_REMAINING_TIME * cs.remainingTime + CWB.W_BATTERY * battery;
+        cs.cost = _cw.wt_remain * cs.remainingTime + _cw.wt_btr * battery;
         ROS_INFO("%d %.1f      %.3f       %.3f", cs.stationId,cs.remainingTime, battery,cs.cost);
     }
 
     void CalculateLargeTasksCost(ros::Time now,LargeExecuteTask& t, geometry_msgs::Pose robotPose){
         CalculateComplexTrajectoryBatteryConsumption(robotPose,t);
         t.waitingTime = t.smallTasks.begin()->second.point.goal.header.stamp - now; 
-        t.cost =  TWB.W_BATTERY/ t.smallTasks.size() * t.battery 
-                    + TWB.W_TIME  * t.waitingTime.toSec() 
-                    + TWB.W_POSSIBILITY * t.openPossibility 
-                    + TWB.W_PRIORITY * t.priority;
+        t.cost =  _tw.wt_btr/ t.smallTasks.size() * t.battery 
+                    + _tw.wt_wait  * t.waitingTime.toSec() 
+                    + _tw.wt_psb * t.openPossibility 
+                    + _tw.wt_pri * t.priority;
         ROS_INFO("%d        %.3f   %.3f   %.3f  %d  %3f",t.taskId,t.battery,t.waitingTime.toSec(), t.openPossibility,t.priority,t.cost);
 
     }
@@ -53,7 +61,7 @@ class CostCalculator{
     void CalculateDoorCost(ros::Time now, Door& door, geometry_msgs::Pose robotPose){
         double battery =  CalculateSimpleBatteryConsumption(robotPose,door.pose);
         long timeSinceLastUpdate = now.sec - door.lastUpdate.sec;      
-        door.cost = DWB.W_BATTERY * battery + DWB.W_POSSIBILITY * door.depOpenpossibility + DWB.W_TIME * timeSinceLastUpdate + DWB.W_IS_USED * door.isUsed;
+        door.cost = _dw.wt_btr * battery + _dw.wt_psb * door.depOpenpossibility + _dw.wt_update * timeSinceLastUpdate + _dw.wt_used * door.isUsed;
         ROS_INFO("%d %.3f         %ld          %.3f     %d  %.3f", door.doorId, battery,timeSinceLastUpdate,door.depOpenpossibility, door.isUsed, door.cost);
     }
 

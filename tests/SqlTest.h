@@ -91,6 +91,13 @@ TEST_F(SqlTest, QueryRelativeDoorOpenPossibility){
     ASSERT_EQ(o.size(),3);
 }
 
+TEST_F(SqlTest,QueryTaskWeight){
+   auto tw = sc->QueryTaskWeight();
+   ASSERT_EQ(tw.wt_btr,1);
+   ASSERT_EQ(tw.wt_wait,1);
+   ASSERT_EQ(tw.wt_psb,-1);
+   ASSERT_EQ(tw.wt_pri,-1);
+}   
 // // // TEST_F(SqlTest,create_database){
 // // //     std::map<int,geometry_msgs::Pose> map;
 // // //     SQLClient sql_client("root","pi");
@@ -99,7 +106,7 @@ TEST_F(SqlTest, QueryRelativeDoorOpenPossibility){
 // // // }
 
 
-
+/*
 TEST_F(SqlTest,TaskInUseTrigger){
     SmallExecuteTask t;
     t.point.pointId = 3;
@@ -110,7 +117,7 @@ TEST_F(SqlTest,TaskInUseTrigger){
     auto v = sc->QueryDoorInfo();
     ASSERT_EQ(v[2].isUsed,1);
 }
-
+*/
 TEST_F(SqlTest,TaskUpdateStatus){
     SmallExecuteTask t;
     t.point.pointId = 3;

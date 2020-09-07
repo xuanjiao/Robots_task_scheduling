@@ -3,14 +3,19 @@
 DROP PROCEDURE IF EXISTS origin_db.create_execute_tasks;
 
 delimiter ;;
-CREATE PROCEDURE origin_db.create_execute_tasks(IN task_num INT,IN t DATETIME)
+CREATE PROCEDURE origin_db.create_execute_tasks(
+	IN task_num INT,
+    INOUT t DATETIME,
+    OUT last_id INT)
 BEGIN 
 	SET @task_index := 1;
 	WHILE @task_index <= task_num DO
 		INSERT INTO origin_db.tasks(task_type, start_time, target_id,priority,dependency)
-        VALUES('ExecuteTask',t + INTERVAL 40 * @task_index SECOND,20 + @task_index,2,0);
-		SET @task_index = @task_index +1;
+        VALUES('ExecuteTask',t + INTERVAL 20 * @task_index SECOND,21 + @task_index MOD 9,2,0);
+		SET @task_index := @task_index +1;
     END WHILE;
+	SELECT MAX(task_id) INTO last_id FROM tasks;
+    SELECT MAX(start_time) INTO t FROM origin_db.tasks;
 END ;;
 
 delimiter ;

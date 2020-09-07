@@ -30,6 +30,7 @@ public:
         vector<LargeExecuteTask> lts;
         LargeExecuteTask lt;
         ros::Time now = ros::Time::now();
+        _cc.LoadWeight(_sc.QueryTaskWeight());
         sts  = _sc.QueryRunableExecuteTasks();
         ROS_INFO("Found %ld execute tasks",sts.size());
         // FilterTask(v);
