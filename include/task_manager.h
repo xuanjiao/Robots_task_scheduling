@@ -14,12 +14,16 @@
 
 using namespace std;
 
-
 class TaskManager{
 public:
-    TaskManager(SQLClient& sc, CostCalculator& cc):_sc(sc),_cc(cc){
 
-    }
+
+    TaskManager(SQLClient& sc, CostCalculator& cc):_sc(sc),_cc(cc){
+        
+       // dm[Key(0,3)] = {1}; 
+       // dm[Key(0,3)] = {1}; 
+
+    };
 
 
 
@@ -30,7 +34,8 @@ public:
         vector<LargeExecuteTask> lts;
         LargeExecuteTask lt;
         ros::Time now = ros::Time::now();
-        _cc.LoadWeight(_sc.QueryTaskWeight());
+        auto w = _sc.QueryTaskWeight();
+        _cc.LoadWeight(w);
         sts  = _sc.QueryRunableExecuteTasks();
         ROS_INFO("Found %ld execute tasks",sts.size());
         // FilterTask(v);

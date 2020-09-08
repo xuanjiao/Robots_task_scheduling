@@ -1,3 +1,5 @@
+#pragma once
+
 #include <gtest/gtest.h>
 #include <actionlib/TestAction.h>
 #include <actionlib/client/simple_action_client.h>

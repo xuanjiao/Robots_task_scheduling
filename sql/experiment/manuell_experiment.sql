@@ -1,4 +1,4 @@
-/* 
+
 DROP TABLE IF EXISTS exp_db.exe_rs;
 CREATE TABLE exp_db.exe_rs(
 	exp_no INT AUTO_INCREMENT,
@@ -6,9 +6,10 @@ CREATE TABLE exp_db.exe_rs(
 	wt_wait DOUBLE (5,2),
     wt_psb DOUBLE (5,2),
     wt_pri DOUBLE (5,2),
+    last_task_finish_time DATETIME,
     total INT,
     completed INT ,
-    not_run INT , 
+    expired INT , 
 	canceled INT,
     running INT,
     err INT,
@@ -36,7 +37,7 @@ VALUES
 (10,	10,		-0.1,	-0.1),
 (0.1,	10,		-10,	-0.1),
 (0.1,	0.1,	-10,	-10);
-
+/*
 
 DROP TABLE exp_db.execute_tasks;
 CREATE TABLE exp_db.execute_tasks(
@@ -63,7 +64,7 @@ SET @LAST_TASK := 0;
 SET @LAST_TIME := '2020-06-01 9:00:00';
 CALL origin_db.create_execute_tasks(@task_per_exp,@LAST_TIME,@LAST_TASK);
 
-SET @exp_no := 9 ;
+SET @exp_no := 15 ;
 INSERT INTO origin_db.exe_weight
 SELECT wt_btr,wt_wait,wt_psb, wt_pri FROM exp_db.exe_rs WHERE exp_no = @exp_no;
 

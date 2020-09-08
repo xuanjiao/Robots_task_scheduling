@@ -1,19 +1,10 @@
 #include <ros/ros.h>
 #include <gtest/gtest.h>
-#include "SqlTest.h"
+#include "sql_test.h"
+#include "object_test.h"
 #include "TaskManagerTest.h"
 #include "service_test.h"
 #include <thread>
-class Example :public ::testing::Test{
-    public: 
-    Example(){
-
-    }
-};
-
-TEST_F(Example,example){
-    ASSERT_EQ(1,1);
-}
 
 int main(int argc, char** argv){
     testing::InitGoogleTest(&argc,argv);

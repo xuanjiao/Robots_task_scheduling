@@ -232,5 +232,5 @@ SELECT * FROM open_possibilities;
 SELECT * FROM positions;
 SELECT * FROM charging_stations;
 SELECT * FROM doors;
-SELECT * FROM tasks;
+SELECT * FROM tas	ks;
 SELECT * FROM custom_points;
