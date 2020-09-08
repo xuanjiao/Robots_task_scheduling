@@ -11,7 +11,5 @@ SELECT * FROM exp_db.execute_tasks;
 SELECT * FROM origin_db.exe_weight;
 SELECT *  FROM exp_db.exe_rs;
 
-ALTER TABLE "table_name"
-Change "column 1" "column 2" ["Data Type"];
 
-ALTER  TABLE exp_db.exp_rs MODIFY 'not_run' 'expired' INT;
+

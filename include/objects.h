@@ -5,15 +5,6 @@
 #include <sstream>
 using namespace std;
 
-typedef pair<int,int> Key;
-typedef vector<int> Value;
-map<Key,Value>  DOORMAP= {
-    {Key(0,2),{1}},
-    {Key(0,3),{1}},
-    {Key(0,4),{1}}
-  //  {key(),{}}
-};
-
 class Point{
 public:
     int pointId;
@@ -24,8 +15,6 @@ public:
 
 class Door{ 
     public:
-    typedef pair<int,int> Key;
-    typedef vector<int> Value;
     int doorId;
     geometry_msgs::Pose pose;
     double depOpenpossibility;

@@ -11,6 +11,7 @@
 #include <sstream>
 #include <set>
 #include "sql_client.h"
+#include "room_map.h"
 
 using namespace std;
 
@@ -165,13 +166,8 @@ public:
         ss << "Relative doors list: ";
         for( auto sit =t.smallTasks.begin(); sit !=t.smallTasks.end(); sit++){          
             // find all doors and dependency doors 
-            id = sit->second.point.doorId;
-            doors.insert(id);
-            ss << " "<<id;
-            id = sit->second.point.depDoorId;
-            doors.insert(id);
-            ss << " "<<id;
-            id = 0;            
+         //    getRelativeDoors(sit)
+                   
         }
         
         doors.erase(0); // ignore 0

@@ -2,7 +2,8 @@
 
 #include <gtest/gtest.h>
 #include <actionlib/TestAction.h>
-#include <objects.h>
+#include "room_map.h"
+
 using namespace std;
 class ObjectTest :public ::testing::Test{
     public: 
@@ -12,5 +13,5 @@ class ObjectTest :public ::testing::Test{
 };
 
 TEST_F(ObjectTest,SearchDoorMap){
-    ASSERT_EQ(DOORMAP[Key(0,3)].front(),1);
+    
 }
