@@ -161,7 +161,7 @@ public:
         _sc.UpdateTaskRobotId(taskId,robotId);
     }
 
-    void CalculateLargetaskOpenpossibility(LargeExecuteTask& t){
+    RltDoors CalculateLargetaskOpenpossibility(LargeExecuteTask& t){
         RltDoors d,dAll;
 
         stringstream ss;
@@ -191,6 +191,7 @@ public:
             t.openPossibility *= op;
         }
          ROS_INFO_STREAM("Large task related door: "<<ss.str()<<" multiply open possibility "<<t.openPossibility);
+        return dAll;
     }
     private:
 

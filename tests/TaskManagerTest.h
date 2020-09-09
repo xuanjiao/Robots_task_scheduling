@@ -91,12 +91,18 @@ TEST_F(TaskManagerTest,CalculateLargetaskOpenpossibility){
 
     LargeExecuteTask lt2;  // point 1 to point 5
     SmallExecuteTask s3,s4;
-    s3.point.roomId = 6;
-    s4.point.roomId = 7;
-    lt.smallTasks.insert(make_pair(6,s3)); 
-    lt.smallTasks.insert(make_pair(7,s4));
-    tm->CalculateLargetaskOpenpossibility(lt);
-    ASSERT_LT(lt.openPossibility - 0.4096, 0.01); // 0.8 x 0.8 x 0.8 x 0.8
+    lt2.startRoom = 1;
+    s3.point.roomId = 12;
+    s4.point.roomId = 13;
+    lt2.smallTasks.insert(make_pair(6,s3)); 
+    lt2.smallTasks.insert(make_pair(7,s4));
+    auto s = tm->CalculateLargetaskOpenpossibility(lt2);
+    ASSERT_EQ(s.count(1),1);// check if contains door 1,10,12,13
+    ASSERT_EQ(s.count(10),1);
+    ASSERT_EQ(s.count(12),1);
+    ASSERT_EQ(s.count(13),1);
+
+    ASSERT_LT(lt2.openPossibility - 0.4096, 0.01); // 0.8 x 0.8 x 0.8 x 0.8
 
 }
 
