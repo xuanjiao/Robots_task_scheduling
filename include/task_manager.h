@@ -162,29 +162,35 @@ public:
     }
 
     void CalculateLargetaskOpenpossibility(LargeExecuteTask& t){
-        RltDoors doors;
-        stringstream ss;
-        int id = 0;
-        ss << "Relative doors list: ";
-        for( auto sit =t.smallTasks.begin(); sit !=t.smallTasks.end(); sit++){          
-        
-            // find relative door for small tasks
-            int room_1 = sit->second.point.roomId;
-            int room_2 = t.startRoom;
+        RltDoors d,dAll;
 
-            if(room_1 < room_2){
-                doors = RoomMap::getRelativeDoors(room_1,room_2);
-            }    
+        stringstream ss;
+       
+        auto sit =t.smallTasks.begin();
+        int room_2 = sit->second.point.roomId;
+        int room_1 = t.startRoom;
+        d= RoomMap::getRelativeDoors(room_1,room_2);
+            dAll.insert(d.begin(),d.end()); // put relative doors in 
+        
+        for(sit++; sit !=t.smallTasks.end();sit++){          
+            room_1 = room_2; 
+            // find relative door for small tasks
+            room_2 = sit->second.point.roomId;
+            d = RoomMap::getRelativeDoors(room_1,room_2);
+            dAll.insert(d.begin(),d.end()); // put relative doors in   
         }
         
+        for(auto door: dAll){
+            ss << door<<" ";
+        }
         // doors.erase(0); // ignore 0
-        vector<double> ops =  _sc.QueryRelativeDoorOpenPossibility(doors,t.waitingTime);
+        vector<double> ops =  _sc.QueryRelativeDoorOpenPossibility(dAll,t.waitingTime);
         
         t.openPossibility = 1;
         for(auto op : ops){
             t.openPossibility *= op;
         }
-        // ROS_INFO_STREAM("Task related door: "<<ss.str()<<" multiply open possibility "<<t.openPossibility);
+         ROS_INFO_STREAM("Large task related door: "<<ss.str()<<" multiply open possibility "<<t.openPossibility);
     }
     private:
 

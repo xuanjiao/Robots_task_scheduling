@@ -146,11 +146,10 @@ class SQLClient{
     vector<SmallExecuteTask> v;
     string now = Util::time_str(ros::Time::now());
     res = stmt->executeQuery(
-      "SELECT tasks.task_id, tasks.dependency as dep_task, tasks.priority, tasks.task_type, tasks.start_time, c.point_id, c.door_id, \
-      di.dependency as dep_door, pos.position_x, pos.position_y FROM custom_points c \
+      "SELECT tasks.task_id, tasks.dependency as dep_task, tasks.priority, tasks.task_type, tasks.start_time, c.point_id, c.room_id, \
+      pos.position_x, pos.position_y FROM custom_points c \
       INNER JOIN tasks ON tasks.target_id = c.point_id \
-      LEFT JOIN doors di ON di.door_id = c.door_id \
-      INNER JOIN positions pos ON pos.target_id = c.door_id \
+      INNER JOIN positions pos ON pos.target_id = c.point_id \
       AND tasks.cur_status IN ('Created','ToReRun') \
       AND tasks.task_type = 'ExecuteTask' \
       AND tasks.start_time > '" + now +"'" +

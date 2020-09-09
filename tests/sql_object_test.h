@@ -16,7 +16,7 @@ TEST_F(SqlObjectTest,QueryRoomWithCoordinate){
     geometry_msgs::Pose pose;
     pose.position.x = 0;
     pose.position.y = -4;
-  ASSERT_EQ(sc->QueryRoomWithCoordinate(pose),16);
+  ASSERT_EQ(sc->QueryRoomWithCoordinate(pose),15);
 
 }
 
@@ -68,6 +68,11 @@ TEST_F(SqlObjectTest, QueryRelativeDoorOpenPossibility){
     doors.insert(5);
     auto o = sc->QueryRelativeDoorOpenPossibility(doors,ros::Duration(100));
     ASSERT_EQ(o.size(),3);
+    ASSERT_GT(o[0],0);
+    ASSERT_GT(o[1],0);
+    ASSERT_GT(o[2],0);
+
+
 }
   
 

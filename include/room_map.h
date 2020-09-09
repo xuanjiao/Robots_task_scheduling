@@ -5,19 +5,20 @@ using namespace std;
 
 typedef pair<int,int> RoomPair;
 typedef vector<int> Value;
-
-typedef pair<int,int> RoomPair;
 typedef set<int> RltDoors;
-
-
 
 class RoomMap{
 public: 
+  static map<RoomPair,RltDoors>  ROOMMAP;
   static RltDoors getRelativeDoors(int room1, int room2){
-    RltDoors s;
-    return s;
+    if(room1<room2)
+      return ROOMMAP[RoomPair(room1,room2)];
+    else
+      return ROOMMAP[RoomPair(room2,room1)];
   }
-map<RoomPair,RltDoors>  ROOMMAP= {
+};
+
+map<RoomPair,RltDoors>  RoomMap::ROOMMAP= {
     {RoomPair(0,1),{1}},
     {RoomPair(0,2),{1,2}},
     {RoomPair(0,3),{1,3}},
@@ -171,4 +172,4 @@ map<RoomPair,RltDoors>  ROOMMAP= {
     {RoomPair(15,16),{15,16}}
     
 };
-};
+

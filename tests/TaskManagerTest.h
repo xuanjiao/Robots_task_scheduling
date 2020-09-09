@@ -1,5 +1,6 @@
 #pragma once
 #include "ros/ros.h"
+#include <gtest/gtest.h>
 #include <geometry_msgs/PoseStamped.h>
 #include "task_manager.h"
 #include "sql_client.h"
@@ -14,6 +15,9 @@ class TaskManagerTest :public ::testing::Test {
             sc= new SQLClient("centralized_pool","pass");
             cc = new CostCalculator(nh);
             tm = new TaskManager(*sc,*cc);
+            ros::Time now;
+            now.sec = 1590994800;
+            ros::Time::setNow(now);
         }
         ~TaskManagerTest(){
             delete sc;
@@ -32,13 +36,14 @@ TEST_F(TaskManagerTest,example){
 
 
 TEST_F(TaskManagerTest,createLargeTask){
+    ASSERT_EQ(ros::Time::now().sec,1590994800);
     std::vector<SmallExecuteTask> tasks;
     SmallExecuteTask t1;
     t1.taskId = 1;
     t1.point.goal.pose.position.x = -24;
     t1.point.goal.pose.position.y = 12;
     t1.point.goal.pose.orientation.w = 2;
-    t1.point.depDoorId = 3; 
+    t1.point.roomId = 3; 
     t1.dependency = 0;
     SmallExecuteTask t2;
     t2.taskId = 2;
@@ -69,33 +74,32 @@ TEST_F(TaskManagerTest,HandleTaskResult){
     r.taskType = "ExecuteTask";
     tm->HandleTaskResult(r);
 }
-/*
+
 TEST_F(TaskManagerTest,CalculateLargetaskOpenpossibility){
+    
     LargeExecuteTask lt;
-    SmallExecuteTask s1,s2; // pont1 to point 2
-    s1.point.doorId = 3;
-    s1.point.depDoorId = 1;
-    s2.point.doorId = 4;
-    s2.point.depDoorId = 1;   
+    lt.waitingTime = ros::Duration(20);
+    lt.startRoom = 1;
+    SmallExecuteTask s1,s2; // corridor -> room 3 -> room 4
+    s1.point.roomId = 3;
+    s2.point.roomId = 4;
     lt.smallTasks.insert(make_pair(1,s1));
     lt.smallTasks.insert(make_pair(2,s2));
     tm->CalculateLargetaskOpenpossibility(lt);
-    ASSERT_LT(lt.openPossibility - 0.128, 0.01); // 0.8 x 0.8 x 0.2
+
+    ASSERT_LT(lt.openPossibility - 0.16, 0.01); // 0.8 x 0.2
 
     LargeExecuteTask lt2;  // point 1 to point 5
     SmallExecuteTask s3,s4;
-    s3.point.doorId = 3;
-    s3.point.depDoorId = 1;
-    s4.point.doorId = 7;
-    s4.point.depDoorId = 0;   
-    lt.smallTasks.insert(make_pair(1,s3)); 
-    lt.smallTasks.insert(make_pair(2,s4));
+    s3.point.roomId = 6;
+    s4.point.roomId = 7;
+    lt.smallTasks.insert(make_pair(6,s3)); 
+    lt.smallTasks.insert(make_pair(7,s4));
     tm->CalculateLargetaskOpenpossibility(lt);
-    ASSERT_LT(lt.openPossibility - 0.512, 0.01); // 0.8 x 0.8 x 0.8
+    ASSERT_LT(lt.openPossibility - 0.4096, 0.01); // 0.8 x 0.8 x 0.8 x 0.8
 
 }
 
-*/
 // TEST_F(TaskManagerTest,calculateBattery){
 //     geometry_msgs::Pose p1,p2,p3;
 //     geometry_msgs::PoseStamped ps2,ps3;
