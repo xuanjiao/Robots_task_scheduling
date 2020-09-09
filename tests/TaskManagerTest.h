@@ -69,7 +69,7 @@ TEST_F(TaskManagerTest,HandleTaskResult){
     r.taskType = "ExecuteTask";
     tm->HandleTaskResult(r);
 }
-
+/*
 TEST_F(TaskManagerTest,CalculateLargetaskOpenpossibility){
     LargeExecuteTask lt;
     SmallExecuteTask s1,s2; // pont1 to point 2
@@ -94,6 +94,8 @@ TEST_F(TaskManagerTest,CalculateLargetaskOpenpossibility){
     ASSERT_LT(lt.openPossibility - 0.512, 0.01); // 0.8 x 0.8 x 0.8
 
 }
+
+*/
 // TEST_F(TaskManagerTest,calculateBattery){
 //     geometry_msgs::Pose p1,p2,p3;
 //     geometry_msgs::PoseStamped ps2,ps3;

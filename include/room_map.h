@@ -9,12 +9,14 @@ typedef vector<int> Value;
 typedef pair<int,int> RoomPair;
 typedef set<int> RltDoors;
 
-static RltDoors getRelativeDoors(int room1, int room2){
-  RltDoors s;
-  return s;
-}
-class ROOMMap{
 
+
+class ROOMMap{
+public: 
+  static RltDoors getRelativeDoors(int room1, int room2){
+    RltDoors s;
+    return s;
+  }
 map<RoomPair,RltDoors>  ROOMMAP= {
     {RoomPair(0,1),{1}},
     {RoomPair(0,2),{1,2}},

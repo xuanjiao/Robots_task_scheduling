@@ -181,6 +181,24 @@ class SQLClient{
     return v;
   }
 
+  int QueryRoomWithCoordinate(double x,double y){
+    int roomId = 0;
+    _sqlMtx.lock();
+    sql::ResultSet* res;
+    res = stmt->executeQuery("SELECT room_id FROM origin_db.room_range WHERE ( "
+      +to_string(x)+" BETWEEN x_min AND x_max  ) AND (" + to_string(y) + " BETWEEN y_min AND y_max) LIMIT 1");
+    if(res->rowsCount()==0){
+      roomId = 0; // if no room info set room 0
+    }else{
+      res->next();
+      roomId = res->getInt("room_id");
+    }
+
+    delete res;  
+    _sqlMtx.unlock();
+    return roomId;
+  }
+
   vector<Door> QueryDoorInfo(){
     _sqlMtx.lock();
     sql::ResultSet* res;

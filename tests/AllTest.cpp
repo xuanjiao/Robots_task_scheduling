@@ -1,8 +1,8 @@
 #include <ros/ros.h>
 #include <gtest/gtest.h>
-#include "sql_test.h"
-#include "object_test.h"
 #include "TaskManagerTest.h"
+#include "sql_object_test.h"
+#include "sql_task_test.h"
 #include "service_test.h"
 #include <thread>
 
@@ -15,7 +15,7 @@ int main(int argc, char** argv){
     std::thread t([]{while(ros::ok()) ros::spin();});
 
     // ::testing::GTEST_FLAG(filter) = "SqlTest.insert_task";
-    //  ::testing::GTEST_FLAG(filter) = "SqlTest.UpdateTaskStatus";
+    //::testing::GTEST_FLAG(filter) = "SqlObjectTest.QueryRoomWithCoordinate";
 
     auto res = RUN_ALL_TESTS();
     

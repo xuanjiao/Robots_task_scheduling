@@ -1,21 +1,64 @@
 create database if not exists origin_db character set utf8 collate utf8_general_ci;
 create user if not exists 'centralized_pool'@'localhost' identified by 'pass';
 create user if not exists 'door_simulator'@'localhost' identified by 'pass';
-create user if not exists 'task_generator'@'localhost' identified by 'pass';
+create user if not exists 'sql_test_1'@'localhost' identified by 'pass';
+create user if not exists 'sql_test_2'@'localhost' identified by 'pass';
 create user if not exists 'charging_station'@'localhost' identified by 'pass';
 
 grant all on origin_db.* to 'centralized_pool'@'localhost';
 grant all on origin_db.* to 'door_simulator'@'localhost';
 grant all on origin_db.* to 'task_generator'@'localhost';
 grant all on origin_db.* to 'charging_station'@'localhost';
+grant all on origin_db.* to 'sql_test_1'@'localhost';
+grant all on origin_db.* to 'sql_test_2'@'localhost';
 
 SET GLOBAL event_scheduler = ON;
 SET SQL_SAFE_UPDATES = 0;
 
-use origin_db;
+USE origin_db;
 
-drop table if exists positions;
-CREATE TABLE positions (
+-- ----------Create room range table ----------------
+DROP TABLE IF EXISTS origin_db.room_range;
+CREATE TABLE origin_db.room_range (
+	room_id INT,
+    x_min DOUBLE (6,2),
+    x_max DOUBLE (6,2),
+    y_min DOUBLE (6,2),
+    y_max DOUBLE (6,2)
+);
+
+INSERT INTO origin_db.room_range
+VALUES
+(0,-26.0,6.0,1.5,5.8),
+(1,-24.0,-14.5,5.8,8.0),
+(2,-26.0,-24.0,6.3,8.0),
+(3,-26.0,-22.5,8.0,15.0),
+(4,-22.5,17.0,8.0,15.0),
+(5,17.0,-13.0,8.0,15.0),
+(6,14.5,-13.0,6.3,8.0),
+
+(8,-12.0,11.0,6.3,9.0),
+(9,4.5,-0.5,5.8,8.5),
+(7,-12.2,-0.5,5.8,15.0),
+
+(10,2.8,10.0,5.8,8.0),
+(11,1.2,2.8,7.3,8.0),
+(12,1.2,5.0,8.0,10.0),
+(13,5.0,10.0,8.0,15.0),
+
+(14,6.0,14.0,1.5,5.8),
+
+(16,-6.2,6.0,-8.5,1.5),
+(15,-6.2,6.0,-1.8,1.5);
+
+
+
+
+-- ----------Create room range table finished ----------------
+
+-- ----------Create position table ----------------
+DROP TABLE IF EXISTS origin_db.positions;
+CREATE TABLE origin_db.positions (
     target_id INT AUTO_INCREMENT,
     target_type varchar(255) NULL,
     position_x DOUBLE (6,2)DEFAULT 0,
@@ -28,7 +71,7 @@ CREATE TABLE positions (
 );
 
 -- insert value to positions table
-INSERT INTO positions 
+INSERT INTO origin_db.positions 
 VALUES
 (1,'Door',-18.5,5.2),
 (2,'Door',-23.5,7.2),
@@ -62,8 +105,8 @@ VALUES
 
 -- Create door info table -------
 
-DROP TABLE IF EXISTS doors;
-CREATE TABLE doors(
+DROP TABLE IF EXISTS origin_db.doors;
+CREATE TABLE origin_db.doors(
 	door_id INT REFERENCES positions(target_id),
     dependency INT REFERENCES positions(target_id),
     last_update DATETIME DEFAULT '2020-06-01 9:00:00',
@@ -72,7 +115,7 @@ CREATE TABLE doors(
 );	
 
 
-INSERT INTO doors(door_id,dependency)
+INSERT INTO origin_db.doors(door_id,dependency)
 VALUES
 (1,0), (2,1), (3,1), (4,1), (5,1), (6,1), (7,0), (8,7), (9,0), (10,0), (11,10), (12,10), (13,10), (14,0), (15,0), (16,0);
 
@@ -80,8 +123,8 @@ VALUES
 
 -- Create charging station table --------
 
-DROP TABLE IF EXISTS  charging_stations;
-CREATE TABLE charging_stations(
+DROP TABLE IF EXISTS  origin_db.charging_stations;
+CREATE TABLE origin_db.charging_stations(
 	station_id INT REFERENCES positions(target_id),
     robot_battery_level DOUBLE(6,2) DEFAULT 100,
     charging_rate DOUBLE(6,2) DEFAULT 2,
@@ -89,14 +132,14 @@ CREATE TABLE charging_stations(
     PRIMARY KEY (station_id)
 );
 
-INSERT INTO charging_stations(station_id)
-SELECT target_id FROM positions WHERE target_type = 'ChargingStation';
+INSERT INTO origin_db.charging_stations(station_id)
+SELECT target_id FROM origin_db.positions WHERE target_type = 'ChargingStation';
 
 -- Create charging station table finished--------
 
 
-DROP TABLE IF EXISTS custom_points;
-CREATE TABLE IF NOT EXISTS custom_points (
+DROP TABLE IF EXISTS origin_db.custom_points;
+CREATE TABLE IF NOT EXISTS origin_db.custom_points (
 	point_id INT REFERENCES positions(target_id),
     door_id INT DEFAULT 0,
     PRIMARY KEY (point_id)
@@ -107,8 +150,8 @@ VALUES
 
 
 -- Create possibility table --------
-drop table if exists open_possibilities;
-CREATE TABLE open_possibilities (
+drop table if exists origin_db.open_possibilities;
+CREATE TABLE origin_db.open_possibilities (
     door_id INT REFERENCES doors(door_id),
     day_of_week INT,
     start_time TIME,
@@ -125,8 +168,8 @@ CALL create_possibility_table(16);
 
 -- Create measurement table --------
 
-DROP TABLE IF EXISTS measurements;
-CREATE TABLE measurements (
+DROP TABLE IF EXISTS origin_db.measurements;
+CREATE TABLE origin_db.measurements (
     door_id INT REFERENCES doors(door_id),
     door_status BOOLEAN,
     date_time DATETIME,
@@ -138,8 +181,8 @@ CALL createRawData();
 
 -- Create task table --------
 
-DROP TABLE IF EXISTS tasks;
-CREATE TABLE tasks (
+DROP TABLE IF EXISTS origin_db.tasks;
+CREATE TABLE origin_db.tasks (
     task_id INT AUTO_INCREMENT,
     task_type ENUM('GatherEnviromentInfo', 'Charging','ExecuteTask'),
     start_time DATETIME,
@@ -157,24 +200,24 @@ CREATE TABLE tasks (
 
 
 -- Create weight table --
-DROP TABLE exe_weight;
-CREATE TABLE exe_weight(
+DROP TABLE origin_db.exe_weight;
+CREATE TABLE origin_db.exe_weight(
 	wt_btr DOUBLE(6,2),
     wt_wait DOUBLE(6,2),  -- waiting time
     wt_psb DOUBLE(6,2),
     wt_pri DOUBLE(6,2)
 );
 
-DROP TABLE door_weight;
-CREATE TABLE door_weight(
+DROP TABLE origin_db.door_weight;
+CREATE TABLE origin_db.door_weight(
 	wt_btr DOUBLE(6,2),
     wt_update DOUBLE(6,2), -- time since last update
     wt_psb DOUBLE(6,2),
     wt_used DOUBLE(6,2) -- is being used by another robot
 );
 
-DROP TABLE charging_station_weight;
-CREATE TABLE charging_station_weight(
+DROP TABLE origin_db.charging_station_weight;
+CREATE TABLE origin_db.charging_station_weight(
 	wt_btr DOUBLE(6,2),  	-- battery level
     wt_remain DOUBLE(6,2)	-- time until finish charging
 );
@@ -182,8 +225,8 @@ CREATE TABLE charging_station_weight(
 
 -- Create charging trigger, update info by time --------
 
-DROP EVENT IF EXISTS charging;    -- dynamic charging stations table
-CREATE EVENT charging
+DROP EVENT IF EXISTS origin_db.charging;    -- dynamic charging stations table
+CREATE EVENT origin_db.charging
 ON SCHEDULE EVERY 1 SECOND
 STARTS CURRENT_TIMESTAMP ENDS CURRENT_TIMESTAMP + INTERVAL 3 HOUR
 DO 
@@ -196,9 +239,9 @@ DO
 
 -- Create last update trigger, update last_update column --------
 
-DROP TRIGGER IF EXISTS last_update_trigger;
+DROP TRIGGER IF EXISTS origin_db.last_update_trigger;
 DELIMITER ;;
-CREATE TRIGGER last_update_trigger
+CREATE TRIGGER origin_db.last_update_trigger
 AFTER INSERT ON measurements FOR EACH ROW
 BEGIN
 	UPDATE doors
@@ -212,12 +255,12 @@ DELIMITER ;
 
 -- Create door_used trigger --
 
-DROP TRIGGER IF EXISTS door_used;
+DROP TRIGGER IF EXISTS origin_db.door_used;
 DELIMITER ;;
-CREATE TRIGGER door_used
-AFTER UPDATE ON tasks FOR EACH ROW
+CREATE TRIGGER origin_db.door_used
+AFTER UPDATE ON origin_db.tasks FOR EACH ROW
 BEGIN
-	UPDATE doors
+	UPDATE origin_db.doors
     SET is_used = IF(NEW.cur_status = 'Running',1,0)
     where NEW.target_id = door_id;
 END;
@@ -227,10 +270,11 @@ DELIMITER ;
 -- Create door_used finished --		
 
 -- Print all tables --
-SELECT * FROM measurements;
-SELECT * FROM open_possibilities;
-SELECT * FROM positions;
-SELECT * FROM charging_stations;
-SELECT * FROM doors;
-SELECT * FROM tas	ks;
-SELECT * FROM custom_points;
+SELECT * FROM origin_db.room_range;
+SELECT * FROM origin_db.measurements;
+SELECT * FROM origin_db.open_possibilities;
+SELECT * FROM origin_db.positions;
+SELECT * FROM origin_db.charging_stations;
+SELECT * FROM origin_db.doors;
+SELECT * FROM origin_db.tasks;
+SELECT * FROM origin_db.custom_points;
