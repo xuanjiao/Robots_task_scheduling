@@ -40,11 +40,13 @@ public:
         sts  = _sc.QueryRunableExecuteTasks();
         ROS_INFO("Found %ld execute tasks",sts.size());
         // FilterTask(v);
-        if(sts.size() != 0 ){
+        if(sts.size() != 0 ){  
             lts = LargeExecuteTask::MakeLargeTasks(sts);
+             
             ROS_INFO_STREAM("Large_task_id Battery WaitTime Open_possibility Priority   Cost");
             ROS_INFO("-----------------------------------------------------------------------------");
             for(LargeExecuteTask& t:lts){
+                t.startRoom = _sc.QueryRoomWithCoordinate(robotPose);
                 CalculateLargetaskOpenpossibility(t);     
                 _cc.CalculateLargeTasksCost(now,t,robotPose);
                 // ROS_INFO_STREAM("Calculate execute task cost finish");
@@ -160,17 +162,22 @@ public:
     }
 
     void CalculateLargetaskOpenpossibility(LargeExecuteTask& t){
-        set<int> doors;
+        RltDoors doors;
         stringstream ss;
         int id = 0;
         ss << "Relative doors list: ";
         for( auto sit =t.smallTasks.begin(); sit !=t.smallTasks.end(); sit++){          
-            // find all doors and dependency doors 
-         //    getRelativeDoors(sit)
-                   
+        
+            // find relative door for small tasks
+            int room_1 = sit->second.point.roomId;
+            int room_2 = t.startRoom;
+
+            if(room_1 < room_2){
+                doors = RoomMap::getRelativeDoors(room_1,room_2);
+            }    
         }
         
-        doors.erase(0); // ignore 0
+        // doors.erase(0); // ignore 0
         vector<double> ops =  _sc.QueryRelativeDoorOpenPossibility(doors,t.waitingTime);
         
         t.openPossibility = 1;

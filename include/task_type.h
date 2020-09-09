@@ -60,6 +60,7 @@ public:
 
 class LargeExecuteTask: public AbstractTask{
 public:
+    int startRoom;    
     map<int,SmallExecuteTask> smallTasks;
     double openPossibility = 0.0;
     double battery = 0.0;

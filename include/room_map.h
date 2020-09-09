@@ -11,7 +11,7 @@ typedef set<int> RltDoors;
 
 
 
-class ROOMMap{
+class RoomMap{
 public: 
   static RltDoors getRelativeDoors(int room1, int room2){
     RltDoors s;

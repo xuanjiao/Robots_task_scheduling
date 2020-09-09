@@ -165,9 +165,7 @@ class SQLClient{
         t.taskType = res->getString("task_type");
         t.point.pointId = res->getInt("point_id");
         t.point.goal.header.stamp = Util::str_ros_time(res->getString("start_time"));
-        t.point.pointId = res->getInt("point_id");
-        t.point.doorId = res->getInt("door_id");
-        t.point.depDoorId = res->getInt("dep_door");
+        t.point.roomId = res->getInt("room_id");
         t.point.goal.header.frame_id = "map";
         t.point.goal.pose.position.x = res->getDouble("position_x");
         t.point.goal.pose.position.y = res->getDouble("position_y");
@@ -181,8 +179,10 @@ class SQLClient{
     return v;
   }
 
-  int QueryRoomWithCoordinate(double x,double y){
+  int QueryRoomWithCoordinate(geometry_msgs::Pose robotPose){
     int roomId = 0;
+    double x = robotPose.position.x;
+    double y = robotPose.position.y;
     _sqlMtx.lock();
     sql::ResultSet* res;
     res = stmt->executeQuery("SELECT room_id FROM origin_db.room_range WHERE ( "

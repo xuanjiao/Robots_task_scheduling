@@ -33,23 +33,23 @@ VALUES
 (1,-24.0,-14.5,5.8,8.0),
 (2,-26.0,-24.0,6.3,8.0),
 (3,-26.0,-22.5,8.0,15.0),
-(4,-22.5,17.0,8.0,15.0),
-(5,17.0,-13.0,8.0,15.0),
-(6,14.5,-13.0,6.3,8.0),
+(4,-22.5,-17.0,8.0,15.0),
+(5,-17.0,-13.0,8.0,15.0),
+(6,-14.5,-13.0,6.3,8.0),
 
-(8,-12.0,11.0,6.3,9.0),
+(8,-12.0,-11.0,6.3,9.0),
 (9,4.5,-0.5,5.8,8.5),
 (7,-12.2,-0.5,5.8,15.0),
 
 (10,2.8,10.0,5.8,8.0),
 (11,1.2,2.8,7.3,8.0),
-(12,1.2,5.0,8.0,10.0),
+(12,1.2,5.0,8.0,15.0),
 (13,5.0,10.0,8.0,15.0),
 
 (14,6.0,14.0,1.5,5.8),
 
-(16,-6.2,6.0,-8.5,1.5),
-(15,-6.2,6.0,-1.8,1.5);
+(16,-6.2,6.0,-1.8,1.5),
+(15,-6.2,6.0,-8.5,1.5);
 
 
 
@@ -100,7 +100,8 @@ VALUES
 (26,'Point',3.0,12.0),
 (27,'Point',7.0,12.0),
 (28,'Point',9.0,4.0),
-(29,'Point',0.0,-4.0);
+(29,'Point',0.0,-4.0),
+(30,'Point',-7.0,3.0);
 
 
 -- Create door info table -------
@@ -141,16 +142,25 @@ SELECT target_id FROM origin_db.positions WHERE target_type = 'ChargingStation';
 DROP TABLE IF EXISTS origin_db.custom_points;
 CREATE TABLE IF NOT EXISTS origin_db.custom_points (
 	point_id INT REFERENCES positions(target_id),
-    door_id INT DEFAULT 0,
+    room_id INT REFERENCES room_range(room_id),
     PRIMARY KEY (point_id)
 );
-INSERT INTO custom_points
+
+
+INSERT INTO origin_db.custom_points(point_id)
 VALUES
-(21,3),(22,4),(23,5),(24,7),(25,7),(26,10),(27,13),(28,14),(29,15),(30,0);
+(21),(22),(23),(24),(25),(26),(27),(28),(29),(30);
+
+-- update custum point room_id	
+
+UPDATE custom_points cp
+INNER JOIN positions pos ON cp.point_id = pos.target_id 
+INNER JOIN room_range r ON (pos.position_x BETWEEN r.x_min AND r.x_max )AND ( pos.position_y BETWEEN r.y_min AND y_max)
+SET cp.room_id = r.room_id ;
 
 
 -- Create possibility table --------
-drop table if exists origin_db.open_possibilities;
+DROP TABLE IF EXISTS origin_db.open_possibilities;
 CREATE TABLE origin_db.open_possibilities (
     door_id INT REFERENCES doors(door_id),
     day_of_week INT,
@@ -267,7 +277,8 @@ END;
 ;;
 DELIMITER ;
 
--- Create door_used finished --		
+-- Create door_used finished --	
+
 
 -- Print all tables --
 SELECT * FROM origin_db.room_range;

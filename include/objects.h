@@ -8,9 +8,8 @@ using namespace std;
 class Point{
 public:
     int pointId;
-    int doorId;
+    int roomId;
     geometry_msgs::PoseStamped goal;
-    int depDoorId = 0;
 };
 
 class Door{ 

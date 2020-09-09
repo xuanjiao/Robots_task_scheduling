@@ -2,6 +2,7 @@
 #include "sql_client.h"
 #include "util.h"
 #include <gtest/gtest.h>
+#include <geometry_msgs/PoseStamped.h>
 
 class SqlObjectTest :public ::testing::Test {
     public:
@@ -12,7 +13,10 @@ class SqlObjectTest :public ::testing::Test {
 };
 
 TEST_F(SqlObjectTest,QueryRoomWithCoordinate){
-  ASSERT_EQ(sc->QueryRoomWithCoordinate(0,-4),16);
+    geometry_msgs::Pose pose;
+    pose.position.x = 0;
+    pose.position.y = -4;
+  ASSERT_EQ(sc->QueryRoomWithCoordinate(pose),16);
 
 }
 
