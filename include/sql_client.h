@@ -140,7 +140,7 @@ class SQLClient{
 
       // get task info to calculate cost
   vector<SmallExecuteTask>
-  QueryRunableExecuteTasks(){
+  QueryRunableExecuteTasks(int robotId){
     _sqlMtx.lock();
     sql::ResultSet* res;
     vector<SmallExecuteTask> v;
@@ -153,7 +153,8 @@ class SQLClient{
       AND tasks.cur_status IN ('Created','ToReRun') \
       AND tasks.task_type = 'ExecuteTask' \
       AND tasks.start_time > '" + now +"'" +
-      "ORDER BY tasks.task_id"
+      " WHERE robot_id is NULL OR robot_id = " + to_string(robotId) +
+      " ORDER BY tasks.task_id"
     );
     if(res->rowsCount()!=0){
       while(res->next()){
@@ -492,6 +493,12 @@ class SQLClient{
     );
     _sqlMtx.unlock();
     return ret;
+  }
+
+  int UpdateRobotStatus(const string roborStatus){
+    _sqlMtx.lock();
+
+    _sqlMtx.unlock();
   }
 
     

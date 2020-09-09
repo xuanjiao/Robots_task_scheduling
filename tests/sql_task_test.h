@@ -12,8 +12,8 @@ class SqlTasktest :public ::testing::Test {
 
 
 TEST_F(SqlTasktest,QueryRunableExecuteTasks){
-    auto v = sc->QueryRunableExecuteTasks();
-    ASSERT_GE(v.size(),0);
+    auto v = sc->QueryRunableExecuteTasks(1);
+    ASSERT_GT(v.size(),0);
 }
 
 TEST_F(SqlTasktest,InsertATargetAssignId){

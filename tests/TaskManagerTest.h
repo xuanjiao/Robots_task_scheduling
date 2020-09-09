@@ -89,7 +89,7 @@ TEST_F(TaskManagerTest,CalculateLargetaskOpenpossibility){
 
     ASSERT_LT(lt.openPossibility - 0.16, 0.01); // 0.8 x 0.2
 
-    LargeExecuteTask lt2;  // point 1 to point 5
+    LargeExecuteTask lt2;  // room 1 -> point 6 -> point 7
     SmallExecuteTask s3,s4;
     lt2.startRoom = 1;
     s3.point.roomId = 12;

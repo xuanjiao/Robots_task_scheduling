@@ -29,7 +29,7 @@ public:
 
 
 
-    LargeExecuteTask SelectExecutetask(geometry_msgs::Pose robotPose){
+    LargeExecuteTask SelectExecutetask(int robotId, geometry_msgs::Pose robotPose){
         ROS_INFO("Start query execute tasks...");
         vector<SmallExecuteTask> sts;
         vector<LargeExecuteTask> lts;
@@ -37,7 +37,7 @@ public:
         ros::Time now = ros::Time::now();
         auto w = _sc.QueryTaskWeight();
         _cc.LoadWeight(w);
-        sts  = _sc.QueryRunableExecuteTasks();
+        sts  = _sc.QueryRunableExecuteTasks(robotId);
         ROS_INFO("Found %ld execute tasks",sts.size());
         // FilterTask(v);
         if(sts.size() != 0 ){  

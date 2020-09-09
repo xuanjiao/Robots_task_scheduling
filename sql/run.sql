@@ -17,6 +17,14 @@ SET SQL_SAFE_UPDATES = 0;
 
 USE origin_db;
 
+--   ------ Create robot table ---
+
+DROP TABLE IF EXISTS origin_db.robots;
+CREATE TABLE origin_db.robots(
+	robot_id INT,
+    robot_status ENUM('GatherInviromentInfo','ExecuteTask','Charging')
+);
+
 -- ----------Create room range table ----------------
 DROP TABLE IF EXISTS origin_db.room_range;
 CREATE TABLE origin_db.room_range (
@@ -24,7 +32,8 @@ CREATE TABLE origin_db.room_range (
     x_min DOUBLE (6,2),
     x_max DOUBLE (6,2),
     y_min DOUBLE (6,2),
-    y_max DOUBLE (6,2)
+    y_max DOUBLE (6,2),
+    PRIMARY KEY (room_id)
 );
 
 INSERT INTO origin_db.room_range

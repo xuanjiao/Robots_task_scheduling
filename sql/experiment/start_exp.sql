@@ -71,8 +71,9 @@ DO BEGIN
 
     INSERT INTO exp_db.execute_tasks(task_type, start_time, target_id, robot_id , priority ,cur_status, dependency, description)
 	SELECT  task_type, start_time, target_id, robot_id , priority ,cur_status, dependency, description FROM origin_db.tasks WHERE task_type = 'ExecuteTask';
-    LIMIT 
+    
     DELETE FROM origin_db.tasks;
+    
     -- update weight table
     DELETE FROM origin_db.exe_weight;
     INSERT INTO origin_db.exe_weight
