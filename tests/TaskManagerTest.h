@@ -66,10 +66,20 @@ TEST_F(TaskManagerTest,createLargeTask){
     ASSERT_EQ(lts[1].smallTasks[3].point.goal.pose.position.x,t3.point.goal.pose.position.x);
 }
 
-TEST_F(TaskManagerTest,HandleTaskResult){
+TEST_F(TaskManagerTest,HandleFailedTaskResult){
     TaskResult r;
     r.isCompleted = false;
     r.taskIds.push_back(1);
+    r.description = "test";
+    r.taskType = "ExecuteTask";
+    tm->HandleTaskResult(r);
+}
+
+TEST_F(TaskManagerTest,HandleSuccessTaskResult){
+    TaskResult r;
+    r.isCompleted = true;
+    r.taskIds.push_back(1);
+    r.taskIds.push_back(4);
     r.description = "test";
     r.taskType = "ExecuteTask";
     tm->HandleTaskResult(r);

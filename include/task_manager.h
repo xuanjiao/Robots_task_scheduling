@@ -134,11 +134,18 @@ public:
     }
 
     void HandleTaskResult(TaskResult& result){
+        auto last = result.taskIds.end()-1;
         if(result.isCompleted){
-            for(auto it = result.taskIds.begin(); it != result.taskIds.end(); it++){
+            for(auto it = result.taskIds.begin();;){
                 int ret1 = _sc.UpdateTaskStatus(*it,"RanToCompletion");
                 int ret2 = _sc.UpdateTaskDescription(*it,result.description);
                 ROS_INFO("Task Succedd. Update task status %d description %d",ret1,ret2);
+                if(it == last){ // if it is the last task
+                    _sc.UpdateTaskEndTime(*it);
+                    break;
+                }else{
+                    it++;
+                }
             }
         }else{
             if(result.taskType == "GatherEnviromentInfo"){

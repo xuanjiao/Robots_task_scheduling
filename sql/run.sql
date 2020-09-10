@@ -210,6 +210,7 @@ CREATE TABLE origin_db.tasks (
     priority INT,
     cur_status ENUM('Created', 'WaitingToRun', 'Running', 'RanToCompletion', 'Canceled','Error','ToReRun') DEFAULT 'Created' ,
     dependency INT,
+    finish_time DATETIME,
     description varchar(255),
     PRIMARY KEY (task_id)																																																																								
 );

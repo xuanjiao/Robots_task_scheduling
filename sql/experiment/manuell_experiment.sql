@@ -64,7 +64,7 @@ SET @LAST_TASK := 0;
 SET @LAST_TIME := '2020-06-01 9:00:00';
 CALL origin_db.create_execute_tasks(@task_per_exp,@LAST_TIME,@LAST_TASK);
 
-SET @exp_no := 15 ;
+SET @exp_no := 1 ;
 INSERT INTO origin_db.exe_weight
 SELECT wt_btr,wt_wait,wt_psb, wt_pri FROM exp_db.exe_rs WHERE exp_no = @exp_no;
 

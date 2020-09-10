@@ -495,10 +495,25 @@ class SQLClient{
     return ret;
   }
 
-  int UpdateRobotStatus(const string roborStatus){
+  int UpdateTaskEndTime(int taskId){
     _sqlMtx.lock();
-
+    int ret = stmt->executeUpdate(
+      "UPDATE tasks SET finish_time = '" + Util::time_str(ros::Time::now()) + "' WHERE task_id = "+to_string(taskId)
+    );
     _sqlMtx.unlock();
+    return ret;
+  }
+
+  int UpdateAllPointRoomId(){
+    _sqlMtx.lock();
+    int ret = stmt->executeUpdate(
+      "UPDATE custom_points cp \
+      INNER JOIN positions pos ON cp.point_id = pos.target_id \
+      INNER JOIN room_range r ON (pos.position_x BETWEEN r.x_min AND r.x_max )AND ( pos.position_y BETWEEN r.y_min AND y_max) \
+      SET cp.room_id = r.room_id"
+    );
+    _sqlMtx.unlock();
+    return ret;
   }
 
     

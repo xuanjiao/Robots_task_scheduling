@@ -8,6 +8,9 @@ class SqlObjectTest :public ::testing::Test {
     public:
         SqlObjectTest() {
             sc = new SQLClient("sql_test_2","pass");
+            ros::Time now;
+            now.sec = 1590994800;
+            ros::Time::setNow(now);
         }
     SQLClient* sc;
 };
@@ -21,10 +24,8 @@ TEST_F(SqlObjectTest,QueryRoomWithCoordinate){
 }
 
 TEST_F(SqlObjectTest,QueryDoorInfo){
-    ros::Time now;
-    now.sec = 1590994800;
-    ros::Time::setNow(now);
-    ASSERT_EQ(ros::Time::now().sec,1590994800);
+
+    //ASSERT_EQ(ros::Time::now().sec,1590994800);
     auto doors = sc->QueryDoorInfo();
     ASSERT_EQ(doors.size(),16);
     ASSERT_EQ(doors[12].doorId,13);
