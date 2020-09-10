@@ -6,7 +6,7 @@ CREATE TABLE exp_db.exe_rs(
 	wt_wait DOUBLE (5,2),
     wt_psb DOUBLE (5,2),
     wt_pri DOUBLE (5,2),
-    last_task_finish_time DATETIME,
+    finish_time DATETIME,
     total INT,
     completed INT ,
     expired INT , 
@@ -37,7 +37,7 @@ VALUES
 (10,	10,		-0.1,	-0.1),
 (0.1,	10,		-10,	-0.1),
 (0.1,	0.1,	-10,	-10);
-/*
+
 
 DROP TABLE exp_db.execute_tasks;
 CREATE TABLE exp_db.execute_tasks(
@@ -49,10 +49,11 @@ CREATE TABLE exp_db.execute_tasks(
     priority INT,
     cur_status ENUM('Created', 'WaitingToRun', 'Running', 'RanToCompletion', 'Canceled','Error','ToReRun') DEFAULT 'Created' ,
     dependency INT,
+    finish_time DATETIME,
     description varchar(255),
     PRIMARY KEY (task_id)
 );
-*/
+
 
 -- set task per experiment
 SET @task_per_exp :=15;
