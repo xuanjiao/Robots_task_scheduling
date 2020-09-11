@@ -45,9 +45,11 @@ class Door{
 class ChargingStation{
 public:
     int stationId;
+    int robotId;
     geometry_msgs::Pose pose;
     double remainingTime;
     double batteryLevel;
+    string cur_status;
     double cost;
 
     static void SorChargingStationsWithCost(vector<ChargingStation>& v){

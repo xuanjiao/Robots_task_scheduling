@@ -26,30 +26,34 @@ public:
 
     void ExecuteCallback(const robot_navigation::ChargingGoalConstPtr &robot){
         robot_navigation::ChargingResult rs;
-        ChargingStation cs1,cs2,cs3;
+        ChargingStation cs1,cs2;
         ROS_INFO("Station %d: Start charging for robot %d (%d)...",_id,robot->robotId,robot->battery);
         cs1.batteryLevel = robot->battery;
         cs1.stationId = _id;
+        cs1.robotId = robot->robotId;
 
         int ret = _sc.UpdateChargingStationInfo(cs1);
-        if(ret != 0 ){
-            ROS_INFO("Update station %d succedded",_id);
-            ros::Duration(1).sleep();
-            cs2 = _sc.QueryChargingStationInfo(_id);
-            ros::Duration sleep(cs2.remainingTime + 1);
-            sleep.sleep();
-            cs3 = _sc.QueryChargingStationInfo(_id);
-            ROS_INFO("Charging for %.2f second finished. Current level %.2f: ",cs2.remainingTime, cs3.batteryLevel);
-            if(cs3.batteryLevel == 100){
-                _as.setSucceeded(rs);
-            }else{
-                _as.setAborted(rs);
-            }
-        }else{
+        if(ret == 0 ){
             ROS_INFO("Update station %d failed",_id);
             _as.setAborted(rs);
+            return;
         }
 
+        ROS_INFO("Update station %d succedded",_id);
+        
+        ros::Rate loop(1);
+        while(ros::ok()){ // Query charging station status every 1s
+            cs2 = _sc.QueryChargingStationInfo(_id);
+            if(cs2.cur_status == "Next_exp"){
+                ROS_INFO("Charging finished");
+                _as.setSucceeded(rs);
+                break;        
+            }else{
+                ROS_INFO("Robot %d battery %.2f remain time  %.2f: ",cs2.robotId, cs2.batteryLevel,cs2.remainingTime);
+            }
+            ros::spinOnce();
+            loop.sleep();
+        }
     }
 
     ~ChargingStationController(){
@@ -75,3 +79,35 @@ int main(int argc,char** argv){
     ChargingStationController csc(stationId);
     ros::spin();
 }
+
+
+/*
+void ExecuteCallback(const robot_navigation::ChargingGoalConstPtr &robot){
+        robot_navigation::ChargingResult rs;
+        ChargingStation cs1,cs2,cs3;
+        ROS_INFO("Station %d: Start charging for robot %d (%d)...",_id,robot->robotId,robot->battery);
+        cs1.batteryLevel = robot->battery;
+        cs1.stationId = _id;
+        cs1.robotId = robot->robotId;
+
+        int ret = _sc.UpdateChargingStationInfo(cs1);
+        if(ret != 0 ){
+            ROS_INFO("Update station %d succedded",_id);
+            ros::Duration(1).sleep();
+            cs2 = _sc.QueryChargingStationInfo(_id);
+            ros::Duration sleep(cs2.remainingTime + 1);
+            sleep.sleep();
+            cs3 = _sc.QueryChargingStationInfo(_id);
+            ROS_INFO("Charging for %.2f second finished. Current level %.2f: ",cs2.remainingTime, cs3.batteryLevel);
+            if(cs3.batteryLevel == 100){
+                _as.setSucceeded(rs);
+            }else{
+                _as.setAborted(rs);
+            }
+        }else{
+            ROS_INFO("Update station %d failed",_id);
+            _as.setAborted(rs);
+        }
+
+    }
+*/

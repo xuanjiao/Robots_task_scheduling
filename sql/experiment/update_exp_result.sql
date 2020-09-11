@@ -1,8 +1,12 @@
 DROP PROCEDURE IF EXISTS exp_db.update_exp_result;
+DROP PROCEDURE IF EXISTS exp_db.update_next_exp_start_time;
 DELIMITER ;;
 
 CREATE PROCEDURE exp_db.update_exp_result()
 BEGIN
+
+-- Update current experiment result and finish time
+-- exp. finish_time = latest execute task finish time 
 UPDATE exp_db.exe_rs rs
 INNER JOIN (
 	SELECT 
@@ -15,7 +19,7 @@ INNER JOIN (
 		SUM( IF (t.cur_status = 'Running' ,1,0)) AS running,
 		SUM( IF (t.cur_status = 'ToReRun' ,1,0)) AS to_rerun,
         MAX(finish_time) AS t
-	FROM exp_db.execute_tasks t WHERE t.task_type = 'ExecuteTask'
+	FROM origin_db.tasks t WHERE t.task_type = 'ExecuteTask'
  	GROUP BY exp_no
 	) tmp ON rs.exp_no = tmp.exp_no
 SET rs.total = tmp.total, 
@@ -26,9 +30,26 @@ SET rs.total = tmp.total,
 	rs.running = tmp.running,
     rs.finish_time = t,
 	rs.to_rerun = tmp.to_rerun;
-    
+
 END ;;
+
+-- next experiment start time = latest charging task finish time
+CREATE PROCEDURE exp_db.update_next_exp_start_time()
+BEGIN
+	UPDATE exp_db.exe_rs rs
+	INNER JOIN (
+		SELECT 
+			FLOOR((t.task_id -1)/ @task_per_exp + 2) AS exp_no, 
+			MAX(finish_time) AS st
+		FROM origin_db.tasks t WHERE t.task_type = 'Charging'
+		GROUP BY exp_no
+		) tmp ON rs.exp_no = tmp.exp_no
+	SET rs.start_time = tmp.st;
+
+END ;;
+
 DELIMITER ;
 
-CALL exp_db.update_exp_result();
-SELECT * FROM exp_db.exe_rs;
+
+-- CALL exp_db.update_exp_result();
+-- SELECT * FROM exp_db.exe_rs;

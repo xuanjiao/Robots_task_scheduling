@@ -48,14 +48,15 @@ TEST_F(SqlObjectTest,InserDoorStatusRecord){
 
 TEST_F(SqlObjectTest,QueryChargingStationInfo){
        // ros::Duration(2).sleep();
-    auto cs2 = sc->QueryChargingStationInfo(17);
-    ASSERT_LE(cs2.remainingTime,100);
+    auto cs2 = sc->QueryChargingStationInfo(18);
+    ASSERT_LE(cs2.cur_status,"Free");
     ASSERT_LE(cs2.batteryLevel,100);
 }
 
 TEST_F(SqlObjectTest,UpdateChargingStationInfo){
     ChargingStation cs;
-    cs.stationId = 18;
+    cs.stationId = 17;
+    cs.robotId = 0;
     cs.batteryLevel = 65.2;
     int ret = sc->UpdateChargingStationInfo(cs);
     ASSERT_EQ(ret,1);

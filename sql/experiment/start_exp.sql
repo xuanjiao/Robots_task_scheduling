@@ -3,7 +3,6 @@
 
 
 -- Create execute task experiment result table
-
 DROP TABLE IF EXISTS exp_db.exe_rs;
 CREATE TABLE exp_db.exe_rs(
 	exp_no INT AUTO_INCREMENT,
@@ -11,10 +10,11 @@ CREATE TABLE exp_db.exe_rs(
 	wt_wait DOUBLE (5,2),
     wt_psb DOUBLE (5,2),
     wt_pri DOUBLE (5,2),
-
+    start_time DATETIME,
+    finish_time DATETIME,
     total INT,
     completed INT ,
-    not_run INT , 
+    expired INT , 
 	canceled INT,
     running INT,
     err INT,

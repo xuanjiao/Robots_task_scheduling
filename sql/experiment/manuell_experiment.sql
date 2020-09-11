@@ -6,6 +6,7 @@ CREATE TABLE exp_db.exe_rs(
 	wt_wait DOUBLE (5,2),
     wt_psb DOUBLE (5,2),
     wt_pri DOUBLE (5,2),
+    start_time DATETIME,
     finish_time DATETIME,
     total INT,
     completed INT ,
@@ -37,7 +38,7 @@ VALUES
 (10,	10,		-0.1,	-0.1),
 (0.1,	10,		-10,	-0.1),
 (0.1,	0.1,	-10,	-10);
-
+/*
 
 DROP TABLE exp_db.execute_tasks;
 CREATE TABLE exp_db.execute_tasks(
@@ -49,21 +50,20 @@ CREATE TABLE exp_db.execute_tasks(
     priority INT,
     cur_status ENUM('Created', 'WaitingToRun', 'Running', 'RanToCompletion', 'Canceled','Error','ToReRun') DEFAULT 'Created' ,
     dependency INT,
-    finish_time DATETIME,
     description varchar(255),
     PRIMARY KEY (task_id)
 );
-
+*/
 
 -- set task per experiment
-SET @task_per_exp :=15;
+SET @task_per_exp :=18;
 
 -- Clear weight table. Insert weght 
 TRUNCATE origin_db.exe_weight;
 TRUNCATE origin_db.tasks;
 SET @LAST_TASK := 0;
 SET @LAST_TIME := '2020-06-01 9:00:00';
-CALL origin_db.create_execute_tasks(@task_per_exp,@LAST_TIME,@LAST_TASK);
+CALL origin_db.create_execute_tasks(15,@LAST_TIME,@LAST_TASK);
 
 SET @exp_no := 1 ;
 INSERT INTO origin_db.exe_weight
