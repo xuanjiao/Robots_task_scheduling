@@ -17,14 +17,6 @@ SET SQL_SAFE_UPDATES = 0;
 
 USE origin_db;
 
---   ------ Create robot table ---
-
-DROP TABLE IF EXISTS origin_db.robots;
-CREATE TABLE origin_db.robots(
-	robot_id INT,
-    robot_status ENUM('GatherInviromentInfo','ExecuteTask','Charging')
-);
-
 -- ----------Create room range table ----------------
 DROP TABLE IF EXISTS origin_db.room_range;
 CREATE TABLE origin_db.room_range (
@@ -136,14 +128,17 @@ VALUES
 DROP TABLE IF EXISTS  origin_db.charging_stations;
 CREATE TABLE origin_db.charging_stations(
 	station_id INT REFERENCES positions(target_id),
-    robot_battery_level DOUBLE(6,2) DEFAULT 100,
-    charging_rate DOUBLE(6,2) DEFAULT 2,
-    remaining_time DOUBLE(6,2) DEFAULT 0,
+    cur_status varchar(255) DEFAULT 'Free',
+	charging_rate DOUBLE(6,2) DEFAULT 2,
+    robot_id INT,
+    battery DOUBLE(6,2),
+    remaining_time DOUBLE(6,2),
     PRIMARY KEY (station_id)
 );
 
 INSERT INTO origin_db.charging_stations(station_id)
-SELECT target_id FROM origin_db.positions WHERE target_type = 'ChargingStation';
+VALUES
+(17),(18),(19);
 
 -- Create charging station table finished--------
 
@@ -245,15 +240,7 @@ CREATE TABLE origin_db.charging_station_weight(
 
 -- Create charging trigger, update info by time --------
 
-DROP EVENT IF EXISTS origin_db.charging;    -- dynamic charging stations table
-CREATE EVENT origin_db.charging
-ON SCHEDULE EVERY 1 SECOND
-STARTS CURRENT_TIMESTAMP ENDS CURRENT_TIMESTAMP + INTERVAL 3 HOUR
-DO 
-		UPDATE charging_stations 
-        SET robot_battery_level = IF(robot_battery_level + charging_rate>=100,100,robot_battery_level + charging_rate),
-			remaining_time =(100 - robot_battery_level)/charging_rate -- Accorging to charging rate, calculate robot_battery_level and charging time 
-		WHERE robot_battery_level <100;
+
 
 -- Create charging trigger finished --------
 
