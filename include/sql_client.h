@@ -179,6 +179,32 @@ class SQLClient{
     return v;
   }
 
+  SmallTask QueryRunableChargingTask(int robotId){
+    _sqlMtx.lock();
+    sql::ResultSet* res;
+    SmallTask t;
+    res = stmt->executeQuery(
+      "SELECT * FROM tasks t INNER JOIN positions p ON t.target_id = p.target_id \
+      WHERE t.task_type = 'Charging'  AND t.cur_status IN ('Created','ToReRun') AND t.robot_id = " + to_string(robotId));
+    if(res->rowsCount() == 0){
+      ROS_INFO("No Charging Task");
+      return t;
+    }
+    res->next();
+    t.taskId = res->getInt("task_id");
+    t.targetId = res->getInt("target_id");
+    t.priority = res->getInt("priority");
+    t.taskType = res->getString("task_type");
+    t.goal.header.stamp = ros::Time::now() + ros::Duration(3);
+    t.goal.header.frame_id = "map";
+    t.goal.pose.position.x = res->getDouble("position_x");
+    t.goal.pose.position.y = res->getDouble("position_y");
+    t.goal.pose.orientation.w = 1.0;
+    delete res;
+    _sqlMtx.unlock();
+    return t;
+  }
+
   int QueryRoomWithCoordinate(geometry_msgs::Pose robotPose){
     int roomId = 0;
     double x = robotPose.position.x;

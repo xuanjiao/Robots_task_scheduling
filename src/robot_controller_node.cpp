@@ -128,6 +128,7 @@ public:
         _rs.isCompleted = false;
         _rs.taskIds = task->taskIds;
         _rs.taskType = task->taskType;
+        _rs.robotId = _robotId;
         
         for(size_t i = 0; i < task->taskIds.size(); i++){
             SmallTask st;
@@ -176,6 +177,8 @@ public:
         }
         ROS_INFO_STREAM("report task result "<<_rs); 
         _sts.clear(); // Delete task record
+
+        ros::Duration(3).sleep();
         RequestTask(); // Get a new task
     }
 

@@ -52,7 +52,12 @@ public:
             if(lt.smallTasks.size()>0){
                 SendRobotLargeTask(lt,req.robotId); 
             }else{
-                SmallTask bt = _tm.CreateBestEnviromentTask(req.pose);
+               // SmallTask bt = _tm.CreateBestEnviromentTask(req.pose);
+                SmallTask bt;
+                bt = _tm.GetAChargingTask(req.robotId);
+                if(bt.taskId == 0){
+                    bt = _tm.CreateBestEnviromentTask(req.pose);
+                }
                 SendRobotSmallTask(bt,req.robotId);
             }
         }
@@ -80,7 +85,9 @@ public:
         rs.taskIds = result->taskIds;
         rs.taskType = result->taskType;
         // ROS_INFO_STREAM("task result "<<rs.isCompleted<<rs.taskType<<rs.description);
+        _acMtx.lock();
         _tm.HandleTaskResult(rs);
+        _acMtx.unlock();
     }
 
     // Send robot new task 

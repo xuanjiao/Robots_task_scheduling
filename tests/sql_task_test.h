@@ -50,13 +50,13 @@ TEST_F(SqlTaskTest,QueryRunableExecuteTasks){
     ASSERT_GT(v.size(),0);
 }
 
-TEST_F(SqlTaskTest,QueryTaskWeight){
-   auto tw = sc->QueryTaskWeight();
-   ASSERT_EQ(tw.wt_btr,1);
-   ASSERT_EQ(tw.wt_wait,1);
-   ASSERT_EQ(tw.wt_psb,-1);
-   ASSERT_EQ(tw.wt_pri,-1);
-} 
+// TEST_F(SqlTaskTest,QueryTaskWeight){
+//    auto tw = sc->QueryTaskWeight();
+//    ASSERT_EQ(tw.wt_btr,1);
+//    ASSERT_EQ(tw.wt_wait,1);
+//    ASSERT_EQ(tw.wt_psb,-1);
+//    ASSERT_EQ(tw.wt_pri,-1);
+// } 
 
 
 TEST_F(SqlTaskTest,TaskUpdateStatus){
@@ -91,3 +91,7 @@ TEST_F(SqlTaskTest,TaskUpdateDescription){
     ASSERT_EQ(ret,1);
 }
 
+TEST_F(SqlTaskTest,QueryRunableChargingTask){
+    SmallTask t = sc->QueryRunableChargingTask(0);
+    ASSERT_EQ(t.taskId,1);
+}

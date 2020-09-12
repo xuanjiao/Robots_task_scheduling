@@ -7,4 +7,5 @@
     <node pkg="robot_navigation" ns="tb3_2" type="robot_controller_node" args="2" name="robot_controller_2" output="screen" launch-prefix="xterm -e"/>    
     <node pkg="robot_navigation" type = "charging_station_node" args = "17" name = "charging_station_node_17" output="screen" launch-prefix="xterm -e"/> 
     <node pkg="robot_navigation" type = "charging_station_node" args = "18" name = "charging_station_node_18" output="screen" launch-prefix="xterm -e"/> 
+    <node pkg="robot_navigation" type = "charging_station_node" args = "19" name = "charging_station_node_19" output="screen" launch-prefix="xterm -e"/> 
 </launch>

@@ -28,6 +28,9 @@ public:
 
 
 
+    SmallTask GetAChargingTask(int robotId){
+        return _sc.QueryRunableChargingTask(robotId);
+    }
 
     LargeExecuteTask SelectExecutetask(int robotId, geometry_msgs::Pose robotPose){
         ROS_INFO("Start query execute tasks...");
@@ -133,18 +136,22 @@ public:
         ROS_INFO("Insert %d record, update %d rows in possibility table",r,u);
     }
 
-    void HandleTaskResult(TaskResult& result){
-        auto last = result.taskIds.end()-1;
+    void HandleTaskResult(TaskResult result){
+        ROS_INFO("DEBUG HandleTaskResult task type %s description %s iscompleted %d ",result.taskType.c_str(),
+            result.description.c_str() ,result.isCompleted);
+        for(int id : result.taskIds){
+            ROS_INFO("DEBUG: id = %d",id);
+        }
         if(result.isCompleted){
-            for(auto it = result.taskIds.begin();;){
-                int ret1 = _sc.UpdateTaskStatus(*it,"RanToCompletion");
-                int ret2 = _sc.UpdateTaskDescription(*it,result.description);
-                ROS_INFO("Task Succedd. Update task status %d description %d",ret1,ret2);
-                if(it == last){ // if it is the last task
-                    _sc.UpdateTaskEndTime(*it);
-                    break;
-                }else{
-                    it++;
+            for(int id : result.taskIds){
+                 ROS_INFO("DEBUG: Update task status");
+                int ret1 = _sc.UpdateTaskStatus(id,"RanToCompletion");
+                 ROS_INFO("DEBUG: Update task description");
+                int ret2 = _sc.UpdateTaskDescription(id,result.description);
+                ROS_INFO("Task Succedd. Update task %d status %d description %d",id ,ret1,ret2);
+                if(id == result.taskIds.back()){ // if it is the last task
+                    ROS_INFO("DEBUG: Update task time");
+                    _sc.UpdateTaskEndTime(id);
                 }
             }
         }else{
