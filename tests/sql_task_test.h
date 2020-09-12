@@ -95,3 +95,8 @@ TEST_F(SqlTaskTest,QueryRunableChargingTask){
     SmallTask t = sc->QueryRunableChargingTask(0);
     ASSERT_EQ(t.taskId,1);
 }
+
+TEST_F(SqlTaskTest,CallNewExpProcedure){
+    sc->CallNewExpProcedure(1);
+
+}

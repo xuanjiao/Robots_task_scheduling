@@ -15,15 +15,16 @@
 
 using namespace std;
 
+
 class TaskManager{
 public:
-
+    static const int EXP_TOTAL = 15;
 
     TaskManager(SQLClient& sc, CostCalculator& cc):_sc(sc),_cc(cc){
         
        // dm[Key(0,3)] = {1}; 
        // dm[Key(0,3)] = {1}; 
-
+        _exp_id = 0;
     };
 
 
@@ -137,20 +138,11 @@ public:
     }
 
     void HandleTaskResult(TaskResult result){
-        ROS_INFO("DEBUG HandleTaskResult task type %s description %s iscompleted %d ",result.taskType.c_str(),
-            result.description.c_str() ,result.isCompleted);
-        for(int id : result.taskIds){
-            ROS_INFO("DEBUG: id = %d",id);
-        }
         if(result.isCompleted){
             for(int id : result.taskIds){
-                 ROS_INFO("DEBUG: Update task status");
                 int ret1 = _sc.UpdateTaskStatus(id,"RanToCompletion");
-                 ROS_INFO("DEBUG: Update task description");
                 int ret2 = _sc.UpdateTaskDescription(id,result.description);
-                ROS_INFO("Task Succedd. Update task %d status %d description %d",id ,ret1,ret2);
                 if(id == result.taskIds.back()){ // if it is the last task
-                    ROS_INFO("DEBUG: Update task time");
                     _sc.UpdateTaskEndTime(id);
                 }
             }
@@ -168,6 +160,20 @@ public:
                 ROS_INFO("Get a unknown task");
             } 
         }
+
+        // When robot 0 finish charging, start next experiment
+        if(result.taskType == "Charging" && result.robotId == 0){
+            ROS_INFO("\n Eexperiment begin ");
+            _exp_id++;
+            if(_exp_id>15){
+                ROS_INFO("Experiment finish");
+                ros::shutdown();
+            }else{
+                _sc.CallNewExpProcedure(_exp_id); 
+            }
+                         
+        }
+
     }
 
     void AfterSendingTask(int taskId, int robotId){
@@ -209,6 +215,7 @@ public:
     }
     private:
 
+    int _exp_id;
     SQLClient& _sc;
     CostCalculator& _cc;
 };

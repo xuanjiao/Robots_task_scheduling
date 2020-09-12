@@ -20,13 +20,13 @@ DO BEGIN
                                       WHEN 'Charging_finish' 	THEN IF(tmp.sumFinish = 3, 'Next_exp', 'Charging_finish')
                                       WHEN 'Next_exp'			THEN IF(robot_id is NULL,'Free','Next_exp')
                                       END;
--- 
-    --  SELECT SUM(IF(cur_status = 'Charging_finish', 1, 0)) INTO @sumFinish FROM origin_db.charging_stations;
- 	-- IF @sumFinish = 3
---      THEN 
--- 		CALL origin_db.next_exp(); 
---  	END IF;
-    
+ 
+--       SELECT SUM(IF(cur_status = 'Charging_finish', 1, 0)) INTO @sumFinish FROM origin_db.charging_stations;
+--  	 IF @sumFinish = 3
+--       THEN 
+--  		CALL origin_db.next_exp(); 
+--   	END IF;
+--     
 	UPDATE origin_db.charging_stations  
       SET battery = CASE cur_status WHEN 'Charging' THEN IF(battery + charging_rate >100,100,battery + charging_rate) END,
 		remaining_time = CASE cur_status WHEN 'Charging' THEN (100 - battery)/charging_rate END;

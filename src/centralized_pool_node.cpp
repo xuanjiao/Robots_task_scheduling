@@ -84,10 +84,11 @@ public:
         rs.description = result->description;
         rs.taskIds = result->taskIds;
         rs.taskType = result->taskType;
+        rs.robotId = result->robotId;
         // ROS_INFO_STREAM("task result "<<rs.isCompleted<<rs.taskType<<rs.description);
-        _acMtx.lock();
         _tm.HandleTaskResult(rs);
-        _acMtx.unlock();
+
+
     }
 
     // Send robot new task 

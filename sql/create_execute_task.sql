@@ -5,8 +5,8 @@ DROP PROCEDURE IF EXISTS origin_db.create_execute_tasks;
 delimiter ;;
 CREATE PROCEDURE origin_db.create_execute_tasks(
 	IN task_num INT,
-    IN t DATETIME,
-    OUT last_id INT
+    IN t DATETIME
+ --   OUT last_id INT
     )
 BEGIN 
 	SET @task_index := 1;
@@ -16,7 +16,7 @@ BEGIN
 		SET @task_index := @task_index +1;
     END WHILE;
 	-- SELECT MAX(task_id) INTO last_id FROM tasks;
-    SELECT MAX(start_time) INTO t FROM origin_db.tasks;
+   --  SELECT MAX(start_time) INTO t FROM origin_db.tasks;
 END ;;
 
 delimiter ;

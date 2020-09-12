@@ -27,6 +27,7 @@ public:
 
 class TaskResult{
 public:
+    int robotId;
     vector<int> taskIds;
     bool isCompleted = false;
     string taskType;

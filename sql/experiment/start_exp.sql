@@ -9,7 +9,7 @@ VALUES
 -- Create execute task experiment result table
 DROP TABLE IF EXISTS origin_db.exe_rs;
 CREATE TABLE origin_db.exe_rs(
-	exp_no INT AUTO_INCREMENT,
+	exp_id INT AUTO_INCREMENT,
 	wt_btr DOUBLE (5,2),
 	wt_wait DOUBLE (5,2),
     wt_psb DOUBLE (5,2),
@@ -23,7 +23,7 @@ CREATE TABLE origin_db.exe_rs(
     running INT,
     err INT,
     to_rerun INT,
-    PRIMARY KEY (exp_no)
+    PRIMARY KEY (exp_id)
 );
 
 -- Make experiment cases
@@ -49,8 +49,8 @@ VALUES
 
 TRUNCATE origin_db.tasks;
 TRUNCATE origin_db.exe_weight;
-SET @exp_no := 0 ;
 
+-- 
 INSERT tasks (task_type,target_id,robot_id,priority)
 VALUES
 ('Charging',17,0,5),
@@ -59,6 +59,7 @@ VALUES
 
 -- set task per experiment
 SET @task_per_exp :=18;
+SET @exp_no := 1 ;
 
 -- CALL origin_db.create_execute_tasks(@task_per_exp,@LAST_TIME,@LAST_TASK);
 SELECT *  FROM origin_db.exe_rs;
