@@ -167,7 +167,7 @@ public:
         }
 
         // When robot 0 finish charging, start next experiment
-        if(result.taskType == "Charging" && result.robotId == 0){
+        if(result.taskType == "Charging" && result.robotId == 1){
             ROS_INFO("\n Eexperiment begin ");
             _exp_id++;
             if(_exp_id>15){

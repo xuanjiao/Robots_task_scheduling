@@ -53,9 +53,9 @@ TRUNCATE origin_db.exe_weight;
 -- 
 INSERT tasks (task_type,target_id,robot_id,priority)
 VALUES
-('Charging',17,0,5),
-('Charging',18,1,5),
-('Charging',19,2,5);
+('Charging',17,1,5),
+('Charging',18,2,5),
+('Charging',19,3,5);
 
 -- set task per experiment
 SET @task_per_exp :=18;

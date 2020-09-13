@@ -515,11 +515,14 @@ class SQLClient{
 
   int UpdateChargingStationInfo(const ChargingStation& cs){
     _sqlMtx.lock();
+    string battery =  (cs.robotId == 0)?" NULL ":to_string(cs.batteryLevel);
+    string robotId =  (cs.robotId == 0)?" NULL ":to_string(cs.robotId);
+    string stationId =  to_string(cs.stationId);
+    
     int ret = stmt->executeUpdate(
-      "UPDATE charging_stations \
-      SET battery = '" + to_string(cs.batteryLevel) + 
-      "', robot_id = '" + to_string(cs.robotId) +
-      "' WHERE station_id = "+ to_string(cs.stationId)
+      "UPDATE charging_stations SET battery = " +  battery + 
+      ", robot_id = " +  robotId +
+      " WHERE station_id = "+ stationId
     );
     _sqlMtx.unlock();
     return ret;

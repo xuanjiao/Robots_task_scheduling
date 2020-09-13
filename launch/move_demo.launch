@@ -2,9 +2,9 @@
     <param name="/use_sim_time" value="true"/>
 <node pkg="robot_navigation" type="centralized_pool_node" name="centralized_pool_node" output = "screen"/>
     <node pkg="robot_navigation" type ="door_status_node" name="door_status_node" output="screen" launch-prefix="xterm -e"/> 
-    <node pkg="robot_navigation" ns="tb3_0" type="robot_controller_node" args="0" name="robot_controller_0" output="screen" launch-prefix="xterm -e"/>    
-    <node pkg="robot_navigation" ns="tb3_1" type="robot_controller_node" args="1" name="robot_controller_1" output="screen" launch-prefix="xterm -e"/>    
-    <node pkg="robot_navigation" ns="tb3_2" type="robot_controller_node" args="2" name="robot_controller_2" output="screen" launch-prefix="xterm -e"/>    
+    <node pkg="robot_navigation" ns="tb3_0" type="robot_controller_node" args="1" name="robot_controller_1" output="screen" launch-prefix="xterm -e"/>    
+    <node pkg="robot_navigation" ns="tb3_1" type="robot_controller_node" args="2" name="robot_controller_2" output="screen" launch-prefix="xterm -e"/>    
+    <node pkg="robot_navigation" ns="tb3_2" type="robot_controller_node" args="3" name="robot_controller_3" output="screen" launch-prefix="xterm -e"/>    
     <node pkg="robot_navigation" type = "charging_station_node" args = "17" name = "charging_station_node_17" output="screen" launch-prefix="xterm -e"/> 
     <node pkg="robot_navigation" type = "charging_station_node" args = "18" name = "charging_station_node_18" output="screen" launch-prefix="xterm -e"/> 
     <node pkg="robot_navigation" type = "charging_station_node" args = "19" name = "charging_station_node_19" output="screen" launch-prefix="xterm -e"/> 

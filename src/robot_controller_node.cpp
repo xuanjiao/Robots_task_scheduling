@@ -83,7 +83,7 @@ public:
         ROS_INFO_STREAM("Get current position...");
         while(ros::ok()){
             // try to get its current location
-            sharedPtr =  ros::topic::waitForMessage<geometry_msgs::PoseWithCovarianceStamped>("/tb3_"+ to_string(_robotId) +"/amcl_pose",_nh);
+            sharedPtr =  ros::topic::waitForMessage<geometry_msgs::PoseWithCovarianceStamped>("amcl_pose",_nh);
             if(sharedPtr == NULL){
                 ROS_INFO_STREAM("Failed to get current position");
             }else{
@@ -218,7 +218,7 @@ public:
                 actionlib::SimpleClientGoalState s2(actionlib::SimpleClientGoalState::LOST);
 
 
-                s2 = _cc.sendGoalAndWait(g,ros::Duration(10,0),ros::Duration(10,0));
+                s2 = _cc.sendGoalAndWait(g);
                 if(s2 == actionlib::SimpleClientGoalState::SUCCEEDED){
                     ROS_INFO("Charging Succeeded");
                     _rs.isCompleted = true;

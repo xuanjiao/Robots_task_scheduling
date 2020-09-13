@@ -54,9 +54,10 @@ public:
             }else{
                // SmallTask bt = _tm.CreateBestEnviromentTask(req.pose);
                 SmallTask bt;
-                bt = _tm.GetAChargingTask(req.robotId);
-                if(bt.taskId == 0){
-                    bt = _tm.CreateBestEnviromentTask(req.pose);
+                
+                while(bt.taskId == 0){
+                   bt = _tm.GetAChargingTask(req.robotId);
+                   ros::Duration(1).sleep();
                 }
                 SendRobotSmallTask(bt,req.robotId);
             }
@@ -90,7 +91,7 @@ public:
         // ROS_INFO_STREAM("task result "<<rs.isCompleted<<rs.taskType<<rs.description);
         _acMtx.lock();
         _tm.HandleTaskResult(rs);
-        _acMtx.unlock();
+         _acMtx.unlock();
 
 
     }
@@ -104,7 +105,7 @@ public:
         g.targetIds.push_back(bt.targetId);
         g.taskType = bt.taskType;
         _acMtx.lock();
-        _cv[robotId]->sendGoal(g,
+        _cv[robotId-1]->sendGoal(g,
                 boost::bind(&CentralizedPool::WhenRobotFinishGoal,this,_1,_2),
                 actionlib::SimpleActionClient<robot_navigation::RunTaskAction>::SimpleActiveCallback(),
                 // boost::bind(&CentralizedPool::WhenActionActive,this),
@@ -113,6 +114,7 @@ public:
       //  ROS_INFO_STREAM(g);
         _acMtx.unlock();
         _tm.AfterSendingTask(bt.taskId,robotId); // Update task status and robot id column in task table
+        ROS_INFO_STREAM("Send task to robot"<<robotId<<" finished");
     }
 
     void SendRobotLargeTask(LargeExecuteTask& lt,int robotId){
@@ -131,7 +133,7 @@ public:
         }
 
         _acMtx.lock();
-        _cv[robotId]->sendGoal(g,
+        _cv[robotId-1]->sendGoal(g,
                 boost::bind(&CentralizedPool::WhenRobotFinishGoal,this,_1,_2),
                 actionlib::SimpleActionClient<robot_navigation::RunTaskAction>::SimpleActiveCallback(),
                 // boost::bind(&CentralizedPool::WhenActionActive,this),

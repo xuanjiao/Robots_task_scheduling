@@ -26,7 +26,7 @@ public:
 
     void ExecuteCallback(const robot_navigation::ChargingGoalConstPtr &robot){
         robot_navigation::ChargingResult rs;
-        ChargingStation cs1,cs2;
+        ChargingStation cs1,cs2,cs3;
         ROS_INFO("Station %d: Start charging for robot %d (%d)...",_id,robot->robotId,robot->battery);
         cs1.batteryLevel = robot->battery;
         cs1.stationId = _id;
@@ -54,6 +54,9 @@ public:
             ros::spinOnce();
             loop.sleep();
         }
+        cs3.robotId = 0;
+        cs3.stationId = _id;
+        _sc.UpdateChargingStationInfo(cs3);
     }
 
     ~ChargingStationController(){

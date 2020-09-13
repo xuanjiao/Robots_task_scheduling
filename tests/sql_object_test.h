@@ -56,7 +56,7 @@ TEST_F(SqlObjectTest,QueryChargingStationInfo){
 TEST_F(SqlObjectTest,UpdateChargingStationInfo){
     ChargingStation cs;
     cs.stationId = 17;
-    cs.robotId = 0;
+    cs.robotId = 1;
     cs.batteryLevel = 65.2;
     int ret = sc->UpdateChargingStationInfo(cs);
     ASSERT_EQ(ret,1);
