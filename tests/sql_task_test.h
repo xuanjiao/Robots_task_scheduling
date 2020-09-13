@@ -72,14 +72,19 @@ TEST_F(SqlTaskTest,TaskUpdateStatus){
 
 TEST_F(SqlTaskTest,UpdateTaskEndTime){
     SmallExecuteTask t;
-    t.point.pointId = 4;
-    t.taskType = "GatherEnviromentInfo";
+    t.point.pointId = 10;
+    t.taskType = "ExecuteTask";
     t.taskId = sc->InsertATaskAssignId(t); 
     int ret = sc->UpdateTaskEndTime(t.taskId);
     ASSERT_EQ(ret,1);
 }
 
 
+TEST_F(SqlTaskTest,UpdateExestTaskEndTime){
+    ASSERT_TRUE(sc->UpdateTaskEndTime(10));
+    ASSERT_TRUE(sc->UpdateTaskEndTime(11));
+    ASSERT_TRUE(sc->UpdateTaskEndTime(12));
+}
 
 TEST_F(SqlTaskTest,TaskUpdateDescription){
     SmallExecuteTask t;

@@ -139,11 +139,16 @@ public:
 
     void HandleTaskResult(TaskResult result){
         if(result.isCompleted){
+             ROS_INFO("**DEBUG last task = %d", result.taskIds.back());
             for(int id : result.taskIds){
+               
                 int ret1 = _sc.UpdateTaskStatus(id,"RanToCompletion");
+                ROS_INFO("**DEBUG Update task status result %d",ret1);
                 int ret2 = _sc.UpdateTaskDescription(id,result.description);
+                ROS_INFO("**DEBUG Update task status result %d",ret2);
                 if(id == result.taskIds.back()){ // if it is the last task
-                    _sc.UpdateTaskEndTime(id);
+                    int ret3 = _sc.UpdateTaskEndTime(id);
+                    ROS_INFO("**DEBUG Update task end time %d",ret3);
                 }
             }
         }else{
@@ -200,9 +205,15 @@ public:
             dAll.insert(d.begin(),d.end()); // put relative doors in   
         }
         
+        if(dAll.empty()){
+            t.openPossibility = 1;
+            return dAll;
+        }
+
         for(auto door: dAll){
             ss << door<<" ";
         }
+        // ROS_INFO_STREAM("Large task related door: "<<ss.str());
         // doors.erase(0); // ignore 0
         vector<double> ops =  _sc.QueryRelativeDoorOpenPossibility(dAll,t.waitingTime);
         
@@ -210,7 +221,8 @@ public:
         for(auto op : ops){
             t.openPossibility *= op;
         }
-         ROS_INFO_STREAM("Large task related door: "<<ss.str()<<" multiply open possibility "<<t.openPossibility);
+    
+        // ROS_INFO_STREAM(" multiply open possibility "<<t.openPossibility);
         return dAll;
     }
     private:

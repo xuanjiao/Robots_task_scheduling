@@ -78,11 +78,35 @@ TEST_F(TaskManagerTest,HandleFailedTaskResult){
 TEST_F(TaskManagerTest,HandleSuccessTaskResult){
     TaskResult r;
     r.isCompleted = true;
-    r.taskIds.push_back(1);
-    r.taskIds.push_back(4);
+    r.taskIds.push_back(17);
+    r.taskIds.push_back(18);
     r.description = "test";
     r.taskType = "ExecuteTask";
     tm->HandleTaskResult(r);
+}
+
+
+TEST_F(TaskManagerTest,HandleMultipleLatgeTaskResult){
+    TaskResult r1;
+    r1.isCompleted = true;
+    r1.taskIds.push_back(27);;
+    r1.description = "test";
+    r1.taskType = "ExecuteTask";
+
+        TaskResult r2;
+    r2.isCompleted = true;
+    r2.taskIds.push_back(28);;
+    r2.description = "test";
+    r2.taskType = "ExecuteTask";
+
+        TaskResult r3;
+    r3.isCompleted = true;
+    r3.taskIds.push_back(29);;
+    r3.description = "test";
+    r3.taskType = "ExecuteTask";
+    tm->HandleTaskResult(r1);
+    tm->HandleTaskResult(r2);
+    tm->HandleTaskResult(r3);
 }
 
 TEST_F(TaskManagerTest,CalculateLargetaskOpenpossibility){

@@ -72,7 +72,9 @@ public:
         fb.doorId = feedback->doorId;
         fb.doorStatus = feedback->doorStatus;
         fb.measureTime = feedback->measureTime;
+
         _tm.HandleTaskFeedback(fb);
+       
     }
 
     // Call when receive a complet event from robot
@@ -86,7 +88,9 @@ public:
         rs.taskType = result->taskType;
         rs.robotId = result->robotId;
         // ROS_INFO_STREAM("task result "<<rs.isCompleted<<rs.taskType<<rs.description);
+        _acMtx.lock();
         _tm.HandleTaskResult(rs);
+        _acMtx.unlock();
 
 
     }
