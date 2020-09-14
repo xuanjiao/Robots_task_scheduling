@@ -23,3 +23,7 @@ SELECT * FROM tasks t INNER JOIN positions p ON t.target_id = p.target_id
       
 SELECT * FROM origin_db.exe_weight;
 SELECT * FROM origin_db.exe_weight;
+
+      SELECT t.position_x, t.position_y, cs.station_id, cs.cur_status, cs.battery, TIME_TO_SEC(cs.remaining_time) AS t 
+      FROM charging_stations cs 
+      INNER JOIN positions t ON t.target_id = cs.station_id

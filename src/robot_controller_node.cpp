@@ -315,23 +315,6 @@ public:
             _fb.doorStatus = message->doorStatus;
             _fb.robotId = _robotId;
             rts.publishFeedback(_fb);
-            
-            if(_fb.doorId == 1 &&  _fb.doorStatus == 0){
-                if(_cp.pose.position.y > 5.5 && _cp.pose.position.y < 6.5){   
-                    _mbc.cancelGoal();
-                    _rs.description = "Door 1 closed";
-                    _movCv.notify_all();
-                    ROS_INFO_STREAM(" Door 1 closed. Cancel task");
-                }
-            }else if(_fb.doorId == 10 &&  _fb.doorStatus == 0){
-                if(_cp.pose.position.y > 5.5 && _cp.pose.position.y < 6.5){   
-                    _mbc.cancelGoal();
-                    _rs.description = "Door 10 closed " ;
-                    _movCv.notify_all();
-                    ROS_INFO_STREAM(" Door 10 closed. Cancel task");
-                }
-            }
-
         }
         
     }

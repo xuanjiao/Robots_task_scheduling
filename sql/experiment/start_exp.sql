@@ -88,7 +88,7 @@ VALUES
 ('Charging',20,3,5);
 
 -- set task per experiment
-SET @task_per_exp :=18;
+SET @task_per_exp :=13;
 SET @exp_no := 1 ;
 
 -- CALL origin_db.create_execute_tasks(@task_per_exp,@LAST_TIME,@LAST_TASK);

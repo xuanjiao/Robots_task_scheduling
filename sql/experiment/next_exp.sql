@@ -19,7 +19,7 @@ SELECT wt_btr,wt_wait,wt_psb, wt_pri FROM origin_db.exe_rs WHERE exp_id = id_exp
 --  Insert some  execute task
 SET @task_index := 1;
     
-WHILE @task_index <= 15 DO
+WHILE @task_index <= @task_per_exp -3 DO
 	INSERT INTO origin_db.tasks(task_type, start_time, target_id,priority,dependency)
 	VALUES('ExecuteTask',first_task + INTERVAL 20 * @task_index SECOND,21 + @task_index MOD 9,2,0);
 	SET @task_index := @task_index +1;
