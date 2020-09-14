@@ -169,7 +169,7 @@ map<RoomPair,RltDoors>  RoomMap::ROOMMAP= {
     {RoomPair(14,15),{14,15}},
     {RoomPair(14,16),{14,16}},
 
-    {RoomPair(15,16),{15,16}}
+    {RoomPair(15,16),{17}}
     
 };
 

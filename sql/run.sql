@@ -90,9 +90,10 @@ VALUES
 (14,'Door',6.0,4.0),
 (15,'Door',3.2,1.5),
 (16,'Door',-4.0,1.5),
-(17,'ChargingStation',0.0,5.0),
-(18,'ChargingStation',-7.0,5.0),
-(19,'ChargingStation',-21.0,5.0),
+(17,'Door',-5.0,-1.5),
+(18,'ChargingStation',0.0,5.0),
+(19,'ChargingStation',-7.0,5.0),
+(20,'ChargingStation',-21.0,5.0),
 (21,'Point',-24.0,12.0),
 (22,'Point',-21.0,12.0),
 (23,'Point',-16.0,12.0),
@@ -119,7 +120,7 @@ CREATE TABLE origin_db.doors(
 
 INSERT INTO origin_db.doors(door_id,dependency)
 VALUES
-(1,0), (2,1), (3,1), (4,1), (5,1), (6,1), (7,0), (8,7), (9,0), (10,0), (11,10), (12,10), (13,10), (14,0), (15,0), (16,0);
+(1,0), (2,1), (3,1), (4,1), (5,1), (6,1), (7,0), (8,7), (9,0), (10,0), (11,10), (12,10), (13,10), (14,0), (15,0), (16,0),(17,0);
 
 -- Create door info table finished-------
 
@@ -138,7 +139,7 @@ CREATE TABLE origin_db.charging_stations(
 
 INSERT INTO origin_db.charging_stations(station_id)
 VALUES
-(17),(18),(19);
+(18),(19),(20);
 
 -- Create charging station table finished--------
 
@@ -176,7 +177,7 @@ CREATE TABLE origin_db.open_possibilities (
 );
 
 
-CALL create_possibility_table(16);
+CALL create_possibility_table(17);
 
 -- Create possibility table finished --------
 

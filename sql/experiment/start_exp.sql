@@ -3,7 +3,7 @@
 TRUNCATE origin_db.charging_stations;
 INSERT INTO origin_db.charging_stations(station_id)
 VALUES
-(17),(18),(19);
+(18),(19),(20);
 
 
 -- Create execute task experiment result table
@@ -16,6 +16,7 @@ CREATE TABLE origin_db.exe_rs(
     wt_pri DOUBLE (5,2),
     start_time DATETIME,
     finish_time DATETIME,
+    duration TIME,
     total INT,
     completed INT ,
     expired INT , 
@@ -27,6 +28,78 @@ CREATE TABLE origin_db.exe_rs(
 );
 
 -- Make experiment cases
+TRUNCATE origin_db.exe_rs;
+
+INSERT INTO origin_db.exe_rs
+(wt_btr,wt_wait,wt_psb, wt_pri)
+VALUES
+(1,		1,		-1,		-1),
+(2,		1,		-1,		-1),
+(3,		1,		-1,		-1),
+(4,		1,		-1,		-1),
+(5,		1,		-1,		-1),
+(6,		1,		-1,		-1),
+(7,		1,		-1,		-1),
+(8,		1,		-1,  	-1),
+(9,		1,		-1,		-1),
+(10,	1,		-1,		-1),
+
+(1,		1,		-1,		-1),
+(1,		2,		-1,  	-1),
+(1,		3,		-1,  	-1),
+(1,		4,		-1,  	-1),
+(1,		5,		-1,  	-1),
+(1,		6,		-1,  	-1),
+(1,		7,		-1,  	-1),
+(1,		8,		-1,  	-1),
+(1,		9,		-1,  	-1),
+(1,		10,		-1,  	-1),
+
+(1,		1,		-1,		-1),
+(1,		1,		-2,  	-1),
+(1,		1,		-3,  	-1),
+(1,		1,		-4,  	-1),
+(1,		1,		-5,  	-1),
+(1,		1,		-6,  	-1),
+(1,		1,		-7,  	-1),
+(1,		1,		-8,  	-1),
+(1,		1,		-0,  	-1),
+(1,		1,		-10,  	-1),
+
+(1,		1,		-1,		-1),
+(1,		1,		-1, 	-2),
+(1,		1,		-1, 	-3),
+(1,		1,		-1, 	-4),
+(1,		1,		-1, 	-5),
+(1,		1,		-1, 	-6),
+(1,		1,		-1, 	-7),
+(1,		1,		-1, 	-8),
+(1,		1,		-1, 	-9),
+(1,		1,		-1, 	-10);
+
+TRUNCATE origin_db.tasks;
+TRUNCATE origin_db.exe_weight;
+
+-- 
+INSERT tasks (task_type,target_id,robot_id,priority)
+VALUES
+('Charging',18,1,5),
+('Charging',19,2,5),
+('Charging',20,3,5);
+
+-- set task per experiment
+SET @task_per_exp :=18;
+SET @exp_no := 1 ;
+
+-- CALL origin_db.create_execute_tasks(@task_per_exp,@LAST_TIME,@LAST_TASK);
+SELECT *  FROM origin_db.exe_rs;
+SELECT * FROM origin_db.exe_weight;
+SELECT * FROM origin_db.tasks;
+SELECT * FROM origin_db.charging_stations;
+
+SHOW EVENTS;
+
+/*
 
 INSERT INTO origin_db.exe_rs
 (wt_btr,wt_wait,wt_psb, wt_pri)
@@ -46,25 +119,4 @@ VALUES
 (10,	10,		-0.1,	-0.1),
 (0.1,	10,		-10,	-0.1),
 (0.1,	0.1,	-10,	-10);
-
-TRUNCATE origin_db.tasks;
-TRUNCATE origin_db.exe_weight;
-
--- 
-INSERT tasks (task_type,target_id,robot_id,priority)
-VALUES
-('Charging',17,1,5),
-('Charging',18,2,5),
-('Charging',19,3,5);
-
--- set task per experiment
-SET @task_per_exp :=18;
-SET @exp_no := 1 ;
-
--- CALL origin_db.create_execute_tasks(@task_per_exp,@LAST_TIME,@LAST_TASK);
-SELECT *  FROM origin_db.exe_rs;
-SELECT * FROM origin_db.exe_weight;
-SELECT * FROM origin_db.tasks;
-SELECT * FROM origin_db.charging_stations;
-
-SHOW EVENTS;
+*/

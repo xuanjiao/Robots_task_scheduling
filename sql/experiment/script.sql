@@ -20,3 +20,6 @@ UPDATE tasks SET finish_time = '2020-06-01 9:06:40' , cur_status = 'RanToComplet
 
 SELECT * FROM tasks t INNER JOIN positions p ON t.target_id = p.target_id 
       WHERE task_type = 'Charging' AND robot_id = 0;
+      
+SELECT * FROM origin_db.exe_weight;
+SELECT * FROM origin_db.exe_weight;

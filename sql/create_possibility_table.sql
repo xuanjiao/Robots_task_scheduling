@@ -17,7 +17,7 @@ DO
 	SET @possibility_1 := IF(@door%2,@high,@low);
 	SET @possibility_2 := IF(@door%2,@low,@high);
 
-    IF @door IN (1,10) THEN 
+    IF @door IN (1,10,17) THEN 
 		-- door near corridor
 		INSERT IGNORE INTO open_possibilities(door_id,day_of_week,start_time,end_time, open_pos , open_pos_st)
 		VALUES

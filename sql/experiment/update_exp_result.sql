@@ -41,6 +41,9 @@ SET rs.total = tmp.total,
 		) tmp ON rs.exp_id = tmp.exp_id
 	SET rs.start_time = tmp.st;
 
+ 	UPDATE origin_db.exe_rs rs
+  SET duration = TIMEDIFF(finish_time,start_time);
+    
 	SELECT *  FROM origin_db.exe_rs;
 END ;;
 

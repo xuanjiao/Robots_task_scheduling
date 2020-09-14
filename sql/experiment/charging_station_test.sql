@@ -34,6 +34,9 @@ SELECT * FROM origin_db.tasks;
 SELECT * FROM origin_db.tasks;
 SELECT * FROM exp_db.exe_rs;
 
+UPDATE charging_stations SET battery = NULL, robot_id = NULL WHERE station_id = 17;
+      
+
 --  UPDATE origin_db.charging_stations  
 --  SET robot_id  = NULL WHERE station_id = 17;
 -- -- 
