@@ -48,6 +48,5 @@ SET rs.total = tmp.total,
 END ;;
 
 DELIMITER ;
-
 -- CALL exp_db.update_exp_result();
 -- SELECT * FROM exp_db.exe_rs;

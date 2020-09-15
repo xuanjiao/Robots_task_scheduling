@@ -551,7 +551,12 @@ class SQLClient{
 
   bool CallNewExpProcedure(int exp_no){
     _sqlMtx.lock();
-    bool ret = stmt->execute("CALL next_exp(" + to_string(exp_no) + ",'" + Util::time_str(ros::Time::now())+"')");
+    bool ret = false;
+    stmt->execute("CALL next_exp(" + to_string(exp_no) + ",'" + Util::time_str(ros::Time::now())+"',@go_on)");
+    std::shared_ptr<sql::ResultSet> res(stmt->executeQuery("SELECT @go_on AS _reply"));
+    while (res->next())
+      ret = res->getBoolean("_reply");
+    
     _sqlMtx.unlock();
     return ret;
   }

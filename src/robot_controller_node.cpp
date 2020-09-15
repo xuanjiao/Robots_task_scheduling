@@ -103,6 +103,7 @@ public:
         while(ros::ok()){
             if(!_tc.call(srv)){
                 ROS_INFO_STREAM("Failed to send request");
+                ros::shutdown();
             }else{
                 if(srv.response.hasTask == false){
                     ROS_INFO_STREAM("No available task");
@@ -362,7 +363,6 @@ private:
     actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> _mbc;
     actionlib::SimpleActionServer<robot_navigation::RunTaskAction> rts;
     
-
     robot_navigation::RunTaskFeedback _fb;
     robot_navigation::RunTaskResult _rs;
 

@@ -63,7 +63,7 @@ VALUES
 (1,		1,		-6,  	-1),
 (1,		1,		-7,  	-1),
 (1,		1,		-8,  	-1),
-(1,		1,		-0,  	-1),
+(1,		1,		-9,  	-1),
 (1,		1,		-10,  	-1),
 
 (1,		1,		-1,		-1),
@@ -88,7 +88,7 @@ VALUES
 ('Charging',20,3,5);
 
 -- set task per experiment
-SET @task_per_exp :=13;
+SET @task_per_exp :=18;
 SET @exp_no := 1 ;
 
 -- CALL origin_db.create_execute_tasks(@task_per_exp,@LAST_TIME,@LAST_TASK);

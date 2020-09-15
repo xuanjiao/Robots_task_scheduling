@@ -18,13 +18,13 @@ using namespace std;
 
 class TaskManager{
 public:
-    static const int EXP_TOTAL = 15;
+    static const int EXP_BEGIN = 1;
 
     TaskManager(SQLClient& sc, CostCalculator& cc):_sc(sc),_cc(cc){
         
        // dm[Key(0,3)] = {1}; 
        // dm[Key(0,3)] = {1}; 
-        _exp_id = 0;
+        _exp_id = EXP_BEGIN;
     };
 
 
@@ -139,16 +139,14 @@ public:
 
     void HandleTaskResult(TaskResult result){
         if(result.isCompleted){
-             ROS_INFO("**DEBUG last task = %d", result.taskIds.back());
             for(int id : result.taskIds){
                
                 int ret1 = _sc.UpdateTaskStatus(id,"RanToCompletion");
-                ROS_INFO("**DEBUG Update task status result %d",ret1);
                 int ret2 = _sc.UpdateTaskDescription(id,result.description);
-                ROS_INFO("**DEBUG Update task status result %d",ret2);
+                ROS_INFO("Update task status %d result %d",ret1,ret2);
                 if(id == result.taskIds.back()){ // if it is the last task
                     int ret3 = _sc.UpdateTaskEndTime(id);
-                    ROS_INFO("**DEBUG Update task end time %d",ret3);
+                    ROS_INFO("Update task end time %d",ret3);
                 }
             }
         }else{
@@ -166,17 +164,17 @@ public:
             } 
         }
 
-        // When robot 0 finish charging, start next experiment
+        // When robot 1 finish charging, start next experiment
         if(result.taskType == "Charging" && result.robotId == 1){
-            ROS_INFO("\n Eexperiment begin ");
-            _exp_id++;
-            if(_exp_id>15){
-                ROS_INFO("Experiment finish");
-                ros::shutdown();
+            
+            
+            if(_sc.CallNewExpProcedure(_exp_id)){
+                ROS_INFO("Experiment %d begin ",_exp_id);
+                _exp_id++;
             }else{
-                _sc.CallNewExpProcedure(_exp_id); 
+                ROS_INFO("Experiment finished. In toal %d experiments",_exp_id);
+                ros::shutdown();
             }
-                         
         }
 
     }

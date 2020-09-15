@@ -9,10 +9,10 @@ CREATE PROCEDURE origin_db.create_execute_tasks(
  --   OUT last_id INT
     )
 BEGIN 
-	SET @task_index := 1;
+	SET @task_index := 0;
 	WHILE @task_index <= task_num DO
 		INSERT INTO origin_db.tasks(task_type, start_time, target_id,priority,dependency)
-        VALUES('ExecuteTask',t + INTERVAL 20 * @task_index SECOND,20 + @task_index,2,0);
+        VALUES('ExecuteTask',t + INTERVAL 30 * @task_index SECOND,21 + @task_index MOD 10,2,0);
 		SET @task_index := @task_index +1;
     END WHILE;
 	-- SELECT MAX(task_id) INTO last_id FROM tasks;
