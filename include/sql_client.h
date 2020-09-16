@@ -338,7 +338,7 @@ class SQLClient{
         while(res->next()){
         ChargingStation cs;
         cs.stationId = res->getInt("station_id"); 
-        cs.batteryLevel = res->getInt("robot_battery_level");
+        cs.batteryLevel = res->getInt("battery");
         cs.remainingTime = res->getInt64("t");
         cs.cur_status = res->getString("cur_status"); 
         cs.pose.position.x = res->getDouble("position_x");

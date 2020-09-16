@@ -15,7 +15,7 @@ int main(int argc, char** argv){
     std::thread t([]{while(ros::ok()) ros::spin();});
 
     // ::testing::GTEST_FLAG(filter) = "SqlTest.insert_task";
-    ::testing::GTEST_FLAG(filter) = "SqlObjectTest.UpdateChargingStationInfo";
+    // ::testing::GTEST_FLAG(filter) = "SqlObjectTest.UpdateChargingStationInfo";
 
     auto res = RUN_ALL_TESTS();
     

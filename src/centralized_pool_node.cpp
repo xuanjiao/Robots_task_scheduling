@@ -11,7 +11,7 @@
 #include <string>
 
 #define CHECK_DB_PERIOD 10
-#define CHARGING_THRESHOLD 90
+#define CHARGING_THRESHOLD 10
 
 typedef actionlib::SimpleActionClient<robot_navigation::RunTaskAction> RunTaskActionClient;                                                                                                                                                                                  ;
 
@@ -33,7 +33,6 @@ public:
     }
 
     void init(){
-	    ros::Duration(1).sleep();
         ROS_INFO_STREAM("Current office time: "<<Util::time_str(ros::Time::now()));
         _ts = _nh.advertiseService("/GetATask",&CentralizedPool::WhenRobotRequestTask,this);
     }

@@ -27,7 +27,7 @@ TEST_F(SqlObjectTest,QueryDoorInfo){
 
     //ASSERT_EQ(ros::Time::now().sec,1590994800);
     auto doors = sc->QueryDoorInfo();
-    ASSERT_EQ(doors.size(),16);
+    ASSERT_EQ(doors.size(),17);
     ASSERT_EQ(doors[12].doorId,13);
     ASSERT_EQ(doors[12].pose.position.x,5.8);
     ASSERT_EQ(doors[12].pose.position.y,7.7);
@@ -55,7 +55,7 @@ TEST_F(SqlObjectTest,QueryChargingStationInfo){
 
 TEST_F(SqlObjectTest,UpdateChargingStationInfo){
     ChargingStation cs;
-    cs.stationId = 17;
+    cs.stationId = 18;
     cs.robotId = 1;
     cs.batteryLevel = 65.2;
     int ret = sc->UpdateChargingStationInfo(cs);
