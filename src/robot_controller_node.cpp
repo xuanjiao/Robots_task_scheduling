@@ -100,10 +100,14 @@ public:
         srv.request.pose = sharedPtr->pose.pose;
         srv.request.robotId = _robotId;
         
+        int cnt = 0;
         while(ros::ok()){
             if(!_tc.call(srv)){
                 ROS_INFO_STREAM("Failed to send request");
-                ros::shutdown();
+                cnt++;
+                if(cnt>10)
+                    ros::shutdown();
+
             }else{
                 if(srv.response.hasTask == false){
                     ROS_INFO_STREAM("No available task");
