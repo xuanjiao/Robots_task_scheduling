@@ -14,7 +14,7 @@ BEGIN
 -- change weight
 TRUNCATE origin_db.exe_weight;
 
-SELECT IF(id_exp = MAX(go_on),false,true) INTO go_on FROM origin_db.exe_rs;
+SELECT IF(id_exp > MAX(exp_id),false,true) INTO go_on FROM origin_db.exe_rs;
                 
 INSERT INTO origin_db.exe_weight
 SELECT wt_btr,wt_wait,wt_psb, wt_pri FROM origin_db.exe_rs WHERE exp_id = id_exp;

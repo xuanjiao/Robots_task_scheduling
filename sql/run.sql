@@ -278,6 +278,28 @@ DELIMITER ;
 -- Create door_used finished --	
 
 
+-- Create execute task experiment result table
+DROP TABLE IF EXISTS origin_db.exe_rs;
+CREATE TABLE origin_db.exe_rs(
+	exp_id INT AUTO_INCREMENT,
+	wt_btr DOUBLE (5,2),
+	wt_wait DOUBLE (5,2),
+    wt_psb DOUBLE (5,2),
+    wt_pri DOUBLE (5,2),
+    start_time DATETIME,
+    finish_time DATETIME,
+    duration TIME,
+    total INT,
+    completed INT ,
+    expired INT , 
+	canceled INT,
+    running INT,
+    err INT,
+    to_rerun INT,
+    PRIMARY KEY (exp_id)
+);
+
+
 -- Print all tables --
 SELECT * FROM origin_db.room_range;
 SELECT * FROM origin_db.measurements;

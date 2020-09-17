@@ -168,7 +168,7 @@ public:
         if(result.taskType == "Charging" && result.robotId == 1){
             
             
-            if(_sc.CallNewExpProcedure(_exp_id)){
+            if(_sc.CallNewExpProcedure(_exp_id)== true){
                 ROS_INFO("Experiment %d begin ",_exp_id);
                 _exp_id++;
             }else{
