@@ -47,8 +47,8 @@ public:
         if(sts.size() != 0 ){  
             lts = LargeExecuteTask::MakeLargeTasks(sts);
              
-            ROS_INFO_STREAM("Large_task_id Battery WaitTime Open_possibility Priority   Cost");
-            ROS_INFO("-----------------------------------------------------------------------------");
+            // ROS_INFO_STREAM("Large_task_id Battery WaitTime Open_possibility Priority   Cost");
+            // ROS_INFO("-----------------------------------------------------------------------------");
             for(LargeExecuteTask& t:lts){
                 t.startRoom = _sc.QueryRoomWithCoordinate(robotPose);
                 CalculateLargetaskOpenpossibility(t);     
