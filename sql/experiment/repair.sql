@@ -10,10 +10,10 @@ VALUES
 -- Make experiment cases
 TRUNCATE origin_db.exe_rs;
 
--- INSERT INTO origin_db.exe_rs
--- (wt_btr,wt_wait,wt_psb, wt_pri)
--- VALUES
--- (1,1,-35,-35);
+INSERT INTO origin_db.exe_rs
+(wt_btr,wt_wait,wt_psb, wt_pri)
+VALUES
+(1,1,-1,-25),(1,1,-1,-30),(1,1,-1,-35),(1,1,-1,-40),(1,1,-1,-45),(1,1,-1,-50);
 
 TRUNCATE origin_db.tasks;
 TRUNCATE origin_db.exe_weight;

@@ -54,7 +54,7 @@ class CostCalculator{
                     + _tw.wt_wait  * t.waitingTime.toSec() 
                     + _tw.wt_psb * t.openPossibility 
                     + _tw.wt_pri * t.priority;
-        ROS_INFO("%d        %.3f   %.3f   %.3f  %d  %3f",t.taskId,t.battery,t.waitingTime.toSec(), t.openPossibility,t.priority,t.cost);
+        // ROS_INFO("%d        %.3f   %.3f   %.3f  %d  %3f",t.taskId,t.battery,t.waitingTime.toSec(), t.openPossibility,t.priority,t.cost);
 
     }
 
