@@ -5,7 +5,7 @@ CREATE PROCEDURE createRawData()
 BEGIN
 	TRUNCATE TABLE measurements;
 	set @tm := '2020-06-01 9:00:01';
-    WHILE  @tm < '2020-06-02 20:00:00' DO
+    WHILE  @tm < '2020-06-03 20:00:00' DO
     INSERT INTO measurements
     
 		SELECT o.door_id,

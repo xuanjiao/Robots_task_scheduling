@@ -299,6 +299,11 @@ CREATE TABLE origin_db.exe_rs(
     PRIMARY KEY (exp_id)
 );
 
+INSERT tasks (task_type,target_id,robot_id,priority)
+VALUES
+('Charging',18,1,5),
+('Charging',19,2,5),
+('Charging',20,3,5);
 
 -- Print all tables --
 SELECT * FROM origin_db.room_range;

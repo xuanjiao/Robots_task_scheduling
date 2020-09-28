@@ -61,8 +61,8 @@ class CostCalculator{
     void CalculateDoorCost(ros::Time now, Door& door, geometry_msgs::Pose robotPose){
         double battery =  CalculateSimpleBatteryConsumption(robotPose,door.pose);
         long timeSinceLastUpdate = now.sec - door.lastUpdate.sec;      
-        door.cost = _dw.wt_btr * battery + _dw.wt_psb * door.depOpenpossibility + _dw.wt_update * timeSinceLastUpdate + _dw.wt_used * door.isUsed;
-        ROS_INFO("%d %.3f         %ld          %.3f     %d  %.3f", door.doorId, battery,timeSinceLastUpdate,door.depOpenpossibility, door.isUsed, door.cost);
+        door.cost = _dw.wt_btr * battery + _dw.wt_psb * door.product_psb + _dw.wt_update * timeSinceLastUpdate + _dw.wt_used * door.isUsed;
+        ROS_INFO("%d %.3f         %ld          %.3f     %d  %.3f", door.doorId, battery,timeSinceLastUpdate,door.product_psb, door.isUsed, door.cost);
     }
 
 

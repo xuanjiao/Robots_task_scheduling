@@ -31,7 +31,6 @@ TEST_F(SqlObjectTest,QueryDoorInfo){
     ASSERT_EQ(doors[12].doorId,13);
     ASSERT_EQ(doors[12].pose.position.x,5.8);
     ASSERT_EQ(doors[12].pose.position.y,7.7);
-    ASSERT_GT(doors[12].depOpenpossibility,0.0);
     // ASSERT_EQ(doors[12].isUsed,false);
 }
 

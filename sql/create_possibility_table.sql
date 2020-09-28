@@ -37,7 +37,25 @@ DO
         ( @door,2,'20:00:00','20:59:59',@high,@high),
         ( @door,2,'21:00:00','21:59:59',@high,@high),
         ( @door,2,'22:00:00','22:59:59',@high,@high),
-        ( @door,2,'23:00:00','23:59:59',@high,@high);
+        ( @door,2,'23:00:00','23:59:59',@high,@high),
+		( @door,3,'00:00:00','7:59:59',@high,@high),
+		( @door,3,'08:00:00','8:59:59',@high,@high),
+		( @door,3,'09:00:00','9:59:59',@high,@high),
+		( @door,3,'10:00:00','10:59:59',@high,@high),
+		( @door,3,'11:00:00','11:59:59',@high,@high),
+		( @door,3,'12:00:00','12:59:59',@high,@high),
+		( @door,3,'13:00:00','13:59:59',@high,@high),
+		( @door,3,'14:00:00','14:59:59',@high,@high),
+		( @door,3,'15:00:00','15:59:59',@high,@high),
+		( @door,3,'16:00:00','16:59:59',@high,@high),
+        ( @door,3,'17:00:00','17:59:59',@high,@high),
+        ( @door,3,'18:00:00','18:59:59',@high,@high),
+        ( @door,3,'19:00:00','19:59:59',@high,@high),
+        ( @door,3,'20:00:00','20:59:59',@high,@high),
+        ( @door,3,'21:00:00','21:59:59',@high,@high),
+        ( @door,3,'22:00:00','22:59:59',@high,@high),
+        ( @door,3,'23:00:00','23:59:59',@high,@high);
+
     ELSE
     
 		INSERT IGNORE INTO open_possibilities(door_id,day_of_week,start_time,end_time, open_pos , open_pos_st)
@@ -65,7 +83,31 @@ DO
         ( @door,2,'20:00:00','20:59:59',@possibility_2,@possibility_2),
         ( @door,2,'21:00:00','21:59:59',@possibility_2,@possibility_2),
         ( @door,2,'22:00:00','22:59:59',@possibility_2,@possibility_2),
-        ( @door,2,'23:00:00','23:59:59',@possibility_2,@possibility_2);
+        ( @door,2,'23:00:00','23:59:59',@possibility_2,@possibility_2),
+        ( @door,3,'00:00:00','0:59:59',@possibility_1,@possibility_1),
+        ( @door,3,'10:00:00','1:59:59',@possibility_1,@possibility_1),
+        ( @door,3,'02:00:00','2:59:59',@possibility_1,@possibility_1),
+        ( @door,3,'03:00:00','3:59:59',@possibility_1,@possibility_1),
+        ( @door,3,'04:00:00','4:59:59',@possibility_1,@possibility_1),
+        ( @door,3,'05:00:00','5:59:59',@possibility_1,@possibility_1),
+        ( @door,3,'06:00:00','6:59:59',@possibility_1,@possibility_1),
+        ( @door,3,'07:00:00','7:59:59',@possibility_1,@possibility_1),
+		( @door,3,'08:00:00','8:59:59',@possibility_1,@possibility_1),
+		( @door,3,'09:00:00','9:59:59',@possibility_1,@possibility_1),
+		( @door,3,'10:00:00','10:59:59',@possibility_1,@possibility_1),
+		( @door,3,'11:00:00','11:59:59',@possibility_1,@possibility_1),
+		( @door,3,'12:00:00','12:59:59',@possibility_1,@possibility_1),
+		( @door,3,'13:00:00','13:59:59',@possibility_2,@possibility_2),
+		( @door,3,'14:00:00','14:59:59',@possibility_2,@possibility_2),
+		( @door,3,'15:00:00','15:59:59',@possibility_2,@possibility_2),
+		( @door,3,'16:00:00','16:59:59',@possibility_2,@possibility_2),
+		( @door,3,'17:00:00','17:59:59',@possibility_2,@possibility_2),
+        ( @door,3,'18:00:00','18:59:59',@possibility_2,@possibility_2),
+        ( @door,3,'19:00:00','19:59:59',@possibility_2,@possibility_2),
+        ( @door,3,'20:00:00','20:59:59',@possibility_2,@possibility_2),
+        ( @door,3,'21:00:00','21:59:59',@possibility_2,@possibility_2),
+        ( @door,3,'22:00:00','22:59:59',@possibility_2,@possibility_2),
+        ( @door,3,'23:00:00','23:59:59',@possibility_2,@possibility_2);
     
     END IF;
 	SET @door = @door + 1;

@@ -231,23 +231,18 @@ class SQLClient{
     vector<Door> doors;
     string time = Util::time_str(ros::Time::now());
     res = stmt->executeQuery(
-      "SELECT i.door_id, i.dependency, i.last_update, i.is_used, t.position_x, t.position_y, o.open_pos_st FROM doors i \
-        INNER JOIN positions t ON t.target_id = i.door_id \
-        LEFT JOIN (SELECT * FROM open_possibilities \
-        WHERE day_of_week = DAYOFWEEK('" + time +  "') and time('" + time +"') between start_time and end_time) o \
-        ON i.dependency = o.door_id \
-        ORDER BY i.door_id"
+      "SELECT d.door_id, d.last_update, d.is_used, t.position_x, t.position_y FROM doors d \
+        INNER JOIN positions t ON t.target_id = d.door_id \
+        ORDER BY d.door_id"
     );
 
     if(res->rowsCount() == 0){
       ROS_INFO_STREAM("No Door Info");    
     }else{
         while(res->next()){
-        Door d;
-        d.doorId = res->getInt("door_id"); // find available door id
-        d.lastUpdate = Util::str_ros_time(res->getString("last_update"));
-        if(res->getInt("dependency")!=0)
-          d.depOpenpossibility = res->getDouble("open_pos_st");
+          Door d;
+          d.doorId = res->getInt("door_id"); // find available door id
+          d.lastUpdate = Util::str_ros_time(res->getString("last_update"));
           d.pose.position.x = res->getDouble("position_x");
           d.pose.position.y = res->getDouble("position_y");
           d.pose.orientation.w = 1.0;

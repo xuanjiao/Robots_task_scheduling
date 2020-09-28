@@ -5,6 +5,7 @@
 #include "task_manager.h"
 #include "sql_client.h"
 #include "task_type.h"
+#include "objects.h"
 
 using namespace std;
 
@@ -109,7 +110,7 @@ TEST_F(TaskManagerTest,HandleMultipleLatgeTaskResult){
     tm->HandleTaskResult(r3);
 }
 
-TEST_F(TaskManagerTest,CalculateLargetaskOpenpossibility){
+TEST_F(TaskManagerTest,CalculateLargeTaskPossibilityProduct){
     
     LargeExecuteTask lt;
     lt.waitingTime = ros::Duration(20);
@@ -119,7 +120,7 @@ TEST_F(TaskManagerTest,CalculateLargetaskOpenpossibility){
     s2.point.roomId = 4;
     lt.smallTasks.insert(make_pair(1,s1));
     lt.smallTasks.insert(make_pair(2,s2));
-    tm->CalculateLargetaskOpenpossibility(lt);
+    tm->CalculatePossibilityProduct(lt);
 
     ASSERT_LT(lt.openPossibility - 0.16, 0.01); // 0.8 x 0.2
 
@@ -130,7 +131,7 @@ TEST_F(TaskManagerTest,CalculateLargetaskOpenpossibility){
     s4.point.roomId = 13;
     lt2.smallTasks.insert(make_pair(6,s3)); 
     lt2.smallTasks.insert(make_pair(7,s4));
-    auto s = tm->CalculateLargetaskOpenpossibility(lt2);
+    auto s = tm->CalculatePossibilityProduct(lt2);
     ASSERT_EQ(s.count(1),1);// check if contains door 1,10,12,13
     ASSERT_EQ(s.count(10),1);
     ASSERT_EQ(s.count(12),1);
@@ -138,6 +139,20 @@ TEST_F(TaskManagerTest,CalculateLargetaskOpenpossibility){
 
     ASSERT_LT(lt2.openPossibility - 0.4096, 0.01); // 0.8 x 0.8 x 0.8 x 0.8
 
+}
+
+TEST_F(TaskManagerTest,CalculateEnviromentPossibilityProduct){
+    Door door;
+    geometry_msgs::Pose robotPose;
+    robotPose.position.x = 3.5;
+    robotPose.position.y = 7.7;
+    door.pose.position.x = -16.0;
+    door.pose.position.y = 7.7;
+    auto doors = tm->CalculatePossibilityProduct(door,robotPose);
+    ASSERT_EQ(doors.count(1),1);
+    ASSERT_EQ(doors.size(),2);
+    ASSERT_EQ(doors.count(10),1);
+    ASSERT_LT(door.product_psb - 0.64, 0.01); // 0.8 x 0.8
 }
 
 // TEST_F(TaskManagerTest,calculateBattery){

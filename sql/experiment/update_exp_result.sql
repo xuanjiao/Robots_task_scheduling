@@ -4,6 +4,8 @@ DELIMITER ;;
 
 CREATE PROCEDURE origin_db.update_exp_result()
 BEGIN
+SET SQL_SAFE_UPDATES = 0;
+SET @task_per_exp :=18;
 
 -- Update current experiment result and finish time
 -- exp. finish_time = latest execute task finish time 

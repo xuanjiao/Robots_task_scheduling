@@ -10,6 +10,7 @@ VALUES
 -- Make experiment cases
 TRUNCATE origin_db.exe_rs;
 
+
 -- INSERT INTO origin_db.exe_rs
 -- (wt_btr,wt_wait,wt_psb, wt_pri)
 -- VALUES

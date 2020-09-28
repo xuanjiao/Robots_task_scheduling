@@ -79,13 +79,6 @@ TEST_F(SqlTaskTest,UpdateTaskEndTime){
     ASSERT_EQ(ret,1);
 }
 
-
-TEST_F(SqlTaskTest,UpdateExestTaskEndTime){
-    ASSERT_TRUE(sc->UpdateTaskEndTime(1));
-    ASSERT_TRUE(sc->UpdateTaskEndTime(2));
-    ASSERT_TRUE(sc->UpdateTaskEndTime(3));
-}
-
 TEST_F(SqlTaskTest,TaskUpdateDescription){
     SmallExecuteTask t;
     t.point.pointId = 5;

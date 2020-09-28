@@ -16,16 +16,14 @@ class Door{
     public:
     int doorId;
     geometry_msgs::Pose pose;
-    double depOpenpossibility;
-    double openpossibility;
+    double product_psb;
     ros::Time lastUpdate;
     bool isUsed;
     double cost;
-
     string getDoorInfo(){
         stringstream ss;
         ss << "Door "<< doorId <<"at ("<<pose.position.x<<", "<<pose.position.y<< 
-        ") dependency open possibility" <<depOpenpossibility<<", last update "
+        ") product of open possibility" <<product_psb<<", last update "
         <<Util::time_str(lastUpdate)<< "is used "<<isUsed;
 
         return ss.str();

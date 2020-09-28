@@ -19,6 +19,7 @@ using namespace std;
 class TaskManager{
 public:
     static const int EXP_BEGIN = 1;
+    static const int TASK_DELAY = 10;
 
     TaskManager(SQLClient& sc, CostCalculator& cc):_sc(sc),_cc(cc){
         
@@ -51,7 +52,7 @@ public:
             // ROS_INFO("-----------------------------------------------------------------------------");
             for(LargeExecuteTask& t:lts){
                 t.startRoom = _sc.QueryRoomWithCoordinate(robotPose);
-                CalculateLargetaskOpenpossibility(t);     
+                CalculatePossibilityProduct(t);     
                 _cc.CalculateLargeTasksCost(now,t,robotPose);
                 // ROS_INFO_STREAM("Calculate execute task cost finish");
             } 
@@ -89,6 +90,7 @@ public:
         ROS_INFO("-----------------------------------------------------------------------------");
         for(Door& door : doors){
                 // this door is not exploring by other doors;
+                CalculatePossibilityProduct(door,robotPose);
                 _cc.CalculateDoorCost(now,door,robotPose);     
             //ROS_INFO("calculate from  (%s) door %d to (%s)",Util::pose_str(robotPose).c_str(), door.doorId, Util::pose_str(door.pose).c_str());
         }
@@ -97,7 +99,7 @@ public:
         ROS_INFO("Best door is %d",doors.back().doorId);
         st.targetId = doors.back().doorId;
         st.goal.pose = doors.back().pose;
-        st.goal.header.stamp = now + ros::Duration(10);
+        st.goal.header.stamp = now + ros::Duration(TASK_DELAY);
         st.goal.header.frame_id = "map";
         st.taskType = "GatherEnviromentInfo";
         st.priority = 1;
@@ -123,7 +125,7 @@ public:
         ROS_INFO("Best charging station is %d",css.back().stationId);
         st.targetId = css.back().stationId;
         st.goal.pose = css.back().pose;
-        st.goal.header.stamp = now + ros::Duration(10);
+        st.goal.header.stamp = now + ros::Duration(TASK_DELAY);
         st.goal.header.frame_id = "map";
         st.taskType = "Charging";
         st.priority = 5;
@@ -184,7 +186,22 @@ public:
         _sc.UpdateTaskRobotId(taskId,robotId);
     }
 
-    RltDoors CalculateLargetaskOpenpossibility(LargeExecuteTask& t){
+    RltDoors CalculatePossibilityProduct(Door& d,geometry_msgs::Pose robotPose){
+        RltDoors ds;
+        int startRoom = 0, endRoom = 0;
+        startRoom = _sc.QueryRoomWithCoordinate(robotPose);
+        endRoom = _sc.QueryRoomWithCoordinate(d.pose);
+        ds = RoomMap::getRelativeDoors(startRoom,endRoom);
+        auto psbs = _sc.QueryRelativeDoorOpenPossibility(ds,ros::Duration(TASK_DELAY));
+
+        d.product_psb = 1;
+        for(double psb : psbs){
+            d.product_psb *= psb;
+        }
+        return ds;
+    }
+
+    RltDoors CalculatePossibilityProduct(LargeExecuteTask& t){
         RltDoors d,dAll;
 
         stringstream ss;
@@ -208,9 +225,9 @@ public:
             return dAll;
         }
 
-        for(auto door: dAll){
-            ss << door<<" ";
-        }
+       // for(auto door: dAll){
+       //     ss << door<<" ";
+       // }
         // ROS_INFO_STREAM("Large task related door: "<<ss.str());
         // doors.erase(0); // ignore 0
         vector<double> ops =  _sc.QueryRelativeDoorOpenPossibility(dAll,t.waitingTime);

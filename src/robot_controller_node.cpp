@@ -39,7 +39,7 @@ public:
     void Init(){
 
         ROS_INFO_STREAM("Robot "<<_robotId << " start initializing..");
-        _ss = _nh.subscribe<robot_navigation::sensor_data>("/sensor_data",100,&RobotController::ListenSensorCallback,this);      
+        _ss = _nh.subscribe<robot_navigation::sensor_data>("/sensor_data",20,&RobotController::ListenSensorCallback,this);      
         _tc = _nh.serviceClient<robot_navigation::GetATask>("/GetATask");
 
         // Start timer
