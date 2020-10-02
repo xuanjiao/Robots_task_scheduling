@@ -14,7 +14,7 @@ INNER JOIN (
 	SELECT 
  		FLOOR((t.task_id -1)/ @task_per_exp + 1) AS exp_id, 
 		COUNT(t.task_id) AS total,
-		SUM( IF (t.cur_status = 'RanToCompletion' ,1,0)) AS completed,
+		SUM( IF (t.cur_status = 'Succedded' ,1,0)) AS completed,
 		SUM( IF (t.cur_status = 'Created' ,1,0)) AS expired,
 		SUM( IF (t.cur_status = 'Canceled' ,1,0)) AS canceled,
 		SUM( IF (t.cur_status = 'Error' ,1,0)) AS err, 

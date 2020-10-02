@@ -143,7 +143,7 @@ public:
         if(result.isCompleted){
             for(int id : result.taskIds){
                
-                int ret1 = _sc.UpdateTaskStatus(id,"RanToCompletion");
+                int ret1 = _sc.UpdateTaskStatus(id,"Succedded");
                 int ret2 = _sc.UpdateTaskDescription(id,result.description);
                 ROS_INFO("Update task status %d result %d",ret1,ret2);
                 if(id == result.taskIds.back()){ // if it is the last task

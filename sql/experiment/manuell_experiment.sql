@@ -48,7 +48,7 @@ CREATE TABLE exp_db.execute_tasks(
     target_id INT,
     robot_id INT,
     priority INT,
-    cur_status ENUM('Created', 'WaitingToRun', 'Running', 'RanToCompletion', 'Canceled','Error','ToReRun') DEFAULT 'Created' ,
+    cur_status ENUM('Created', 'WaitingToRun', 'Running', 'Succedded', 'Canceled','Error','ToReRun') DEFAULT 'Created' ,
     dependency INT,
     description varchar(255),
     PRIMARY KEY (task_id)

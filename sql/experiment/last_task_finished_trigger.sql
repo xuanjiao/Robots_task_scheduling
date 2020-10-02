@@ -8,7 +8,7 @@ AFTER UPDATE ON origin_db.tasks FOR EACH ROW
 BEGIN
 	
 	-- Split tasks to experiment 1,2,3 ... write experiment result in exec_task result 
-	IF NEW.cur_status IN ('RanToCompletion','Error', 'Canceled') AND  NEW.task_id = @LAST_TASK  THEN
+	IF NEW.cur_status IN ('Succedded','Error', 'Canceled') AND  NEW.task_id = @LAST_TASK  THEN
 		CALL exp_db.update_exp_result();
     
   END IF;

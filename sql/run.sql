@@ -64,9 +64,6 @@ CREATE TABLE origin_db.positions (
     target_type varchar(255) NULL,
     position_x DOUBLE (6,2)DEFAULT 0,
     position_y DOUBLE (6,2)DEFAULT 0,
-    -- orientation_z DOUBLE DEFAULT 0,
-    -- orientation_w DOUBLE DEFAULT 0,
-    -- CONSTRAINT Pose UNIQUE(position_x,position_y,orientation_z,orientation_w),
     CONSTRAINT Pose UNIQUE(position_x,position_y),
     PRIMARY KEY (target_id)
 );
