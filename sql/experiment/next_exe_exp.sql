@@ -1,10 +1,10 @@
 
 -- next experiment
 
-DROP PROCEDURE IF EXISTS origin_db.next_exp;
+DROP PROCEDURE IF EXISTS origin_db.next_exe_exp;
 DELIMITER ;;
 
-CREATE PROCEDURE origin_db.next_exp(
+CREATE PROCEDURE origin_db.next_exe_exp(
 	IN id_exp INT,
 	IN first_task DATETIME,
     OUT go_on BOOLEAN

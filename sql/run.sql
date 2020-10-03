@@ -174,7 +174,7 @@ CREATE TABLE origin_db.open_possibilities (
 );
 
 
-CALL create_possibility_table(17);
+CALL create_possibility_table(2,17);
 
 -- Create possibility table finished --------
 
@@ -201,7 +201,7 @@ CREATE TABLE origin_db.tasks (
     target_id INT,
     robot_id INT,
     priority INT,
-    cur_status ENUM('Created', 'WaitingToRun', 'Running', 'RanToCompletion', 'Canceled','Error','ToReRun') DEFAULT 'Created' ,
+    cur_status ENUM('Created', 'WaitingToRun', 'Running', 'Succedded', 'Canceled','Error','ToReRun') DEFAULT 'Created' ,
     dependency INT,
     finish_time DATETIME,
     description varchar(255),
@@ -287,12 +287,9 @@ CREATE TABLE origin_db.exe_rs(
     finish_time DATETIME,
     duration TIME,
     total INT,
-    completed INT ,
+    succedded INT ,
     expired INT , 
-	canceled INT,
-    running INT,
-    err INT,
-    to_rerun INT,
+	failed INT,
     PRIMARY KEY (exp_id)
 );
 
@@ -311,3 +308,4 @@ SELECT * FROM origin_db.charging_stations;
 SELECT * FROM origin_db.doors;
 SELECT * FROM origin_db.tasks;
 SELECT * FROM origin_db.custom_points;
+SHOW EVENTS;
