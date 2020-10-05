@@ -23,6 +23,9 @@ using namespace std;
 
 class SQLClient{
   public:
+  static const int EXP_BEGIN = 1;
+  int _exp_id = EXP_BEGIN;
+
   SQLClient(){}
   SQLClient(string user_name, string pass){
     ConnectToDatabase(user_name,pass);
@@ -105,6 +108,25 @@ class SQLClient{
     return tw;
   }
 
+    DoorWeight QueryDoorWeight(){
+    _sqlMtx.lock();
+    sql::ResultSet* res;
+    DoorWeight dw;
+    res = stmt->executeQuery(" SELECT * FROM door_weight");
+    if(res->rowsCount() == 0){
+      ROS_INFO("No task weight infomation");
+    }else{
+      res->next();
+      dw.wt_btr = res->getDouble("wt_btr");
+      dw.wt_update = res->getDouble("wt_update");
+      dw.wt_psb = res->getDouble("wt_psb");
+    }
+    delete res;
+    _sqlMtx.unlock();
+    return dw;
+  }
+
+
 
   vector<tuple<int,geometry_msgs::Pose,long double>>
   QueryTargetPositionAndOpenPossibilities(string time){
@@ -186,20 +208,18 @@ class SQLClient{
     res = stmt->executeQuery(
       "SELECT * FROM tasks t INNER JOIN positions p ON t.target_id = p.target_id \
       WHERE t.task_type = 'Charging'  AND t.cur_status IN ('Created','ToReRun') AND t.robot_id = " + to_string(robotId));
-    if(res->rowsCount() == 0){
-      ROS_INFO("No Charging Task");
-      return t;
+    while(res->next()){
+      t.taskId = res->getInt("task_id");
+      t.targetId = res->getInt("target_id");
+      t.priority = res->getInt("priority");
+      t.taskType = res->getString("task_type");
+      t.goal.header.stamp = ros::Time::now() + ros::Duration(3);
+      t.goal.header.frame_id = "map";
+      t.goal.pose.position.x = res->getDouble("position_x");
+      t.goal.pose.position.y = res->getDouble("position_y");
+      t.goal.pose.orientation.w = 1.0;
     }
-    res->next();
-    t.taskId = res->getInt("task_id");
-    t.targetId = res->getInt("target_id");
-    t.priority = res->getInt("priority");
-    t.taskType = res->getString("task_type");
-    t.goal.header.stamp = ros::Time::now() + ros::Duration(3);
-    t.goal.header.frame_id = "map";
-    t.goal.pose.position.x = res->getDouble("position_x");
-    t.goal.pose.position.y = res->getDouble("position_y");
-    t.goal.pose.orientation.w = 1.0;
+    
     delete res;
     _sqlMtx.unlock();
     return t;
@@ -226,13 +246,14 @@ class SQLClient{
   }
 
   vector<Door> QueryDoorInfo(){
+    
     _sqlMtx.lock();
     sql::ResultSet* res;
     vector<Door> doors;
     string time = Util::time_str(ros::Time::now());
     res = stmt->executeQuery(
-      "SELECT d.door_id, d.last_update, d.is_used, t.position_x, t.position_y FROM doors d \
-        INNER JOIN positions t ON t.target_id = d.door_id \
+      "SELECT d.door_id, d.last_update,t.position_x, t.position_y FROM doors d \
+        INNER JOIN positions t ON t.target_id = d.door_id WHERE d.is_used = 0 \
         ORDER BY d.door_id"
     );
 
@@ -246,7 +267,6 @@ class SQLClient{
           d.pose.position.x = res->getDouble("position_x");
           d.pose.position.y = res->getDouble("position_y");
           d.pose.orientation.w = 1.0;
-          d.isUsed = res->getBoolean("is_used");
           doors.push_back(d);
       }
     }
@@ -470,7 +490,7 @@ class SQLClient{
       et = res->getString("end_time");
       dw = res->getString("day_of_week");
 
-      ROS_INFO_STREAM("Start time "<<st<<" End time "<<et<<" Day of week "<<dw);
+    //  ROS_INFO_STREAM("Start time "<<st<<" End time "<<et<<" Day of week "<<dw);
 
       // update open possibility table
       ret =  stmt->executeUpdate(
@@ -544,16 +564,50 @@ class SQLClient{
     return ret;
   }
 
-  bool CallNewExpProcedure(int exp_no){
+  bool CallNewExpProcedure(){
     _sqlMtx.lock();
     bool ret = false;
-    stmt->execute("CALL next_exp(" + to_string(exp_no) + ",'" + Util::time_str(ros::Time::now())+"',@go_on)");
+    stmt->execute("CALL next_exe_exp(" + to_string(_exp_id) + ",'" + Util::time_str(ros::Time::now())+"',@go_on)");
     std::shared_ptr<sql::ResultSet> res(stmt->executeQuery("SELECT @go_on AS _reply"));
     while (res->next())
       ret = res->getBoolean("_reply");
     
     _sqlMtx.unlock();
+
+    if(ret == true){
+        ROS_INFO("Experiment %d begin ",_exp_id);
+        _exp_id++;
+    }else{
+        ROS_INFO("Experiment finished. In toal %d experiments",_exp_id);
+        ros::shutdown();
+    }
     return ret;
+  }
+
+   bool CallNewEnvExpProcedure(){
+    _sqlMtx.lock();
+    bool ret = false;
+    stmt->execute("CALL next_env_exp(" + to_string(_exp_id) + ",'" + Util::time_str(ros::Time::now())+"',@go_on)");
+    std::shared_ptr<sql::ResultSet> res(stmt->executeQuery("SELECT @go_on AS _reply"));
+    while (res->next())
+      ret = res->getBoolean("_reply");
+    
+    _sqlMtx.unlock();
+
+    if(ret == true){
+        ROS_INFO("Enviroment Experiment %d begin ",_exp_id);
+        _exp_id++;
+    }else{
+        ROS_INFO("Enviroment Experiment finished. In toal %d experiments",_exp_id);
+        ros::shutdown();
+    }
+    return ret;
+  }
+
+  void CallFinishExpProcedure(){
+    _sqlMtx.lock();
+    stmt->execute(" CALL finish_env_exp()");
+    _sqlMtx.unlock();
   }
 
     

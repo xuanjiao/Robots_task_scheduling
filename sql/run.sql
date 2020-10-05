@@ -225,8 +225,7 @@ DROP TABLE origin_db.door_weight;
 CREATE TABLE origin_db.door_weight(
 	wt_btr DOUBLE(6,2),
     wt_update DOUBLE(6,2), -- time since last update
-    wt_psb DOUBLE(6,2),
-    wt_used DOUBLE(6,2) -- is being used by another robot
+    wt_psb DOUBLE(6,2)
 );
 
 DROP TABLE origin_db.charging_station_weight;
@@ -293,11 +292,25 @@ CREATE TABLE origin_db.exe_rs(
     PRIMARY KEY (exp_id)
 );
 
-INSERT tasks (task_type,target_id,robot_id,priority)
-VALUES
-('Charging',18,1,5),
-('Charging',19,2,5),
-('Charging',20,3,5);
+-- Create execute task experiment result table
+DROP TABLE IF EXISTS origin_db.env_rs;
+CREATE TABLE origin_db.env_rs(
+	exp_id INT AUTO_INCREMENT,
+	wt_btr DOUBLE (5,2),
+	wt_update DOUBLE (5,2),
+    wt_psb DOUBLE (5,2),
+    start_time DATETIME,
+    finish_time DATETIME,
+    duration TIME,
+    last_update DATETIME,
+    avg_interval TIME,
+    succedded INT ,
+    failed INT ,
+    PRIMARY KEY (exp_id)
+);
+
+ -- TRUNCATE tasks;
+ INSERT tasks (task_type,target_id,robot_id,priority) VALUES('Charging',18,1,5),('Charging',19,2,5),('Charging',20,3,5);
 
 -- Print all tables --
 SELECT * FROM origin_db.room_range;

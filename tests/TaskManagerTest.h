@@ -15,7 +15,7 @@ class TaskManagerTest :public ::testing::Test {
         {
             sc= new SQLClient("centralized_pool","pass");
             cc = new CostCalculator(nh);
-            tm = new TaskManager(*sc,*cc);
+            tm = new TaskManager(nh,*sc,*cc);
             ros::Time now;
             now.sec = 1590994800;
             ros::Time::setNow(now);

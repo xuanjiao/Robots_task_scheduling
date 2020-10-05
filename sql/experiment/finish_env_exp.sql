@@ -5,3 +5,4 @@ VALUES
 ('Charging',18,1,5),
 ('Charging',19,2,5),
 ('Charging',20,3,5);
+

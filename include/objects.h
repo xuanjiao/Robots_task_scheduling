@@ -18,13 +18,12 @@ class Door{
     geometry_msgs::Pose pose;
     double product_psb;
     ros::Time lastUpdate;
-    bool isUsed;
     double cost;
     string getDoorInfo(){
         stringstream ss;
         ss << "Door "<< doorId <<"at ("<<pose.position.x<<", "<<pose.position.y<< 
         ") product of open possibility" <<product_psb<<", last update "
-        <<Util::time_str(lastUpdate)<< "is used "<<isUsed;
+        <<Util::time_str(lastUpdate);
 
         return ss.str();
     }

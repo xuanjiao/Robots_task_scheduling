@@ -95,6 +95,6 @@ TEST_F(SqlTaskTest,QueryRunableChargingTask){
 }
 
 TEST_F(SqlTaskTest,CallNewExpProcedure){
-    sc->CallNewExpProcedure(1);
+    sc->CallNewEnvExpProcedure();
 
 }

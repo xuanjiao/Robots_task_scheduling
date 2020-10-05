@@ -6,19 +6,26 @@ DELIMITER ;;
 
 CREATE PROCEDURE origin_db.next_env_exp(
 	IN id_exp INT,
-	IN first_task DATETIME,
+    IN t DATETIME,
     OUT go_on BOOLEAN
  )
 BEGIN
 
 -- change weight
-TRUNCATE origin_db.exe_weight;
+TRUNCATE origin_db.door_weight;
 
-SELECT IF(id_exp > MAX(exp_id),false,true) INTO go_on FROM origin_db.exe_rs;
+SELECT IF(id_exp > MAX(exp_id),false,true) INTO go_on FROM origin_db.env_rs;
                 
-INSERT INTO origin_db.exe_weight
-SELECT wt_btr,wt_wait,wt_psb, wt_pri FROM origin_db.exe_rs WHERE exp_id = id_exp;
+INSERT INTO origin_db.door_weight
+SELECT wt_btr, wt_update, wt_psb FROM origin_db.env_rs WHERE exp_id = id_exp;
 
+-- SELECT MIN(last_update) INTO @up FROM doors;
+    
+UPDATE origin_db.env_rs 
+SET start_time = t
+WHERE exp_id = id_exp;
+
+UPDATE doors SET last_update = t;
 END ;;
 
 

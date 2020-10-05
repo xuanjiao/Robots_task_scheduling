@@ -33,7 +33,7 @@ public:
     }
 
     void init(){
-        ROS_INFO_STREAM("Current office time: "<<Util::time_str(ros::Time::now()));
+        ROS_INFO_STREAM("Current simulation time: "<<Util::time_str(ros::Time::now()));
         _ts = _nh.advertiseService("/GetATask",&CentralizedPool::WhenRobotRequestTask,this);
     }
 
@@ -43,10 +43,22 @@ public:
         ROS_INFO("REQUEST from Robot %d (%f,%f) battery %f",req.robotId,req.pose.position.x,req.pose.position.y,req.batteryLevel);
         
         ROS_INFO_STREAM("Current time: "<<Util::time_str(ros::Time::now()));
+        
+        SmallTask bt;
+        bt = _tm.GetAChargingTask(req.robotId);       
+        while(bt.taskId == 0){
+            bt = _tm.CreateBestEnviromentTask(req.pose);
+        }
+        SendRobotSmallTask(bt,req.robotId);   
+
+        /* Execute task experiment
         if(req.batteryLevel <= CHARGING_THRESHOLD){ // need charging
             SmallTask bt = _tm.CreateBestChargingTask(req.pose);
             SendRobotSmallTask(bt,req.robotId); // send goal to robot
         }else{
+
+
+             
             LargeExecuteTask lt = _tm.SelectExecutetask(req.robotId,req.pose);
             if(lt.smallTasks.size()>0){
                 SendRobotLargeTask(lt,req.robotId); 
@@ -60,7 +72,9 @@ public:
                 }
                 SendRobotSmallTask(bt,req.robotId);
             }
+            
         }
+        */
         res.hasTask = true;
         return true;
     }
@@ -113,7 +127,6 @@ public:
       //  ROS_INFO_STREAM(g);
         _acMtx.unlock();
         _tm.AfterSendingTask(bt.taskId,robotId); // Update task status and robot id column in task table
-        ROS_INFO_STREAM("Send task to robot"<<robotId<<" finished");
     }
 
     void SendRobotLargeTask(LargeExecuteTask& lt,int robotId){
@@ -155,7 +168,7 @@ int main(int argc, char** argv){
     ros::NodeHandle nodeHandle;
     SQLClient sqlClient("centralized_pool","pass");
     CostCalculator cc(nodeHandle);
-    TaskManager taskManager(sqlClient,cc);
+    TaskManager taskManager(nodeHandle,sqlClient,cc);
     CentralizedPool pool(sqlClient,nodeHandle,taskManager);
 
     ros::spin(); // block program
