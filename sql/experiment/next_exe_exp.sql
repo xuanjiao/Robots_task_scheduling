@@ -24,7 +24,7 @@ SET @task_index := 0;
     
 WHILE @task_index < 15 DO
 	INSERT INTO origin_db.tasks(task_type, start_time, target_id,priority,dependency)
-	VALUES('ExecuteTask',first_task + INTERVAL 65 * (@task_index +1) SECOND,21 + @task_index MOD 10,2,0);
+	VALUES('ExecuteTask',first_task + INTERVAL 30 * (@task_index +1) SECOND,21 + @task_index MOD 10,2,0);
 	SET @task_index := @task_index +1;
 END WHILE;
 

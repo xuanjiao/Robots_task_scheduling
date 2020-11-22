@@ -95,7 +95,7 @@ class SQLClient{
     TaskWeight tw;
     res = stmt->executeQuery(" SELECT * FROM exe_weight");
     if(res->rowsCount() == 0){
-      ROS_INFO("No task weight infomation");
+      ROS_INFO("No execute task weight infomation");
     }else{
       res->next();
       tw.wt_btr = res->getDouble("wt_btr");

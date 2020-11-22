@@ -302,7 +302,7 @@ CREATE TABLE origin_db.env_rs(
     start_time DATETIME,
     finish_time DATETIME,
     duration TIME,
-    last_update DATETIME,
+    last_update TIME,
     avg_interval TIME,
     succedded INT ,
     failed INT ,
@@ -313,6 +313,7 @@ CREATE TABLE origin_db.env_rs(
  INSERT tasks (task_type,target_id,robot_id,priority) VALUES('Charging',18,1,5),('Charging',19,2,5),('Charging',20,3,5);
 
 -- Print all tables --
+SELECT * FROM origin_db.exe_rs;
 SELECT * FROM origin_db.room_range;
 SELECT * FROM origin_db.measurements;
 SELECT * FROM origin_db.open_possibilities;

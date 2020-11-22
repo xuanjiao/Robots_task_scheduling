@@ -8,16 +8,16 @@
 using namespace std;
 
 typedef struct TaskWeight{
-    double wt_btr;
-    double wt_wait;
-    double wt_psb;
-    double wt_pri;
+    double wt_btr = 5.0;
+    double wt_wait = 1.0;
+    double wt_psb = -5.0;
+    double wt_pri = -5.0;
 }TaskWeight;
 
 typedef struct DoorWeight{
-    double wt_update; // large time since last update-> lower cost
-    double wt_btr;
-    double wt_psb;
+    double wt_update = 0.1; // large time since last update-> lower cost
+    double wt_btr = 15;
+    double wt_psb = 0.1;
 }DoorWeight;
 
 typedef struct ChargingWeight{
@@ -37,12 +37,12 @@ class CostCalculator{
 
     void LoadTaskWeight(TaskWeight &tw){
         _tw = tw;
-        ROS_INFO("Task weight %.1f %.1f %.1f %.1f",_tw.wt_btr,tw.wt_wait,tw.wt_psb,tw.wt_pri);
+        ROS_INFO("Task weight %.2f %.2f %.2f %.2f",_tw.wt_btr,tw.wt_wait,tw.wt_psb,tw.wt_pri);
     }
 
     void LoadDoorWeight(DoorWeight &dw){
         _dw = dw;
-        ROS_INFO("Door weight %.1f %.1f %.1f",_dw.wt_btr,_dw.wt_update,_dw.wt_psb);
+        ROS_INFO("Door weight %.2f %.2f %.2f",_dw.wt_btr,_dw.wt_update,_dw.wt_psb);
     }
 
 
@@ -66,9 +66,9 @@ class CostCalculator{
 
     void CalculateDoorCost(ros::Time now, Door& door, geometry_msgs::Pose robotPose){
         double battery =  CalculateSimpleBatteryConsumption(robotPose,door.pose);
-        long timeSinceLastUpdate = now.sec - door.lastUpdate.sec;      
+        double timeSinceLastUpdate = now.toSec() - door.lastUpdate.toSec();      
         door.cost = _dw.wt_btr * battery + _dw.wt_psb * door.product_psb + _dw.wt_update * timeSinceLastUpdate;
-         ROS_INFO("%d  %.3f     %ld             %.3f  %.3f", door.doorId, battery,timeSinceLastUpdate,door.product_psb, door.cost);
+      //  ROS_INFO("%d  %.3f     %.3f     %.3f  %.3f", door.doorId, battery,timeSinceLastUpdate,door.product_psb, door.cost);
     }
 
 

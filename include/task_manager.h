@@ -19,7 +19,7 @@ using namespace std;
 class TaskManager{
 public:
     static const int TASK_DELAY = 10;
-    static const int ENV_EXP_TIME = 600;
+    static const int ENV_EXP_TIME = 1200;
     ros::Timer _exp_timer;
     ros::NodeHandle& _nh;
 
@@ -189,8 +189,8 @@ public:
         if(result.taskType == "Charging" && result.robotId == 1){
             
             
-            //_sc.CallNewExpProcedure();
-            _sc.CallNewEnvExpProcedure();
+            _sc.CallNewExpProcedure();
+            // _sc.CallNewEnvExpProcedure();
             _exp_timer.setPeriod(ros::Duration(ENV_EXP_TIME));
             _exp_timer.start();
         }

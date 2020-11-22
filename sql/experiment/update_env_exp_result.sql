@@ -1,6 +1,5 @@
-DROP TABLE IF EXISTS  env_rs_bu;
-CREATE TABLE env_rs_bu SELECT * FROM  env_rs;
-ALTER TABLE env_rs_bu MODIFY last_update TIME;
+-- DROP TABLE IF EXISTS  env_rs;
+-- ALTER TABLE origin_db.env_rs MODIFY last_update TIME;
 
 DROP PROCEDURE IF EXISTS update_env_exp_result;
 DELIMITER ;;
@@ -9,18 +8,26 @@ CREATE PROCEDURE update_env_exp_result()
 BEGIN
 SET SQL_SAFE_UPDATES = 0;
 -- update duration and finish time
-UPDATE env_rs_bu 
-SET finish_time = ADDTIME(start_time ,'00:10:00'),
-duration = '00:10:00' WHERE start_time IS NOT NULL;
+UPDATE env_rs 
+SET finish_time = ADDTIME(start_time ,'00:20:00'),
+duration = '00:20:00' WHERE start_time IS NOT NULL;
 
 SET @id_exp:=1; 
-SELECT COUNT(start_time) INTO @exp_cnt FROM origin_db.env_rs_bu;
+SELECT COUNT(start_time) INTO @exp_cnt FROM origin_db.env_rs;
 WHILE ( @id_exp <= @exp_cnt ) DO 
+
 	SELECT start_time, finish_time INTO  @st, @ft 
-	FROM origin_db.env_rs_bu 
+	FROM origin_db.env_rs
+	WHERE exp_id = @id_exp;
+    
+    -- success or failed task
+	UPDATE  origin_db.env_rs
+    SET succedded = (SELECT COUNT(task_id) FROM tasks WHERE start_time > @st AND finish_time < @ft AND cur_status = 'Succedded'),
+		failed = (SELECT COUNT(task_id) FROM tasks WHERE start_time > @st AND finish_time < @ft AND cur_status <> 'Succedded')
 	WHERE exp_id = @id_exp;
 
-	UPDATE  origin_db.env_rs_bu  JOIN
+	-- last update time
+	UPDATE  origin_db.env_rs JOIN
 		( 
 			SELECT MIN(dl) AS l
 			FROM
@@ -32,10 +39,11 @@ WHILE ( @id_exp <= @exp_cnt ) DO
 			)tmp1
 		)tmp2 
 		
-	SET last_update = tmp2.l
+	SET last_update = TIMEDIFF(tmp2.l,@st)
 	WHERE exp_id = @id_exp;
 
-	UPDATE  origin_db.env_rs_bu  JOIN (
+	-- average update interval
+	UPDATE  origin_db.env_rs JOIN (
 	SELECT 
 		SEC_TO_TIME(AVG(TIMESTAMPDIFF(SECOND, r2.date_time,r1.date_time))) AS ai
 	FROM
@@ -64,11 +72,11 @@ WHILE ( @id_exp <= @exp_cnt ) DO
 	)tmp SET avg_interval =  tmp.ai WHERE exp_id = @id_exp;
     SET  @id_exp := @id_exp+1;
 END WHILE;
+
+SELECT * FROM env_rs;
 END;;
 
 DELIMITER ;
 
 
 CALL update_env_exp_result();
-
-SELECT * FROM env_rs_bu;

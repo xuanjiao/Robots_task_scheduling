@@ -43,28 +43,26 @@ public:
         ROS_INFO("REQUEST from Robot %d (%f,%f) battery %f",req.robotId,req.pose.position.x,req.pose.position.y,req.batteryLevel);
         
         ROS_INFO_STREAM("Current time: "<<Util::time_str(ros::Time::now()));
-        
+
+       /* environment task 
         SmallTask bt;
         bt = _tm.GetAChargingTask(req.robotId);       
         while(bt.taskId == 0){
             bt = _tm.CreateBestEnviromentTask(req.pose);
         }
         SendRobotSmallTask(bt,req.robotId);   
-
-        /* Execute task experiment
+    */
+       
         if(req.batteryLevel <= CHARGING_THRESHOLD){ // need charging
             SmallTask bt = _tm.CreateBestChargingTask(req.pose);
             SendRobotSmallTask(bt,req.robotId); // send goal to robot
-        }else{
-
-
-             
+        }else{          
             LargeExecuteTask lt = _tm.SelectExecutetask(req.robotId,req.pose);
             if(lt.smallTasks.size()>0){
                 SendRobotLargeTask(lt,req.robotId); 
             }else{
                // SmallTask bt = _tm.CreateBestEnviromentTask(req.pose);
-                SmallTask bt;
+                 SmallTask bt;
                 
                 while(bt.taskId == 0){
                    bt = _tm.GetAChargingTask(req.robotId);
@@ -74,7 +72,7 @@ public:
             }
             
         }
-        */
+        
         res.hasTask = true;
         return true;
     }
