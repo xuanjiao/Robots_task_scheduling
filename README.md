@@ -1,3 +1,5 @@
+# Master Thesis: Exploiting Knowledge of Room Occupation for the Sche- duling of Navigation Tasks of a Fleet of Robots in Office Environments (2020)
+
 # Table of content
 -   Introduction
     -   Background
@@ -36,11 +38,13 @@ Given a multi-room office environment that has sensors, robots, and a task serve
 
 ### Install ROS
     ROS tutorial 
+
     https://emanual.robotis.com/docs/en/platform/turtlebot3/simulation/
 
 ### Download project folder
 
     Download this project to home/catkin_ws
+    
     git clone https://github.com/xuanjiao/robots_task_scheduling.git
 
 # Usages
