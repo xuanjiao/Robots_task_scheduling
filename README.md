@@ -37,14 +37,13 @@ Given a multi-room office environment that has sensors, robots, and a task serve
     `source /home/[user_name]/catkin_ws/src/robot_navigation/sql/run.sql`
 
 ### Install ROS
-    ROS tutorial 
-    
-    ```
+ROS tutorial 
+     
     https://emanual.robotis.com/docs/en/platform/turtlebot3/simulation/
-    ```
+    
 ### Download project folder
 
-    Download this project to home/catkin_ws
+Download this project to home/catkin_ws
     
     ```
     git clone https://github.com/xuanjiao/robots_task_scheduling.git
