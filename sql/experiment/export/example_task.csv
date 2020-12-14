@@ -1,2 +1,0 @@
-task_id,task_type,start_time,target_id,robot_id,priority,cur_status,dependency,finish_time,description
-12,ExecuteTask,"2020-06-01 09:12:44",29,1,2,RanToCompletion,0,"2020-06-01 09:14:52",Succeeded
