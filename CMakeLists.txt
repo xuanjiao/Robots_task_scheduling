@@ -167,7 +167,11 @@ add_dependencies(robot_controller_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${cat
 target_link_libraries(robot_controller_node ${catkin_LIBRARIES})
 
 
-add_executable(centralized_pool_node src/centralized_pool_node.cpp)
+add_executable(centralized_pool_node  
+            src/cost_function.cpp
+            src/task_manager.cpp 
+            src/room_map.cpp 
+            src/centralized_pool_node.cpp)
 add_dependencies(centralized_pool_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(centralized_pool_node mysqlcppconn ${catkin_LIBRARIES})
 
