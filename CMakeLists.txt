@@ -154,7 +154,9 @@ include_directories(
 # add_executable(${PROJECT_NAME}_node src/robot_navigation_node.cpp)
 
 add_definitions(${MYSQL_DEFINITIONS})
-add_executable(door_status_node src/door_status_node.cpp)
+add_executable(door_status_node 
+              src/sql_client.cpp
+              src/door_status_node.cpp)
 add_dependencies(door_status_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(door_status_node
   ${catkin_LIBRARIES}
@@ -170,17 +172,15 @@ target_link_libraries(robot_controller_node ${catkin_LIBRARIES})
 add_executable(centralized_pool_node  
             src/cost_function.cpp
             src/task_manager.cpp 
-            src/room_map.cpp 
+            src/room_map.cpp
+            src/sql_client.cpp 
             src/centralized_pool_node.cpp)
 add_dependencies(centralized_pool_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(centralized_pool_node mysqlcppconn ${catkin_LIBRARIES})
 
-
-add_executable(task_generator_node src/task_generator_node.cpp)
-add_dependencies(task_generator_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(task_generator_node mysqlcppconn ${catkin_LIBRARIES})
-
-add_executable(charging_station_node src/charging_station_node.cpp)
+add_executable(charging_station_node 
+              src/sql_client.cpp 
+              src/charging_station_node.cpp)
 add_dependencies(charging_station_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(charging_station_node mysqlcppconn ${catkin_LIBRARIES})
 
