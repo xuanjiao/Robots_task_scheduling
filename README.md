@@ -1,112 +1,47 @@
 # Master Thesis: Exploiting Knowledge of Room Occupation for the Sche- duling of Navigation Tasks of a Fleet of Robots in Office Environments (2020)
 
-# Table of content
--   Introduction
-    -   Background
-    -   Goad
--   Installation
-    -   Install MySQL database
-    -   Install ROS
-    -   Download project folder
--   Usage
--   Project directory
+# Prerequisite
+[Ubuntu 16.04](https://ubuntu.com/tutorials/install-ubuntu-desktop-1604#1-overview)
 
-# Introduction
+[ROS](https://emanual.robotis.com/docs/en/platform/turtlebot3/quick-start/)
 
-## Background
-Robots has many potential in office environment. They allow people to communicate without direct social contact, which is very popular in the current lock-down situation. For example, robots can deliver documents, or find colleagues to start video conferences. However, compared to the office building, the robot is small, and its respective is limited. If robots want to schedule their activities properly according to their surrounding environment, they need additional information source, sensor modules. 
+[ROS simulation packages](https://emanual.robotis.com/docs/en/platform/turtlebot3/simulation/)
 
-## Goals
-Given a multi-room office environment that has sensors, robots, and a task server called centralized pool. 
+[MySQL Workbench](https://dev.mysql.com/downloads/workbench/)
 
-1. Find a way to gather information about room occupation effectively. 
-2. Use information from robots and environment (e.g. room occupation) to schedule tasks, reducing total energy and time. 
-
+[MySQL Connector/C++](https://dev.mysql.com/doc/dev/connector-cpp/8.0/)
 # Installation
-### Install MySQL database
-1. Install mysql library
 
-     `sudo apt-get install libmysqlcppconn-dev`
+1. Log in mysql server 
 
-2. Log in mysql server 
+`mysql -r root -p`
 
-    `mysql -r root -p`
+2. Use SQL schema to create tables
 
-3. Use SQL schema to create tables
+`source /home/[user_name]/catkin_ws/src/robot_navigation/sql/run.sql`
 
-    `source /home/[user_name]/catkin_ws/src/robot_navigation/sql/run.sql`
-
-### Install ROS
-ROS tutorial 
-     
-    https://emanual.robotis.com/docs/en/platform/turtlebot3/simulation/
+3. Download this project to home/catkin_ws
     
-### Download project folder
-
-Download this project to home/catkin_ws
     
-    ```
-    git clone https://github.com/xuanjiao/robots_task_scheduling.git
-    ```
+```
+git clone https://github.com/xuanjiao/robots_task_scheduling.git
+```
+
 # Usages
 1.  Start Gazebo simulator
 
-    `roslaunch turtlebot3_gazebo multi_turtlebot3.launch`
+`roslaunch turtlebot3_gazebo multi_turtlebot3.launch`
 
 2.  Start navigation stack
 
-    ` roslaunch turtlebot3_gazebo multi.launch`
+` roslaunch turtlebot3_gazebo multi.launch`
 
 3.  Start ROS nodes: robots, centralized pool, charging station, sensor simulator, etc.
 
-    `roslaunch robot_navigation move_demo.launch`
+`roslaunch robot_navigation move_demo.launch`
 
-# Project directory
-```
-├── action/
-│   ├── Charging.action     % Charging Action provided by charging stations 
-│   └── RunTask.action      % RunTask Action provided by robots
-├── CMakeLists.txt      
-├── include/
-│   ├── cost_function.h     % Cost calculation class
-│   ├── objects.h           % Target class: doors, points and charging stations
-│   ├── room_map.h          % map information
-│   ├── sql_client.h        % MySQL Client class
-│   ├── task_manager.h      % Task scheduling class
-│   ├── task_type.h         % Task definition
-│   └── util.h              % Some help function
-├── launch/
-│   ├── gtest.test          % Run unit test
-│   └── move_demo.launch    % Launch ROS nodes: robots, centralized pool, charging station, sensor simulator
-├── maps/
-│   └── office.pgm          % Map file used by the map server
-├── msg/
-│   ├── sensor_data.msg     % Sensor message   
-├── README.md
-├── sql/                    % Database statements
-│   ├── create_execute_task.sql
-│   ├── create_possibility_table.sql
-│   ├── createRawData.sql
-│   ├── experiment/
-│   │   ├── charging_event.sql
-│   │   ├── next_env_exp.sql
-│   │   ├── next_exe_exp.sql
-│   │   ├── update_env_exp_result.sql
-│   │   └── update_exe_exp_result.sql
-│   ├── run.sql
-├── src/
-│   ├── centralized_pool_node.cpp   % Centralized pool
-│   ├── charging_station_node.cpp   % Charging station
-│   ├── door_status_node.cpp        % Door sensor
-│   ├── robot_controller_node.cpp   % Robot
-├── srv/
-│   └── GetATask.srv        % Task service provided by the centralized pool
-├── tests/                  % Unit tests
-│   ├── AllTest.cpp
-│   ├── other_test.h
-│   ├── sql_object_test.h
-│   ├── sql_task_test.h
-│   └── TaskManagerTest.h
-└── world/
-    ├── office.world        % Simulator configuration
-```
+# Overview (TODO)
+
+# Demo
+
+[Link to Youtube video](https://youtu.be/Y7iX4Zc0Ej4)
