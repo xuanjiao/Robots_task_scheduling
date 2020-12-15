@@ -1,5 +1,7 @@
 # Master Thesis: Exploiting Knowledge of Room Occupation for the Sche- duling of Navigation Tasks of a Fleet of Robots in Office Environments (2020)
 
+This is a robot system that can schedule robot tasks according to environmental information including room occupation.
+
 # Prerequisite
 [Ubuntu 16.04](https://ubuntu.com/tutorials/install-ubuntu-desktop-1604#1-overview)
 
@@ -40,8 +42,11 @@ git clone https://github.com/xuanjiao/robots_task_scheduling.git
 
 `roslaunch robot_navigation move_demo.launch`
 
-# Overview (TODO)
-
+# Main features
+-   The door sensors can measure and store door status in the local table.
+-   The robot is able to request the sensor data (table) as long as it enters the sensor range.
+-   The robot then sends acquired room occupation table to the centralized server.
+-   The centralized pool make decisions based on information from robot and environment.
 # Demo
 
 [Link to Youtube video](https://youtu.be/Y7iX4Zc0Ej4)
