@@ -1,6 +1,6 @@
-# Master Thesis: Exploiting Knowledge of Room Occupation for the Sche- duling of Navigation Tasks of a Fleet of Robots in Office Environments (2020)
+# Master Thesis: Exploiting Knowledge of Room Occupation for the Scheduling of Navigation Tasks of a Fleet of Robots in Office Environments (2020)
 
-This is a robot system that can schedule robot tasks according to environmental information including room occupation.
+A robot system that can schedule robot tasks according to environmental information, including room occupation.
 
 # Requirements
 [Ubuntu 16.04](https://ubuntu.com/tutorials/install-ubuntu-desktop-1604#1-overview)
@@ -14,7 +14,7 @@ This is a robot system that can schedule robot tasks according to environmental 
 [MySQL Connector/C++](https://dev.mysql.com/doc/dev/connector-cpp/8.0/)
 # Installation
 
-1. Log in mysql server 
+1. Log in to MySQL server 
 
 `mysql -r root -p`
 
@@ -44,9 +44,9 @@ git clone https://github.com/xuanjiao/robots_task_scheduling.git
 
 # Main features
 -   The door sensors can measure and store door status in the local table.
--   The robot is able to request the sensor data (table) as long as it enters the sensor range.
--   The robot then sends acquired room occupation table to the centralized server.
--   The centralized server make decisions based on the information from the robot and environment. The decisions inludes selecting a navigation task, asking robot to gather information from a specific sensor, asking robot to recharge at a charging station, etc.
+-   The robot can request the sensor data (table) as long as it enters the sensor range.
+-   The robot then sends the acquired room occupation table to the centralized server.
+-   The centralized server makes decisions based on the information from the robot and the environment. The decisions include selecting a navigation task, asking the robot to gather information from a specific sensor, asking the robot to recharge at a charging station, etc.
 
 # Demo
 
