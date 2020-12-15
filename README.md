@@ -2,7 +2,7 @@
 
 This is a robot system that can schedule robot tasks according to environmental information including room occupation.
 
-# Prerequisite
+# Requirements
 [Ubuntu 16.04](https://ubuntu.com/tutorials/install-ubuntu-desktop-1604#1-overview)
 
 [ROS](https://emanual.robotis.com/docs/en/platform/turtlebot3/quick-start/)
@@ -46,7 +46,8 @@ git clone https://github.com/xuanjiao/robots_task_scheduling.git
 -   The door sensors can measure and store door status in the local table.
 -   The robot is able to request the sensor data (table) as long as it enters the sensor range.
 -   The robot then sends acquired room occupation table to the centralized server.
--   The centralized pool make decisions based on information from robot and environment.
+-   The centralized server make decisions based on the information from the robot and environment. The decisions inludes selecting a navigation task, asking robot to gather information from a specific sensor, asking robot to recharge at a charging station, etc.
+
 # Demo
 
 [Link to Youtube video](https://youtu.be/Y7iX4Zc0Ej4)
