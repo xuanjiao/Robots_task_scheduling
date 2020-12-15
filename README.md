@@ -16,11 +16,15 @@ A robot system that can efficiently schedule robot tasks according to environmen
 
 1. Log in to MySQL server 
 
-`mysql -r root -p`
+```
+mysql -r root -p
+```
 
 2. Use SQL schema to create tables
 
-`source /home/[user_name]/catkin_ws/src/robot_navigation/sql/run.sql`
+```
+source /home/[user_name]/catkin_ws/src/robot_navigation/sql/run.sql
+```
 
 3. Download this project to home/catkin_ws
     
@@ -32,15 +36,21 @@ git clone https://github.com/xuanjiao/robots_task_scheduling.git
 # Usages
 1.  Start Gazebo simulator
 
-`roslaunch turtlebot3_gazebo multi_turtlebot3.launch`
+```
+roslaunch turtlebot3_gazebo multi_turtlebot3.launch
+```
 
 2.  Start navigation stack
 
-` roslaunch turtlebot3_gazebo multi.launch`
+```
+roslaunch turtlebot3_gazebo multi.launch
+```
 
 3.  Start ROS nodes: robots, centralized pool, charging station, sensor simulator, etc.
 
-`roslaunch robot_navigation move_demo.launch`
+```
+roslaunch robot_navigation move_demo.launch
+```
 
 # Main features
 -   The door sensors can measure and store door status in the local table.
