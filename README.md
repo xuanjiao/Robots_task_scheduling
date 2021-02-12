@@ -1,6 +1,6 @@
-# Master Thesis: Exploiting Knowledge of Room Occupation for the Scheduling of Navigation Tasks of a Fleet of Robots in Office Environments (2020)
+# Robot task scheduling
 
-A robot system that can efficiently schedule robot tasks according to environmental information, including room occupation.
+A robot system that can efficiently schedule robot tasks according to environmental information, including room occupation. This project is part of my master thesis -- Simulation of robot task scheduling method
 
 # Requirements
 [Ubuntu 16.04](https://ubuntu.com/tutorials/install-ubuntu-desktop-1604#1-overview)
